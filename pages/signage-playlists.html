@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>電子標牌 · 播放列表 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-module="signage" data-page="playlists"
+      data-crumbs='[{"label":"電子標牌","href":"signage-home.html"},{"label":"播放列表"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#7c67f4,#4e3fd6)"><i class="ti ti-playlist"></i></span>
+        <div>
+          <div class="off-page-title-row">
+            <h1>播放列表</h1>
+            <button class="off-btn off-btn-primary"><i class="ti ti-plus"></i> 新增</button>
+          </div>
+          <p class="off-page-desc">管理內容排序、生效時間與循環模式</p>
+        </div>
+      </div>
+
+      <div class="off-grid cols-3">
+        <div class="off-panel">
+          <div class="off-panel-head"><span class="off-panel-icon"><i class="ti ti-playlist"></i></span><h3 class="off-panel-title">大廳歡迎清單</h3></div>
+          <p style="color:var(--off-text-muted); font-size:13px">生效：全時段 · 循環：是 · 內容 4 項</p>
+          <div style="display:flex; gap:6px; flex-wrap:wrap">
+            <span class="off-chip">圖片 · 12s</span><span class="off-chip">影片 · 30s</span><span class="off-chip">天氣 · 10s</span><span class="off-chip">預約看板 · 15s</span>
+          </div>
+        </div>
+        <div class="off-panel">
+          <div class="off-panel-head"><span class="off-panel-icon"><i class="ti ti-playlist"></i></span><h3 class="off-panel-title">會議室門口清單</h3></div>
+          <p style="color:var(--off-text-muted); font-size:13px">生效：09:00 - 18:00 · 循環：是 · 內容 3 項</p>
+          <div style="display:flex; gap:6px; flex-wrap:wrap">
+            <span class="off-chip">預約看板 · 20s</span><span class="off-chip">公告 · 10s</span><span class="off-chip">時鐘 · 10s</span>
+          </div>
+        </div>
+        <div class="off-panel">
+          <div class="off-panel-head"><span class="off-panel-icon"><i class="ti ti-playlist"></i></span><h3 class="off-panel-title">緊急切換清單</h3></div>
+          <p style="color:var(--off-text-muted); font-size:13px">觸發：緊急廣播 · 循環：否 · 內容 1 項</p>
+          <div style="display:flex; gap:6px; flex-wrap:wrap">
+            <span class="off-chip chip-red">緊急訊息 · 全螢幕</span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>

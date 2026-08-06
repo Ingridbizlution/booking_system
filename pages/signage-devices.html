@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>電子標牌 · 設備 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-module="signage" data-page="devices"
+      data-crumbs='[{"label":"電子標牌","href":"signage-home.html"},{"label":"設備"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#7c67f4,#4e3fd6)"><i class="ti ti-device-desktop"></i></span>
+        <div>
+          <div class="off-page-title-row">
+            <h1>設備</h1>
+            <button class="off-btn off-btn-primary"><i class="ti ti-plus"></i> 新增</button>
+          </div>
+          <p class="off-page-desc">管理連線的看板裝置</p>
+        </div>
+      </div>
+
+      <div class="off-panel" style="padding:0">
+        <table class="off-table">
+          <thead>
+            <tr>
+              <th style="width:40px"><input type="checkbox"></th>
+              <th>名稱</th><th>機型</th><th>連線</th><th>解析度</th><th>方向</th><th>最後心跳</th><th>狀態</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><input type="checkbox"></td>
+              <td><span class="off-avatar"><i class="ti ti-device-tv"></i></span> <span style="margin-left:8px">接待處與大堂 1</span></td>
+              <td>Android TV 55"</td><td>Wi-Fi</td><td>1920x1080</td><td>橫向</td><td>2 天前</td>
+              <td><span class="off-chip chip-red">離線</span></td></tr>
+            <tr><td><input type="checkbox"></td>
+              <td><span class="off-avatar"><i class="ti ti-device-tv"></i></span> <span style="margin-left:8px">接待處與大堂 2</span></td>
+              <td>BrightSign HD224</td><td>LAN</td><td>3840x2160</td><td>橫向</td><td>10 小時前</td>
+              <td><span class="off-chip chip-red">離線</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>

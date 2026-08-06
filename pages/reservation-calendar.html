@@ -1,0 +1,1491 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>預約管理 · 管理日曆 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+  <style>
+    .cal-toolbar {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 12px; flex-wrap: wrap;
+    }
+    .cal-toolbar h2 {
+      font-size: 22px; font-weight: 700; margin: 0;
+      color: var(--off-primary); min-width: 140px;
+    }
+    .cal-nav { display: flex; gap: 4px; }
+    .cal-nav button {
+      width: 34px; height: 34px; border-radius: 8px;
+      border: 1px solid var(--off-border); background: #fff;
+      cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+      color: #4b525f;
+    }
+    .cal-nav button:hover { background: var(--off-sidebar-hover); color: var(--off-primary); }
+    .cal-legend { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; font-size: 12px; }
+    .cal-legend .dot {
+      display: inline-block; width: 10px; height: 10px; border-radius: 2px;
+      margin-right: 4px; vertical-align: middle;
+    }
+    /* 資源時間線 */
+    .tl-container {
+      background: #fff;
+      border: 1px solid var(--off-border);
+      border-radius: var(--off-card-radius);
+      overflow: hidden;
+    }
+    .tl-scroll {
+      overflow-x: hidden;
+      overflow-y: auto;
+      max-height: calc(100vh - 280px);
+    }
+    .tl-grid {
+      display: grid;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    .tl-header-room {
+      position: sticky;
+      left: 0; top: 0; z-index: 4;
+      background: #f8f9fc;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: var(--off-text-muted);
+      font-weight: 600;
+      border-bottom: 2px solid var(--off-border);
+      border-right: 2px solid var(--off-border);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .tl-header-day {
+      position: sticky; top: 0; z-index: 3;
+      background: #f8f9fc;
+      padding: 6px 4px;
+      text-align: center;
+      border-bottom: 2px solid var(--off-border);
+      border-right: 1px solid var(--off-border);
+    }
+    .tl-header-day .tl-day-num {
+      font-size: 15px; font-weight: 700; color: #4b525f; line-height: 1.2;
+    }
+    .tl-header-day .tl-day-wd {
+      font-size: 11px; color: var(--off-text-muted);
+    }
+    .tl-header-day.today { background: var(--off-primary-soft); }
+    .tl-header-day.today .tl-day-num { color: var(--off-primary); }
+    .tl-header-day.weekend .tl-day-num,
+    .tl-header-day.weekend .tl-day-wd { color: var(--off-red); }
+    .tl-room {
+      position: sticky; left: 0; z-index: 2;
+      background: #fff;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--off-border);
+      border-right: 2px solid var(--off-border);
+      display: flex; align-items: center; gap: 10px;
+      min-height: 54px;
+    }
+    .tl-room:hover { background: #fafbfd; }
+    .tl-room-icon {
+      width: 30px; height: 30px; border-radius: 8px;
+      background: var(--off-primary-soft); color: var(--off-primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; flex-shrink: 0;
+    }
+    .tl-room-name {
+      font-size: 13px; font-weight: 600; color: #111;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 150px;
+    }
+    .tl-room-info {
+      font-size: 11px; color: var(--off-text-muted);
+      display: flex; align-items: center; gap: 4px;
+    }
+    .tl-cell {
+      padding: 3px 4px;
+      border-bottom: 1px solid var(--off-border);
+      border-right: 1px solid var(--off-border);
+      min-height: 54px;
+      background: #fff;
+      display: flex; flex-direction: column;
+      gap: 2px; overflow: hidden;
+    }
+    .tl-cell.today { background: #f0f7ff; }
+    .tl-cell.weekend { background: #fafbfd; }
+    .tl-event {
+      font-size: 10px; padding: 2px 5px; border-radius: 4px;
+      background: var(--off-primary-soft); color: var(--off-primary);
+      cursor: pointer;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      border-left: 2px solid var(--off-primary);
+      line-height: 1.4;
+    }
+    .tl-event:hover { filter: brightness(0.92); }
+    .tl-event.status-pending  { background: #fff2cd; color: #b7891b; border-left-color: #b7891b; }
+    .tl-event.status-approved,
+    .tl-event.status-checked_in { background: #d7f5ee; color: #12a97e; border-left-color: #12a97e; }
+    .tl-event.status-cancelled  { background: #f2f4f8; color: var(--off-text-muted); border-left-color: #cfd4de; text-decoration: line-through; }
+    .tl-more {
+      font-size: 10px; color: var(--off-text-muted);
+      padding: 1px 5px; text-align: center;
+    }
+    .tl-empty {
+      grid-column: 1 / -1;
+      text-align: center; padding: 60px 20px;
+      color: var(--off-text-muted);
+    }
+    .tl-empty i { font-size: 32px; display: block; margin-bottom: 8px; opacity: .5; }
+
+    /* View mode dropdown */
+    .cal-view-select {
+      padding: 6px 12px; border-radius: 8px;
+      border: 1px solid var(--off-border); background: #fff;
+      font-size: 13px; color: #4b525f; cursor: pointer; outline: none;
+    }
+    .cal-view-select:hover { border-color: var(--off-primary); }
+    .cal-view-select:focus { border-color: var(--off-primary); box-shadow: 0 0 0 2px rgba(31,128,240,.15); }
+
+    /* Day view: hour header */
+    .tl-header-hour {
+      position: sticky; top: 0; z-index: 3;
+      background: #f8f9fc; padding: 8px 2px; text-align: center;
+      border-bottom: 2px solid var(--off-border); border-right: 1px solid var(--off-border);
+      font-size: 12px; color: #4b525f; font-weight: 600;
+    }
+    .tl-header-hour.now { background: var(--off-primary-soft); color: var(--off-primary); }
+
+    /* List view */
+    .tl-list-cell {
+      padding: 6px 10px; border-bottom: 1px solid var(--off-border);
+      min-height: 54px; background: #fff;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .tl-list-event {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
+      border-left: 3px solid var(--off-primary);
+      background: var(--off-primary-soft); color: var(--off-primary);
+    }
+    .tl-list-event:hover { filter: brightness(0.95); }
+    .tl-list-event .ev-time { font-weight: 600; white-space: nowrap; min-width: 100px; }
+    .tl-list-event .ev-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tl-list-event .ev-status { font-size: 11px; padding: 1px 8px; border-radius: 999px; background: rgba(0,0,0,.06); }
+    .tl-list-event.status-pending  { background: #fff2cd; color: #b7891b; border-left-color: #b7891b; }
+    .tl-list-event.status-approved,
+    .tl-list-event.status-checked_in { background: #d7f5ee; color: #12a97e; border-left-color: #12a97e; }
+    .tl-list-event.status-cancelled  { background: #f2f4f8; color: var(--off-text-muted); border-left-color: #cfd4de; text-decoration: line-through; }
+    .tl-list-empty { padding: 12px; color: var(--off-text-muted); font-size: 12px; text-align: center; }
+
+    /* ---- 預約 modal 專用樣式 ---- */
+    .bk-modal { grid-template-columns: 1fr; width: min(720px, 94vw); max-height: 92vh; }
+    .bk-head {
+      display: flex; align-items: center; padding: 20px 24px 0;
+    }
+    .bk-head h3 { font-size: 22px; font-weight: 700; margin: 0; }
+    .bk-tabs {
+      margin-left: auto; display: inline-flex;
+      background: #f2f4f8; border-radius: 999px; padding: 3px;
+    }
+    .bk-tabs button {
+      border: 0; background: transparent; padding: 6px 16px;
+      border-radius: 999px; cursor: pointer; color: #4b525f; font-size: 13px;
+    }
+    .bk-tabs button.active { background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.08); font-weight: 600; color: #111; }
+    .bk-tabs button:disabled { opacity: .5; cursor: not-allowed; }
+    .bk-body { padding: 12px 20px 20px; overflow-y: auto; flex: 1; }
+    .bk-section {
+      background: #f4f6fa; border-radius: 14px;
+      padding: 10px 14px; margin-bottom: 8px;
+    }
+    .bk-section > .bk-row {
+      display: flex; align-items: center; gap: 10px; min-height: 32px;
+    }
+    .bk-section > .bk-row > i { color: #6b7280; }
+    .bk-section > .bk-row > .label { color: #4b525f; font-size: 14px; min-width: 80px; }
+    .bk-section input, .bk-section textarea {
+      border: 0; background: transparent; outline: none;
+      font-size: 14px; color: #111; flex: 1; width: 100%;
+    }
+    .bk-section .bk-collapse {
+      cursor: pointer;
+    }
+    .bk-section .bk-content { display: none; margin-top: 8px; }
+    .bk-section.open .bk-content { display: block; }
+    .bk-section .bk-chev { margin-left: auto; color: #6b7280; transition: transform .15s; }
+    .bk-section.open .bk-chev { transform: rotate(180deg); }
+
+    .bk-time-row {
+      display: grid; grid-template-columns: 1.6fr 1fr; gap: 6px;
+      margin-top: 6px;
+    }
+    .bk-time-row select, .bk-time-row input {
+      background: #fff; border: 1px solid var(--off-border);
+      border-radius: 10px; padding: 8px 12px; font-size: 13px; outline: none;
+    }
+
+    .bk-title-row {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .bk-title-row input { flex: 1; }
+    .bk-private-btn {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 4px 10px; border-radius: 999px;
+      background: #fff; border: 1px solid var(--off-border);
+      color: #4b525f; font-size: 12px; cursor: pointer;
+    }
+    .bk-private-btn.active { background: var(--off-primary-soft); color: var(--off-primary); border-color: var(--off-primary); }
+
+    .bk-list { max-height: 280px; overflow-y: auto; margin-top: 8px; }
+
+    /* ===== 預約事件 detail popover ===== */
+    .rd-modal { grid-template-columns: 1fr; width: min(460px, 94vw); max-height: 92vh; overflow: hidden; display:flex; flex-direction:column; }
+    .rd-head { padding: 20px 24px 8px; }
+    .rd-title { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+    .rd-title h3 { margin:0; font-size:20px; font-weight:700; }
+    .rd-title .status-chip {
+      background:#ffb17a; color:#a54808; padding:2px 10px; border-radius:999px; font-size:12px; font-weight:500;
+    }
+    .rd-title .status-chip.approved { background:#d7f5ee; color:#12a97e; }
+    .rd-title .status-chip.pending  { background:#fff2cd; color:#b7891b; }
+    .rd-title .status-chip.cancelled{ background:#f2f4f8; color:var(--off-text-muted); }
+    .rd-title .status-chip.completed{ background:#eef1f6; color:#4b525f; }
+    .rd-title .kebab {
+      margin-left:auto; width:32px; height:32px; border-radius:50%;
+      background:#f2f4f8; border:0; cursor:pointer;
+      display:inline-flex; align-items:center; justify-content:center; color:#4b525f;
+    }
+    .rd-time { color:#111; font-weight:500; font-size:14px; }
+    .rd-time-day { display:block; font-size:16px; font-weight:600; margin-bottom:2px; }
+
+    .rd-body { padding:12px 20px; overflow-y:auto; flex:1; }
+    .rd-row {
+      display:flex; align-items:center; gap:10px;
+      padding:12px 14px; background:#f4f6fa; border-radius:10px;
+      margin-bottom:6px; font-size:14px; color:#4b525f;
+    }
+    .rd-row > i { color:#6b7280; }
+    .rd-row .label { flex:0 0 auto; }
+    .rd-row .val { margin-left:auto; color:#111; font-weight:500; }
+    .rd-row .val.mono { font-family: monospace; letter-spacing:1px; }
+    .rd-row .val.red { color:var(--off-red); }
+    .rd-row .external { color:#9aa3b0; cursor:pointer; }
+    .rd-row.link { cursor:pointer; }
+    .rd-row.link:hover { background:#eef4ff; }
+
+    .rd-foot {
+      display:flex; align-items:center; gap:8px;
+      padding:12px 20px; border-top:1px solid var(--off-border);
+    }
+    .rd-foot .icon-btn {
+      width:34px; height:34px; border-radius:50%;
+      background:#f2f4f8; border:0; cursor:pointer;
+      display:inline-flex; align-items:center; justify-content:center; color:#4b525f;
+    }
+    .rd-foot .icon-btn:hover { background:#e4e8ef; color:var(--off-red); }
+    .rd-foot .btn-ghost {
+      background:#f2f4f8; color:#111; border:0; padding:8px 16px; border-radius:999px;
+      font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+    }
+    .rd-foot .btn-ghost:hover { background:#e4e8ef; }
+    .rd-foot .btn-primary {
+      background: var(--off-primary); color:#fff; border:0; padding:8px 16px; border-radius:999px;
+      font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; font-weight:500;
+    }
+
+    /* 延長時間 選單 */
+    .rd-extend-menu {
+      position:absolute; z-index: 70;
+      background:#fff; border-radius:14px;
+      box-shadow: 0 12px 32px rgba(0,0,0,.16);
+      padding:8px; width:280px;
+    }
+    .rd-extend-item {
+      display:flex; align-items:center; gap:10px;
+      padding:10px 12px; border-radius:8px; cursor:pointer;
+    }
+    .rd-extend-item:hover { background:#f4f6fa; }
+    .rd-extend-item i { color:#6b7280; }
+    .rd-extend-item b { font-weight:500; }
+    .rd-extend-item small { color:var(--off-text-muted); font-size:12px; display:block; margin-top:2px; }
+    .rd-extend-custom {
+      display:flex; align-items:center; gap:6px; padding:10px 12px;
+      border-top:1px solid var(--off-border); margin-top:4px;
+    }
+    .rd-extend-custom input {
+      flex:1; padding:6px 10px; border:1px solid var(--off-border);
+      border-radius:8px; font-size:13px; outline:none;
+    }
+    .rd-extend-custom button {
+      border:0; background:var(--off-primary); color:#fff;
+      padding:6px 12px; border-radius:8px; font-size:12px; cursor:pointer;
+    }
+
+    /* 確認彈窗（完結） */
+    .rd-confirm { width: min(360px, 92vw); border-radius: 16px; padding: 20px; }
+    .rd-confirm h4 { margin: 0 0 8px; font-size: 18px; font-weight: 700; }
+    .rd-confirm p { margin: 0 0 20px; color: #4b525f; font-size: 14px; }
+    .rd-confirm-btns { display: flex; gap: 8px; }
+    .rd-confirm-btns button {
+      flex:1; padding: 10px; border-radius: 999px; border: 0; cursor: pointer;
+      font-size: 14px; font-weight: 500;
+    }
+    .rd-confirm-btns .cancel { background: #f2f4f8; color: #111; }
+    .rd-confirm-btns .ok { background: var(--off-primary); color: #fff; }
+
+    /* 編輯預約 modal 底部審批提示條 */
+    .rd-edit-approval {
+      display:flex; align-items:flex-start; gap:12px;
+      padding:14px 16px; background:#fff8e5;
+      border:1px solid #f6d97a; border-radius:12px;
+      margin:12px 24px 0; font-size:13px;
+    }
+    .rd-edit-approval .dot { width:8px; height:8px; border-radius:50%; background:var(--off-orange); flex-shrink:0; margin-top:6px; }
+    .rd-edit-approval b { display:block; color:#7a5b00; }
+    .rd-edit-approval small { color:#7a5b00; }
+    .bk-list-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px; border-radius: 10px;
+      cursor: pointer;
+    }
+    .bk-list-item:hover { background: rgba(31,128,240,.06); }
+    .bk-list-item.selected { background: rgba(31,128,240,.1); }
+    .bk-list-item .star { color: #cfd4de; }
+    .bk-list-item .dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #12a97e; display: inline-block;
+    }
+    .bk-list-item .name { flex: 1; font-size: 14px; }
+    .bk-list-item .capacity {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: #eef1f6; color: #4b525f; padding: 2px 8px; border-radius: 999px;
+      font-size: 12px;
+    }
+    .bk-list-item .approve { color: #f39c3d; }
+    .bk-list-item .combine { color: var(--off-primary); }
+
+    .bk-attendee-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px; margin-bottom: 4px;
+      background: #fff; border-radius: 10px; cursor: pointer;
+      border: 1px solid transparent;
+    }
+    .bk-attendee-item.selected { border-color: var(--off-primary); background: var(--off-primary-soft); }
+    .bk-attendee-item .avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 600; font-size: 13px;
+    }
+    .bk-attendee-item .avatar.green  { background: #12a97e; }
+    .bk-attendee-item .avatar.purple { background: #7c67f4; }
+    .bk-attendee-item .avatar.orange { background: #f39c3d; }
+    .bk-attendee-item .avatar.blue   { background: var(--off-primary); }
+    .bk-attendee-item b { display: block; font-size: 14px; }
+    .bk-attendee-item small { color: var(--off-text-muted); font-size: 12px; }
+
+    .bk-foot {
+      padding: 14px 20px;
+      border-top: 1px solid var(--off-border);
+      display: flex; justify-content: flex-end; align-items: center; gap: 8px;
+    }
+    #bk-err { color: var(--off-red); font-size: 13px; margin-right: auto; display: none; }
+    #bk-save[disabled] { opacity: .5; cursor: not-allowed; }
+  </style>
+</head>
+<body data-module="reservation" data-page="calendar"
+      data-crumbs='[{"label":"預約管理","href":"reservation-dashboard.html"},{"label":"預約"},{"label":"管理日曆"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#58c7f5,#1f80f0)"><i class="ti ti-calendar-event"></i></span>
+        <div>
+          <div class="off-page-title-row">
+            <h1>管理日曆</h1>
+            <span class="off-new-tag">NEW</span>
+            <button class="off-btn off-btn-primary" id="btn-new-booking">
+              <i class="ti ti-plus"></i> 預約
+            </button>
+          </div>
+          <p class="off-page-desc">以資源時間線呈現所有會議室的預約狀態。左側為會議室列表，橫軸為日期，可一目了然查看各房間的預約情況。</p>
+        </div>
+      </div>
+
+      <div class="cal-toolbar">
+        <div class="cal-nav">
+          <button id="cal-prev" title="上個月"><i class="ti ti-chevron-left"></i></button>
+          <button id="cal-today" title="回到本月" style="width:auto; padding:0 12px; font-size:13px">本月</button>
+          <button id="cal-next" title="下個月"><i class="ti ti-chevron-right"></i></button>
+        </div>
+        <select class="cal-view-select" id="cal-view-mode">
+          <option value="month" selected>月顯示</option>
+          <option value="week">周顯示</option>
+          <option value="day">日顯示</option>
+          <option value="list">列表</option>
+        </select>
+        <h2 id="cal-title">—</h2>
+        <div class="cal-legend">
+          <span><span class="dot" style="background:#12a97e"></span>已核准</span>
+          <span><span class="dot" style="background:#b7891b"></span>待審批</span>
+          <span><span class="dot" style="background:#cfd4de"></span>已取消</span>
+        </div>
+      </div>
+
+      <div class="tl-container">
+        <div class="tl-scroll" id="tl-scroll">
+          <div class="tl-grid" id="tl-grid">
+            <div class="tl-empty"><i class="ti ti-loader-2"></i> 讀取中…</div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 預約詳情 Popover Modal -->
+  <div class="off-modal-back" id="modal-rd">
+    <div class="off-modal off-modal-wrap rd-modal">
+      <button class="off-modal-close" onclick="offCloseModal('modal-rd')"><i class="ti ti-x"></i></button>
+      <div class="rd-head">
+        <div class="rd-title">
+          <h3 id="rd-title">—</h3>
+          <span id="rd-status" class="status-chip">—</span>
+          <button class="kebab" title="更多"><i class="ti ti-dots"></i></button>
+        </div>
+        <div class="rd-time">
+          <span class="rd-time-day" id="rd-day">—</span>
+          <span id="rd-hours">—</span>
+        </div>
+      </div>
+      <div class="rd-body">
+        <div class="rd-row"><i class="ti ti-door"></i><span class="label">房間</span>
+          <span class="val" id="rd-room">—</span>
+          <i class="ti ti-external-link external"></i>
+        </div>
+        <div class="rd-row"><i class="ti ti-user"></i><span class="label">發起人</span>
+          <span class="val" id="rd-organizer">—</span>
+          <i class="ti ti-external-link external"></i>
+        </div>
+        <div class="rd-row link"><i class="ti ti-users"></i><span class="label">與會者</span>
+          <span class="val" id="rd-attendees" style="color:var(--off-text-muted); font-weight:400">—</span>
+          <i class="ti ti-chevron-right external"></i>
+        </div>
+        <div class="rd-row"><i class="ti ti-grip-vertical"></i><span class="label">預約代碼</span>
+          <span class="val mono" id="rd-access-code">—</span>
+        </div>
+        <div class="rd-row link" id="rd-share-row"><i class="ti ti-share"></i><span class="label">分享</span>
+          <i class="ti ti-external-link external" style="margin-left:auto"></i>
+        </div>
+        <div class="rd-row link"><i class="ti ti-chart-bar"></i><span class="label">容量使用率</span>
+          <span class="val red" id="rd-utilization">—</span>
+          <i class="ti ti-chevron-right external"></i>
+        </div>
+        <div class="rd-row"><i class="ti ti-hash"></i><span class="label">預約 ID</span>
+          <span class="val mono" id="rd-bk-id">—</span>
+        </div>
+        <div class="rd-row link"><i class="ti ti-history"></i><span class="label">預約履歷</span>
+          <i class="ti ti-chevron-right external" style="margin-left:auto"></i>
+        </div>
+      </div>
+      <div class="rd-foot">
+        <button class="icon-btn" id="rd-delete" title="刪除"><i class="ti ti-trash"></i></button>
+        <div style="flex:1"></div>
+        <button class="btn-ghost" id="rd-extend"><i class="ti ti-clock"></i> 延長時間</button>
+        <button class="btn-ghost" id="rd-complete"><i class="ti ti-logout"></i> 完結</button>
+        <button class="btn-primary" id="rd-edit"><i class="ti ti-pencil"></i> 編輯</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 確認：提早結束 -->
+  <div class="off-modal-back" id="modal-rd-confirm">
+    <div class="off-modal rd-confirm">
+      <h4>確認</h4>
+      <p>確認提早結束</p>
+      <div class="rd-confirm-btns">
+        <button class="cancel" onclick="offCloseModal('modal-rd-confirm')">取消</button>
+        <button class="ok" id="rd-confirm-ok">確認</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 延長時間 選單 -->
+  <div class="rd-extend-menu" id="rd-extend-menu" style="display:none">
+    <div class="rd-extend-item" data-min="15">
+      <i class="ti ti-clock-plus"></i>
+      <div style="flex:1"><b>延長時間 15 分鐘</b><small id="rd-ext-end-15">—</small></div>
+    </div>
+    <div class="rd-extend-item" data-min="30">
+      <i class="ti ti-clock-plus"></i>
+      <div style="flex:1"><b>延長時間 30 分鐘</b><small id="rd-ext-end-30">—</small></div>
+    </div>
+    <div class="rd-extend-item" data-min="45">
+      <i class="ti ti-clock-plus"></i>
+      <div style="flex:1"><b>延長時間 45 分鐘</b><small id="rd-ext-end-45">—</small></div>
+    </div>
+    <div class="rd-extend-item" data-min="60">
+      <i class="ti ti-clock-plus"></i>
+      <div style="flex:1"><b>延長時間 1 小時</b><small id="rd-ext-end-60">—</small></div>
+    </div>
+    <div class="rd-extend-custom">
+      <span style="font-size:12px; color:var(--off-text-muted)">自訂</span>
+      <input id="rd-ext-custom" type="number" min="1" placeholder="分鐘">
+      <button id="rd-ext-custom-btn">延長時間</button>
+    </div>
+  </div>
+
+  <!-- 預約房間 Modal -->
+  <div class="off-modal-back" id="modal-booking">
+    <div class="off-modal off-modal-wrap bk-modal">
+      <button class="off-modal-close" onclick="offCloseModal('modal-booking')"><i class="ti ti-x"></i></button>
+
+      <div class="bk-head">
+        <h3 id="bk-head-title">預約房間</h3>
+        <div class="bk-tabs" id="bk-head-tabs">
+          <button class="active" data-mode="single">單次</button>
+          <button data-mode="recurring" disabled title="尚未開放">重複</button>
+          <button data-mode="series" disabled title="尚未開放">系列</button>
+        </div>
+      </div>
+
+      <input type="hidden" id="bk-edit-id" value="">
+      <!-- 編輯模式時顯示的審批提示條 -->
+      <div class="rd-edit-approval" id="bk-approval-hint" style="display:none">
+        <span class="dot"></span>
+        <div>
+          <b>需要審批</b>
+          <small>作為管理員，您可以直接批准此預約或保存以供稍後審查。</small>
+        </div>
+      </div>
+
+      <div class="bk-body">
+        <!-- 發起人 -->
+        <div class="bk-section">
+          <div class="bk-row">
+            <i class="ti ti-id-badge"></i>
+            <span class="label">發起人</span>
+            <span id="bk-organizer" style="color:var(--off-primary); font-weight:500">—</span>
+          </div>
+        </div>
+
+        <!-- 標題 + 私人預約 -->
+        <div class="bk-section">
+          <div class="bk-row bk-title-row">
+            <i class="ti ti-typography"></i>
+            <input id="bk-title" placeholder="新增標題">
+            <button class="bk-private-btn" id="bk-private-btn" type="button">
+              <i class="ti ti-eye-off"></i> 私人預約
+            </button>
+          </div>
+        </div>
+
+        <!-- 時段 -->
+        <div class="bk-section open" id="bk-time-section">
+          <div class="bk-row bk-collapse" data-toggle="bk-time-section">
+            <i class="ti ti-clock"></i>
+            <span id="bk-time-summary" style="flex:1; color:#111; font-weight:500">—</span>
+            <button type="button" class="off-btn" id="bk-allday" style="padding:4px 12px; font-size:12px">整日</button>
+            <i class="ti ti-chevron-down bk-chev"></i>
+          </div>
+          <div class="bk-content">
+            <div class="bk-time-row">
+              <input type="date" id="bk-start-date">
+              <input type="time" id="bk-start-time" step="900">
+            </div>
+            <div class="bk-time-row" style="margin-top:6px">
+              <input type="date" id="bk-end-date">
+              <input type="time" id="bk-end-time" step="900">
+            </div>
+          </div>
+        </div>
+
+        <!-- 尋找房間 -->
+        <div class="bk-section" id="bk-room-section">
+          <div class="bk-row bk-collapse" data-toggle="bk-room-section">
+            <i class="ti ti-door" style="color:var(--off-red)"></i>
+            <span id="bk-room-summary" style="flex:1; color:var(--off-text-muted)">尋找房間</span>
+            <i class="ti ti-chevron-down bk-chev"></i>
+          </div>
+          <div class="bk-content">
+            <input id="bk-room-search" placeholder="🔍 搜尋"
+                   style="width:100%; background:#fff; border:1px solid var(--off-border); border-radius:10px; padding:8px 12px; font-size:13px; outline:none">
+            <div class="bk-list" id="bk-room-list">
+              <div style="padding:16px; text-align:center; color:var(--off-text-muted); font-size:13px">讀取中…</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 邀請與會者 -->
+        <div class="bk-section" id="bk-attendee-section">
+          <div class="bk-row bk-collapse" data-toggle="bk-attendee-section">
+            <i class="ti ti-users"></i>
+            <span id="bk-attendee-summary" style="flex:1; color:var(--off-text-muted)">邀請與會者</span>
+            <i class="ti ti-chevron-down bk-chev"></i>
+          </div>
+          <div class="bk-content">
+            <input id="bk-attendee-search" placeholder="🔍 搜尋人員"
+                   style="width:100%; background:#fff; border:1px solid var(--off-border); border-radius:10px; padding:8px 12px; font-size:13px; outline:none">
+            <div class="bk-list" id="bk-attendee-list">
+              <div style="padding:16px; text-align:center; color:var(--off-text-muted); font-size:13px">讀取中…</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 備忘錄 -->
+        <div class="bk-section">
+          <div class="bk-row">
+            <i class="ti ti-note"></i>
+            <input id="bk-notes" placeholder="會議備忘錄">
+          </div>
+        </div>
+      </div>
+
+      <div class="bk-foot">
+        <div id="bk-err"></div>
+        <!-- 新增模式：預約 -->
+        <button class="off-btn off-btn-primary" id="bk-save" disabled>
+          <i class="ti ti-check"></i> 預約
+        </button>
+        <!-- 編輯模式：保存待審批 + 直接批准 -->
+        <button class="off-btn off-btn-primary" id="bk-save-pending" style="display:none; background:#1f80f0">
+          <i class="ti ti-clock"></i> 保存待審批
+        </button>
+        <button class="off-btn off-btn-primary" id="bk-save-approve" style="display:none">
+          <i class="ti ti-shield-check"></i> 直接批准
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script>
+    OffAuth.requireLogin();
+    const esc = s => (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    // 目前檢視的日期游標
+    let cursor = new Date();
+    cursor.setDate(1);
+    cursor.setHours(0, 0, 0, 0);
+
+    let viewMode = 'month';
+
+    function isSameDay(a, b) {
+      return a.getFullYear() === b.getFullYear()
+          && a.getMonth() === b.getMonth()
+          && a.getDate() === b.getDate();
+    }
+    function fmtTime(d) {
+      return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+    }
+    function toISO(d) { return new Date(d).toISOString(); }
+
+    function getMonday(d) {
+      const dt = new Date(d);
+      const day = dt.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      dt.setDate(dt.getDate() + diff);
+      dt.setHours(0, 0, 0, 0);
+      return dt;
+    }
+
+    function getViewDateRange() {
+      const y = cursor.getFullYear(), m = cursor.getMonth(), d = cursor.getDate();
+      switch (viewMode) {
+        case 'month':
+        case 'list':
+          return { start: new Date(y, m, 1), end: new Date(y, m + 1, 0, 23, 59, 59, 999) };
+        case 'week': {
+          const s = new Date(cursor); s.setHours(0,0,0,0);
+          const e = new Date(s); e.setDate(e.getDate() + 6); e.setHours(23,59,59,999);
+          return { start: s, end: e };
+        }
+        case 'day':
+          return { start: new Date(y, m, d, 0,0,0,0), end: new Date(y, m, d, 23,59,59,999) };
+      }
+    }
+
+    function updateViewTitle() {
+      const y = cursor.getFullYear(), m = cursor.getMonth(), d = cursor.getDate();
+      const titleEl = document.getElementById('cal-title');
+      const todayBtn = document.getElementById('cal-today');
+      const prevBtn = document.getElementById('cal-prev');
+      const nextBtn = document.getElementById('cal-next');
+      switch (viewMode) {
+        case 'month':
+        case 'list':
+          titleEl.textContent = `${y} 年 ${m + 1} 月`;
+          todayBtn.textContent = '本月'; todayBtn.title = '回到本月';
+          prevBtn.title = '上個月'; nextBtn.title = '下個月';
+          break;
+        case 'week': {
+          const end = new Date(cursor); end.setDate(end.getDate() + 6);
+          if (cursor.getMonth() === end.getMonth()) {
+            titleEl.textContent = `${y} 年 ${m+1} 月 ${d} 日 – ${end.getDate()} 日`;
+          } else {
+            titleEl.textContent = `${cursor.getMonth()+1}/${d} – ${end.getMonth()+1}/${end.getDate()}`;
+          }
+          todayBtn.textContent = '本週'; todayBtn.title = '回到本週';
+          prevBtn.title = '上一週'; nextBtn.title = '下一週';
+          break;
+        }
+        case 'day': {
+          const wd = ['日','一','二','三','四','五','六'][cursor.getDay()];
+          titleEl.textContent = `${y} 年 ${m+1} 月 ${d} 日 (${wd})`;
+          todayBtn.textContent = '今天'; todayBtn.title = '回到今天';
+          prevBtn.title = '前一天'; nextBtn.title = '後一天';
+          break;
+        }
+      }
+    }
+
+    function buildRoomHtml(room) {
+      return `<div class="tl-room"><span class="tl-room-icon"><i class="ti ti-door"></i></span><div><div class="tl-room-name">${esc(room.name)}</div><div class="tl-room-info"><i class="ti ti-users" style="font-size:11px"></i> ${room.capacity}${room.location_name ? ' · ' + esc(room.location_name) : ''}</div></div></div>`;
+    }
+
+    function buildDateKey(date) {
+      return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2,'0')}-${date.getDate().toString().padStart(2,'0')}`;
+    }
+
+    // ---- 月顯示 ----
+    function renderMonth(rooms, reservations, grid) {
+      const y = cursor.getFullYear(), m = cursor.getMonth();
+      const daysInMonth = new Date(y, m + 1, 0).getDate();
+      grid.style.gridTemplateColumns = `180px repeat(${daysInMonth}, 1fr)`;
+
+      const roomMap = {};
+      reservations.forEach(r => {
+        const start = new Date(r.start_at), end = new Date(r.end_at);
+        let cur = new Date(start); cur.setHours(0,0,0,0);
+        const endDay = new Date(end); endDay.setHours(0,0,0,0);
+        while (cur <= endDay) {
+          if (cur.getMonth() === m && cur.getFullYear() === y) {
+            const k = buildDateKey(cur);
+            if (!roomMap[r.resource_id]) roomMap[r.resource_id] = {};
+            (roomMap[r.resource_id][k] = roomMap[r.resource_id][k] || []).push(r);
+          }
+          cur.setDate(cur.getDate() + 1);
+        }
+      });
+
+      const today = new Date();
+      let html = '';
+      html += `<div class="tl-header-room"><i class="ti ti-door"></i> 會議室 (${rooms.length})</div>`;
+      for (let d = 1; d <= daysInMonth; d++) {
+        const date = new Date(y, m, d);
+        const wd = ['日','一','二','三','四','五','六'][date.getDay()];
+        const isToday = isSameDay(date, today);
+        const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+        html += `<div class="tl-header-day${isToday ? ' today' : ''}${isWeekend ? ' weekend' : ''}"><div class="tl-day-num">${d}</div><div class="tl-day-wd">${wd}</div></div>`;
+      }
+
+      rooms.forEach(room => {
+        html += buildRoomHtml(room);
+        for (let d = 1; d <= daysInMonth; d++) {
+          const date = new Date(y, m, d);
+          const k = buildDateKey(date);
+          const events = (roomMap[room.id] && roomMap[room.id][k]) || [];
+          const isToday = isSameDay(date, today);
+          const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+          const shown = events.slice(0, 2);
+          const rest = events.length - shown.length;
+          html += `<div class="tl-cell${isToday ? ' today' : ''}${isWeekend ? ' weekend' : ''}">${shown.map(r => `<div class="tl-event status-${esc(r.status)}" data-id="${r.id}" title="${esc(r.title)} · ${fmtTime(new Date(r.start_at))}–${fmtTime(new Date(r.end_at))}">${fmtTime(new Date(r.start_at))} ${esc(r.title)}</div>`).join('')}${rest > 0 ? `<div class="tl-more">+${rest}</div>` : ''}</div>`;
+        }
+      });
+      grid.innerHTML = html;
+    }
+
+    // ---- 周顯示 ----
+    function renderWeek(rooms, reservations, grid) {
+      const weekStart = new Date(cursor); weekStart.setHours(0,0,0,0);
+      grid.style.gridTemplateColumns = '180px repeat(7, 1fr)';
+
+      const roomMap = {};
+      reservations.forEach(r => {
+        const start = new Date(r.start_at), end = new Date(r.end_at);
+        let cur = new Date(start); cur.setHours(0,0,0,0);
+        const endDay = new Date(end); endDay.setHours(0,0,0,0);
+        while (cur <= endDay) {
+          const k = buildDateKey(cur);
+          if (!roomMap[r.resource_id]) roomMap[r.resource_id] = {};
+          (roomMap[r.resource_id][k] = roomMap[r.resource_id][k] || []).push(r);
+          cur.setDate(cur.getDate() + 1);
+        }
+      });
+
+      const today = new Date();
+      let html = '';
+      html += `<div class="tl-header-room"><i class="ti ti-door"></i> 會議室 (${rooms.length})</div>`;
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(weekStart); date.setDate(date.getDate() + i);
+        const wd = ['日','一','二','三','四','五','六'][date.getDay()];
+        const isToday = isSameDay(date, today);
+        const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+        html += `<div class="tl-header-day${isToday ? ' today' : ''}${isWeekend ? ' weekend' : ''}"><div class="tl-day-num">${date.getMonth()+1}/${date.getDate()}</div><div class="tl-day-wd">${wd}</div></div>`;
+      }
+
+      rooms.forEach(room => {
+        html += buildRoomHtml(room);
+        for (let i = 0; i < 7; i++) {
+          const date = new Date(weekStart); date.setDate(date.getDate() + i);
+          const k = buildDateKey(date);
+          const events = (roomMap[room.id] && roomMap[room.id][k]) || [];
+          const isToday = isSameDay(date, today);
+          const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+          const shown = events.slice(0, 5);
+          const rest = events.length - shown.length;
+          html += `<div class="tl-cell${isToday ? ' today' : ''}${isWeekend ? ' weekend' : ''}">${shown.map(r => `<div class="tl-event status-${esc(r.status)}" data-id="${r.id}" title="${esc(r.title)} · ${fmtTime(new Date(r.start_at))}–${fmtTime(new Date(r.end_at))}">${fmtTime(new Date(r.start_at))}–${fmtTime(new Date(r.end_at))} ${esc(r.title)}</div>`).join('')}${rest > 0 ? `<div class="tl-more">+${rest}</div>` : ''}</div>`;
+        }
+      });
+      grid.innerHTML = html;
+    }
+
+    // ---- 日顯示 ----
+    function renderDay(rooms, reservations, grid) {
+      const DAY_START = 8, DAY_END = 22;
+      const hours = DAY_END - DAY_START;
+      grid.style.gridTemplateColumns = `180px repeat(${hours}, 1fr)`;
+
+      const today = new Date();
+      const curDay = new Date(cursor); curDay.setHours(0,0,0,0);
+      const nowHour = today.getHours();
+
+      const roomMap = {};
+      reservations.forEach(r => {
+        const start = new Date(r.start_at), end = new Date(r.end_at);
+        let startH = start.getHours(), endH = end.getHours();
+        if (end.getMinutes() > 0) endH++;
+        startH = Math.max(startH, DAY_START);
+        endH = Math.min(endH, DAY_END);
+        for (let h = startH; h < endH; h++) {
+          if (!roomMap[r.resource_id]) roomMap[r.resource_id] = {};
+          (roomMap[r.resource_id][h] = roomMap[r.resource_id][h] || []).push(r);
+        }
+      });
+
+      let html = '';
+      html += `<div class="tl-header-room"><i class="ti ti-door"></i> 會議室 (${rooms.length})</div>`;
+      for (let h = DAY_START; h < DAY_END; h++) {
+        const isNow = isSameDay(curDay, today) && h === nowHour;
+        html += `<div class="tl-header-hour${isNow ? ' now' : ''}">${h.toString().padStart(2,'0')}:00</div>`;
+      }
+
+      rooms.forEach(room => {
+        html += buildRoomHtml(room);
+        for (let h = DAY_START; h < DAY_END; h++) {
+          const events = (roomMap[room.id] && roomMap[room.id][h]) || [];
+          const isNow = isSameDay(curDay, today) && h === nowHour;
+          const evHtml = events.map(r => {
+            const startH = Math.max(new Date(r.start_at).getHours(), DAY_START);
+            if (startH === h) {
+              return `<div class="tl-event status-${esc(r.status)}" data-id="${r.id}" title="${esc(r.title)} · ${fmtTime(new Date(r.start_at))}–${fmtTime(new Date(r.end_at))}">${fmtTime(new Date(r.start_at))} ${esc(r.title)}</div>`;
+            }
+            return `<div class="tl-event status-${esc(r.status)}" data-id="${r.id}" title="${esc(r.title)}" style="padding:2px 3px">&nbsp;</div>`;
+          }).join('');
+          html += `<div class="tl-cell${isNow ? ' today' : ''}">${evHtml}</div>`;
+        }
+      });
+      grid.innerHTML = html;
+    }
+
+    // ---- 列表 ----
+    function renderList(rooms, reservations, grid) {
+      grid.style.gridTemplateColumns = '180px 1fr';
+      let html = '';
+      html += `<div class="tl-header-room"><i class="ti ti-door"></i> 會議室 (${rooms.length})</div>`;
+      html += `<div class="tl-header-room" style="left:auto; position:static"><i class="ti ti-list"></i> 預約列表</div>`;
+
+      rooms.forEach(room => {
+        const events = reservations.filter(r => r.resource_id === room.id)
+          .sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
+        html += buildRoomHtml(room);
+        if (events.length) {
+          html += `<div class="tl-list-cell">${events.map(r => {
+            const s = new Date(r.start_at), e = new Date(r.end_at);
+            return `<div class="tl-list-event status-${esc(r.status)}" data-id="${r.id}"><span class="ev-time">${(s.getMonth()+1)}/${s.getDate()} ${fmtTime(s)}–${fmtTime(e)}</span><span class="ev-title">${esc(r.title)}</span><span class="ev-status">${statusLabel(r.status)}</span></div>`;
+          }).join('')}</div>`;
+        } else {
+          html += `<div class="tl-list-cell"><div class="tl-list-empty">無預約</div></div>`;
+        }
+      });
+      grid.innerHTML = html;
+    }
+
+    async function render() {
+      updateViewTitle();
+      const range = getViewDateRange();
+      const grid = document.getElementById('tl-grid');
+      grid.innerHTML = '<div class="tl-empty"><i class="ti ti-loader-2"></i> 讀取中…</div>';
+
+      let rooms = [], reservations = [];
+      try {
+        [rooms, reservations] = await Promise.all([
+          OffAPI.rooms.list(),
+          OffAPI.reservations.list({
+            from_at: range.start.toISOString(),
+            to_at: range.end.toISOString(),
+          }),
+        ]);
+      } catch (e) {
+        grid.innerHTML = `<div class="tl-empty" style="color:var(--off-red)">讀取失敗：${esc(e.message)}</div>`;
+        return;
+      }
+
+      window.__cal_reservations = reservations;
+      bkRooms = rooms;
+
+      if (!rooms.length) {
+        grid.innerHTML = '<div class="tl-empty"><i class="ti ti-door" style="font-size:32px; display:block; margin-bottom:8px; opacity:.5"></i><div>尚無會議室</div><div style="font-size:12px; margin-top:4px">請先到「標準房間」頁面新增房間</div></div>';
+        return;
+      }
+
+      switch (viewMode) {
+        case 'month': renderMonth(rooms, reservations, grid); break;
+        case 'week':  renderWeek(rooms, reservations, grid);  break;
+        case 'day':   renderDay(rooms, reservations, grid);   break;
+        case 'list':  renderList(rooms, reservations, grid);  break;
+      }
+
+      grid.querySelectorAll('[data-id]').forEach(el => {
+        el.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          openReservationDetail(parseInt(el.dataset.id, 10));
+        });
+      });
+    }
+
+    document.getElementById('cal-prev').addEventListener('click', () => {
+      switch (viewMode) {
+        case 'month': case 'list': cursor.setMonth(cursor.getMonth() - 1); break;
+        case 'week': cursor.setDate(cursor.getDate() - 7); break;
+        case 'day': cursor.setDate(cursor.getDate() - 1); break;
+      }
+      render();
+    });
+    document.getElementById('cal-next').addEventListener('click', () => {
+      switch (viewMode) {
+        case 'month': case 'list': cursor.setMonth(cursor.getMonth() + 1); break;
+        case 'week': cursor.setDate(cursor.getDate() + 7); break;
+        case 'day': cursor.setDate(cursor.getDate() + 1); break;
+      }
+      render();
+    });
+    document.getElementById('cal-today').addEventListener('click', () => {
+      cursor = new Date();
+      if (viewMode === 'month' || viewMode === 'list') cursor.setDate(1);
+      else if (viewMode === 'week') cursor = getMonday(cursor);
+      cursor.setHours(0, 0, 0, 0);
+      render();
+    });
+
+    document.getElementById('cal-view-mode').addEventListener('change', (e) => {
+      viewMode = e.target.value;
+      if (viewMode === 'month' || viewMode === 'list') cursor.setDate(1);
+      else if (viewMode === 'week') cursor = getMonday(cursor);
+      cursor.setHours(0, 0, 0, 0);
+      render();
+    });
+
+    render();
+
+    // ============================================================
+    // 「+ 預約」Modal 邏輯
+    // ============================================================
+    let bkRooms = [];
+    let bkUsers = [];
+    let bkSelectedRoomId = null;
+    let bkSelectedAttendees = new Set();
+    let bkIsPrivate = false;
+
+    const AVA_PALETTE = ['green', 'purple', 'orange', 'blue'];
+    const avatarClass = (id) => AVA_PALETTE[id % AVA_PALETTE.length];
+
+    function pad(n) { return n.toString().padStart(2, '0'); }
+    function toDateInput(d)  { return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+    function toTimeInput(d)  { return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+    function combineDT(dateStr, timeStr) {
+      // "2026-08-04" + "09:45" -> Date (local)
+      const [y, mo, d] = dateStr.split('-').map(Number);
+      const [h, mi] = timeStr.split(':').map(Number);
+      return new Date(y, mo - 1, d, h, mi, 0, 0);
+    }
+    function humanDate(d) {
+      const wd = ['日','一','二','三','四','五','六'][d.getDay()];
+      return `${d.getMonth()+1}月${d.getDate()}日 (星期${wd})`;
+    }
+    function humanTime(d) {
+      const h = d.getHours(); const m = d.getMinutes();
+      const ap = h < 12 ? '上午' : '下午';
+      const hh = h % 12 === 0 ? 12 : h % 12;
+      return `${ap}${hh}:${pad(m)}`;
+    }
+
+    function openBooking() {
+      // 預設時段：從現在下一個 15 分鐘刻度開始，時長 1 小時
+      const now = new Date();
+      const start = new Date(now);
+      start.setMinutes(Math.ceil(now.getMinutes() / 15) * 15, 0, 0);
+      const end = new Date(start.getTime() + 60 * 60 * 1000);
+
+      document.getElementById('bk-start-date').value = toDateInput(start);
+      document.getElementById('bk-start-time').value = toTimeInput(start);
+      document.getElementById('bk-end-date').value   = toDateInput(end);
+      document.getElementById('bk-end-time').value   = toTimeInput(end);
+
+      // 發起人
+      const me = OffAuth.user();
+      document.getElementById('bk-organizer').textContent = me ? me.display_name : '—';
+
+      // 重置
+      document.getElementById('bk-title').value = '';
+      document.getElementById('bk-notes').value = '';
+      document.getElementById('bk-room-search').value = '';
+      document.getElementById('bk-attendee-search').value = '';
+      bkSelectedRoomId = null;
+      bkSelectedAttendees = new Set();
+      bkIsPrivate = false;
+      document.getElementById('bk-private-btn').classList.remove('active');
+      document.getElementById('bk-err').style.display = 'none';
+
+      // 展開狀態：時段 & 房間 預設展開；與會者收合
+      document.getElementById('bk-time-section').classList.add('open');
+      document.getElementById('bk-room-section').classList.add('open');
+      document.getElementById('bk-attendee-section').classList.remove('open');
+
+      updateTimeSummary();
+      updateRoomSummary();
+      updateAttendeeSummary();
+      updateSaveEnabled();
+
+      // 拉資料
+      loadBkRooms();
+      loadBkUsers();
+
+      offOpenModal('modal-booking');
+    }
+
+    document.getElementById('btn-new-booking').addEventListener('click', openBooking);
+
+    // ---- 區塊摺疊 ----
+    document.querySelectorAll('#modal-booking [data-toggle]').forEach(el => {
+      el.addEventListener('click', (ev) => {
+        // 避免點到內部按鈕觸發摺疊
+        if (ev.target.closest('button, input')) return;
+        document.getElementById(el.dataset.toggle).classList.toggle('open');
+      });
+    });
+
+    // ---- 私人預約按鈕 ----
+    document.getElementById('bk-private-btn').addEventListener('click', () => {
+      bkIsPrivate = !bkIsPrivate;
+      document.getElementById('bk-private-btn').classList.toggle('active', bkIsPrivate);
+    });
+
+    // ---- 整日按鈕 ----
+    document.getElementById('bk-allday').addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const sd = document.getElementById('bk-start-date').value;
+      const ed = document.getElementById('bk-end-date').value || sd;
+      document.getElementById('bk-start-date').value = sd;
+      document.getElementById('bk-start-time').value = '00:00';
+      document.getElementById('bk-end-date').value = ed;
+      document.getElementById('bk-end-time').value = '23:59';
+      updateTimeSummary();
+      updateSaveEnabled();
+    });
+
+    // ---- 時段輸入變動 ----
+    ['bk-start-date','bk-start-time','bk-end-date','bk-end-time'].forEach(id => {
+      document.getElementById(id).addEventListener('change', () => {
+        updateTimeSummary();
+        updateSaveEnabled();
+      });
+    });
+
+    function updateTimeSummary() {
+      const sd = document.getElementById('bk-start-date').value;
+      const st = document.getElementById('bk-start-time').value;
+      const ed = document.getElementById('bk-end-date').value;
+      const et = document.getElementById('bk-end-time').value;
+      if (!sd || !st || !ed || !et) {
+        document.getElementById('bk-time-summary').textContent = '—';
+        return;
+      }
+      const s = combineDT(sd, st), e = combineDT(ed, et);
+      const sameDay = sd === ed;
+      const txt = sameDay
+        ? `${humanDate(s)}　${humanTime(s)} - ${humanTime(e)}`
+        : `${humanDate(s)} ${humanTime(s)} - ${humanDate(e)} ${humanTime(e)}`;
+      document.getElementById('bk-time-summary').textContent = txt;
+    }
+
+    // ---- 房間 ----
+    async function loadBkRooms() {
+      const list = document.getElementById('bk-room-list');
+      try {
+        bkRooms = await OffAPI.rooms.list();
+      } catch (e) {
+        list.innerHTML = `<div style="padding:16px; color:var(--off-red)">${esc(e.message)}</div>`;
+        return;
+      }
+      renderBkRoomList();
+    }
+
+    function renderBkRoomList() {
+      const q = (document.getElementById('bk-room-search').value || '').toLowerCase();
+      const list = bkRooms.filter(r => !q || r.name.toLowerCase().includes(q));
+      const box = document.getElementById('bk-room-list');
+      if (!list.length) {
+        box.innerHTML = `<div style="padding:16px; text-align:center; color:var(--off-text-muted); font-size:13px">沒有符合的房間</div>`;
+        return;
+      }
+      box.innerHTML = list.map(r => `
+        <div class="bk-list-item${r.id === bkSelectedRoomId ? ' selected' : ''}" data-id="${r.id}">
+          <i class="ti ti-star star"></i>
+          <span class="dot"></span>
+          <span class="name">${esc(r.name)}</span>
+          ${r.subtype === 'combinable' ? '<i class="ti ti-copy combine" title="可合併"></i>' : ''}
+          <span class="capacity"><i class="ti ti-users"></i> ${r.capacity}</span>
+        </div>
+      `).join('');
+      box.querySelectorAll('.bk-list-item').forEach(el => {
+        el.addEventListener('click', () => selectRoom(parseInt(el.dataset.id, 10)));
+      });
+    }
+
+    document.getElementById('bk-room-search').addEventListener('input', renderBkRoomList);
+
+    function selectRoom(id) {
+      bkSelectedRoomId = id;
+      renderBkRoomList();
+      updateRoomSummary();
+      updateSaveEnabled();
+    }
+
+    function updateRoomSummary() {
+      const r = bkRooms.find(x => x.id === bkSelectedRoomId);
+      const el = document.getElementById('bk-room-summary');
+      if (r) { el.textContent = r.name; el.style.color = '#111'; el.style.fontWeight = '500'; }
+      else   { el.textContent = '尋找房間'; el.style.color = 'var(--off-text-muted)'; el.style.fontWeight = ''; }
+    }
+
+    // ---- 與會者 ----
+    async function loadBkUsers() {
+      const list = document.getElementById('bk-attendee-list');
+      try {
+        bkUsers = await OffAPI.users.list();
+      } catch (e) {
+        list.innerHTML = `<div style="padding:16px; color:var(--off-red)">${esc(e.message)}</div>`;
+        return;
+      }
+      renderBkAttendeeList();
+    }
+
+    function renderBkAttendeeList() {
+      const q = (document.getElementById('bk-attendee-search').value || '').toLowerCase();
+      const me = OffAuth.user();
+      const list = bkUsers.filter(u =>
+        (!me || u.id !== me.id) &&
+        (!q || u.display_name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q))
+      );
+      const box = document.getElementById('bk-attendee-list');
+      if (!list.length) {
+        box.innerHTML = `<div style="padding:16px; text-align:center; color:var(--off-text-muted); font-size:13px">沒有符合的用戶</div>`;
+        return;
+      }
+      box.innerHTML = list.map(u => `
+        <div class="bk-attendee-item${bkSelectedAttendees.has(u.id) ? ' selected' : ''}" data-id="${u.id}">
+          <span class="avatar ${avatarClass(u.id)}">${esc((u.display_name || '?').slice(0,1))}</span>
+          <div style="flex:1">
+            <b>${esc(u.display_name)}</b>
+            <small>${esc(u.email)}</small>
+          </div>
+          ${bkSelectedAttendees.has(u.id) ? '<i class="ti ti-check" style="color:var(--off-primary)"></i>' : ''}
+        </div>`).join('');
+      box.querySelectorAll('.bk-attendee-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const id = parseInt(el.dataset.id, 10);
+          if (bkSelectedAttendees.has(id)) bkSelectedAttendees.delete(id);
+          else bkSelectedAttendees.add(id);
+          renderBkAttendeeList();
+          updateAttendeeSummary();
+        });
+      });
+    }
+    document.getElementById('bk-attendee-search').addEventListener('input', renderBkAttendeeList);
+
+    function updateAttendeeSummary() {
+      const n = bkSelectedAttendees.size;
+      const el = document.getElementById('bk-attendee-summary');
+      if (n > 0) { el.textContent = `${n} 位與會者`; el.style.color = '#111'; el.style.fontWeight = '500'; }
+      else       { el.textContent = '邀請與會者'; el.style.color = 'var(--off-text-muted)'; el.style.fontWeight = ''; }
+    }
+
+    // ---- 儲存前檢查 ----
+    function updateSaveEnabled() {
+      const title = document.getElementById('bk-title').value.trim();
+      const sd = document.getElementById('bk-start-date').value;
+      const st = document.getElementById('bk-start-time').value;
+      const ed = document.getElementById('bk-end-date').value;
+      const et = document.getElementById('bk-end-time').value;
+      const ok = title && bkSelectedRoomId && sd && st && ed && et
+                 && combineDT(ed, et) > combineDT(sd, st);
+      document.getElementById('bk-save').disabled = !ok;
+    }
+    document.getElementById('bk-title').addEventListener('input', updateSaveEnabled);
+
+    // ---- 送出 ----
+    async function submitBooking(mode) {
+      // mode: 'create' | 'edit-pending' | 'edit-approve'
+      const err = document.getElementById('bk-err');
+      err.style.display = 'none';
+      const sd = document.getElementById('bk-start-date').value;
+      const st = document.getElementById('bk-start-time').value;
+      const ed = document.getElementById('bk-end-date').value;
+      const et = document.getElementById('bk-end-time').value;
+      const payload = {
+        resource_id: bkSelectedRoomId,
+        title: document.getElementById('bk-title').value.trim(),
+        start_at: combineDT(sd, st).toISOString(),
+        end_at:   combineDT(ed, et).toISOString(),
+        type: bkIsPrivate ? 'private' : 'normal',
+        notes: document.getElementById('bk-notes').value.trim() || null,
+        attendee_user_ids: [...bkSelectedAttendees],
+      };
+      const editId = parseInt(document.getElementById('bk-edit-id').value, 10) || null;
+      try {
+        if (editId) {
+          // 編輯模式：不能改 resource_id / attendees（PATCH 目前只吃 title/times/notes）
+          await OffAPI.reservations.patch(editId, {
+            title: payload.title,
+            start_at: payload.start_at,
+            end_at: payload.end_at,
+            notes: payload.notes,
+          });
+          if (mode === 'edit-approve') {
+            await OffAPI.reservations.approve(editId, { approve: true });
+          }
+        } else {
+          await OffAPI.reservations.create(payload);
+        }
+        offCloseModal('modal-booking');
+        await render();
+      } catch (e) {
+        err.textContent = e.message || (editId ? '更新失敗' : '建立失敗');
+        err.style.display = 'block';
+      }
+    }
+    document.getElementById('bk-save').addEventListener('click', () => submitBooking('create'));
+    document.getElementById('bk-save-pending').addEventListener('click', () => submitBooking('edit-pending'));
+    document.getElementById('bk-save-approve').addEventListener('click', () => submitBooking('edit-approve'));
+
+    // ============================================================
+    // 預約 detail popover + 完結 + 延長 + 編輯
+    // ============================================================
+    let __currentReservation = null;
+
+    function statusLabel(s) {
+      return ({
+        approved: '已批准',
+        pending: '待審批',
+        checked_in: '使用中',
+        completed: '已完結',
+        cancelled: '已取消',
+        rejected: '已拒絕',
+      })[s] || s;
+    }
+
+    function openReservationDetail(id) {
+      const r = (window.__cal_reservations || []).find(x => x.id === id);
+      if (!r) return;
+      __currentReservation = r;
+
+      const s = new Date(r.start_at), e = new Date(r.end_at);
+      document.getElementById('rd-title').textContent = r.title;
+      const statusEl = document.getElementById('rd-status');
+      statusEl.textContent = statusLabel(r.status);
+      statusEl.className = 'status-chip ' + r.status;
+      document.getElementById('rd-day').textContent =
+        `${s.getFullYear()}年${humanDate(s)}`;
+      document.getElementById('rd-hours').textContent =
+        `${humanTime(s)} – ${humanTime(e)}`;
+
+      document.getElementById('rd-room').textContent = r.resource_name || '—';
+      document.getElementById('rd-organizer').textContent = r.organizer_name || '—';
+
+      // 與會者名稱：從 attendees 反查
+      const users = window.__cal_users_cache || [];
+      const atNames = (r.attendees || []).map(a => {
+        const u = users.find(x => x.id === a.user_id);
+        return u ? u.display_name : (a.external_email || '');
+      }).filter(Boolean);
+      const attEl = document.getElementById('rd-attendees');
+      if (atNames.length) { attEl.textContent = atNames.join('、'); attEl.style.color = '#111'; attEl.style.fontWeight = '500'; }
+      else { attEl.textContent = '—'; attEl.style.color = 'var(--off-text-muted)'; attEl.style.fontWeight = '400'; }
+
+      document.getElementById('rd-access-code').textContent = r.access_code || '—';
+      document.getElementById('rd-bk-id').textContent =
+        `BK${r.id.toString().padStart(4, '0')}`;
+
+      // 容量使用率：（與會者+1）÷ 房間容量
+      const room = bkRooms.find(x => x.id === r.resource_id);
+      const capacity = room ? room.capacity : 0;
+      const used = (r.attendees ? r.attendees.length : 0) + 1;
+      const util = capacity > 0 ? Math.round((used / capacity) * 100) : 0;
+      document.getElementById('rd-utilization').textContent = `${util}%`;
+
+      offOpenModal('modal-rd');
+    }
+
+    // 快取所有用戶（給與會者顯示用）
+    async function ensureUsersCached() {
+      if (window.__cal_users_cache) return;
+      try { window.__cal_users_cache = await OffAPI.users.list(); }
+      catch { window.__cal_users_cache = []; }
+    }
+    // 頁面載入時預熱
+    ensureUsersCached();
+
+    // ---- 底部：刪除 ----
+    document.getElementById('rd-delete').addEventListener('click', async () => {
+      if (!__currentReservation) return;
+      if (!confirm('確定要刪除此預約？')) return;
+      try {
+        await OffAPI.reservations.cancel(__currentReservation.id);
+        offCloseModal('modal-rd');
+        await render();
+      } catch (e) { alert('刪除失敗：' + e.message); }
+    });
+
+    // ---- 底部：完結（提早結束）→ 確認彈窗 ----
+    document.getElementById('rd-complete').addEventListener('click', () => {
+      if (!__currentReservation) return;
+      offOpenModal('modal-rd-confirm');
+    });
+    document.getElementById('rd-confirm-ok').addEventListener('click', async () => {
+      if (!__currentReservation) return;
+      const now = new Date();
+      try {
+        await OffAPI.reservations.patch(__currentReservation.id, {
+          end_at: now.toISOString(),
+        });
+        offCloseModal('modal-rd-confirm');
+        offCloseModal('modal-rd');
+        await render();
+      } catch (e) { alert('完結失敗：' + e.message); }
+    });
+
+    // ---- 底部：延長時間 → 浮動選單 ----
+    const extendMenu = document.getElementById('rd-extend-menu');
+    document.getElementById('rd-extend').addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      if (!__currentReservation) return;
+      // 定位在按鈕上方
+      const btn = ev.currentTarget.getBoundingClientRect();
+      extendMenu.style.left = `${btn.left - 100}px`;
+      extendMenu.style.top = `${btn.top - extendMenu.offsetHeight - 8}px`;
+      extendMenu.style.display = 'block';
+      // 更新 4 個「結束於 …」小字
+      const endAt = new Date(__currentReservation.end_at);
+      [15, 30, 45, 60].forEach(min => {
+        const newEnd = new Date(endAt.getTime() + min * 60000);
+        document.getElementById(`rd-ext-end-${min}`).textContent = `結束於 ${humanTime(newEnd)}`;
+      });
+      // 定位補正（可能因為 display:none 導致 offsetHeight=0）
+      setTimeout(() => {
+        extendMenu.style.top = `${btn.top - extendMenu.offsetHeight - 8}px`;
+      }, 0);
+    });
+    // 點外面關閉
+    document.addEventListener('click', (ev) => {
+      if (extendMenu.style.display === 'block' && !extendMenu.contains(ev.target)) {
+        extendMenu.style.display = 'none';
+      }
+    });
+    async function extendBy(min) {
+      if (!__currentReservation || !min || min <= 0) return;
+      const newEnd = new Date(new Date(__currentReservation.end_at).getTime() + min * 60000);
+      try {
+        await OffAPI.reservations.patch(__currentReservation.id, {
+          end_at: newEnd.toISOString(),
+        });
+        extendMenu.style.display = 'none';
+        offCloseModal('modal-rd');
+        await render();
+      } catch (e) { alert('延長失敗：' + e.message); }
+    }
+    extendMenu.querySelectorAll('.rd-extend-item[data-min]').forEach(el => {
+      el.addEventListener('click', () => extendBy(parseInt(el.dataset.min, 10)));
+    });
+    document.getElementById('rd-ext-custom-btn').addEventListener('click', () => {
+      const v = parseInt(document.getElementById('rd-ext-custom').value, 10);
+      extendBy(v);
+    });
+
+    // ---- 底部：編輯 → 重用 booking modal（編輯模式）----
+    document.getElementById('rd-edit').addEventListener('click', async () => {
+      if (!__currentReservation) return;
+      const r = __currentReservation;
+
+      // 先關 detail
+      offCloseModal('modal-rd');
+
+      // 依 openBooking() 的邏輯開啟 booking modal，然後覆寫成編輯模式
+      const start = new Date(r.start_at);
+      const end   = new Date(r.end_at);
+
+      document.getElementById('bk-start-date').value = toDateInput(start);
+      document.getElementById('bk-start-time').value = toTimeInput(start);
+      document.getElementById('bk-end-date').value   = toDateInput(end);
+      document.getElementById('bk-end-time').value   = toTimeInput(end);
+      document.getElementById('bk-title').value = r.title || '';
+      document.getElementById('bk-notes').value = r.notes || '';
+      document.getElementById('bk-organizer').textContent = r.organizer_name || '—';
+
+      bkSelectedRoomId = r.resource_id;
+      bkIsPrivate = (r.type === 'private');
+      bkSelectedAttendees = new Set((r.attendees || []).map(a => a.user_id).filter(Boolean));
+      document.getElementById('bk-private-btn').classList.toggle('active', bkIsPrivate);
+      document.getElementById('bk-err').style.display = 'none';
+
+      // 編輯模式：改標題、隱藏「預約」按鈕、顯示 「保存待審批」+「直接批准」
+      document.getElementById('bk-edit-id').value = r.id;
+      document.getElementById('bk-head-title').textContent = '編輯預約';
+      document.getElementById('bk-head-tabs').style.display = 'none';
+      document.getElementById('bk-approval-hint').style.display = '';
+      document.getElementById('bk-save').style.display = 'none';
+      document.getElementById('bk-save-pending').style.display = '';
+      document.getElementById('bk-save-approve').style.display = '';
+
+      // 展開狀態：時段展開；房間收合；與會者收合（因為已鎖房間）
+      document.getElementById('bk-time-section').classList.add('open');
+      document.getElementById('bk-room-section').classList.remove('open');
+      document.getElementById('bk-attendee-section').classList.remove('open');
+
+      updateTimeSummary();
+      updateRoomSummary();
+      updateAttendeeSummary();
+      updateSaveEnabled();
+
+      // 拉資料把清單填好（讓 rendered items 有 selected 狀態）
+      loadBkRooms();
+      loadBkUsers();
+
+      offOpenModal('modal-booking');
+    });
+
+    // ---- 每次開啟「+ 預約」時把 modal 回到新增模式 ----
+    const _origOpenBooking = openBooking;
+    openBooking = function () {
+      document.getElementById('bk-edit-id').value = '';
+      document.getElementById('bk-head-title').textContent = '預約房間';
+      document.getElementById('bk-head-tabs').style.display = '';
+      document.getElementById('bk-approval-hint').style.display = 'none';
+      document.getElementById('bk-save').style.display = '';
+      document.getElementById('bk-save-pending').style.display = 'none';
+      document.getElementById('bk-save-approve').style.display = 'none';
+      _origOpenBooking();
+    };
+  </script>
+</body>
+</html>

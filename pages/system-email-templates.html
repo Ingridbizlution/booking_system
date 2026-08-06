@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>系統 · 電子郵件範本 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-module="system" data-page="email"
+      data-crumbs='[{"label":"系統","href":"system-audit.html"},{"label":"電子郵件範本"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#a5b3c3,#5b6472)"><i class="ti ti-mail-forward"></i></span>
+        <div>
+          <div class="off-page-title-row">
+            <h1>電子郵件範本</h1>
+            <button class="off-btn off-btn-primary"><i class="ti ti-plus"></i> 新增範本</button>
+          </div>
+          <p class="off-page-desc">系統寄件範本；支援變數插值（如 {{user.name}}、{{reservation.start_at}}）</p>
+        </div>
+      </div>
+
+      <div class="off-panel" style="padding:0">
+        <table class="off-table">
+          <thead>
+            <tr><th>Key</th><th>語系</th><th>主旨</th><th>最後更新</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>invite</code></td><td>zh-TW</td><td>邀請您加入 {{org.name}}</td><td>2026-07-28</td><td><button class="off-btn off-btn-ghost"><i class="ti ti-edit"></i></button></td></tr>
+            <tr><td><code>reservation_created</code></td><td>zh-TW</td><td>您的預約已建立</td><td>2026-07-30</td><td><button class="off-btn off-btn-ghost"><i class="ti ti-edit"></i></button></td></tr>
+            <tr><td><code>reservation_reminder</code></td><td>zh-TW</td><td>預約提醒：{{resource.name}} · {{reservation.start_at}}</td><td>2026-07-30</td><td><button class="off-btn off-btn-ghost"><i class="ti ti-edit"></i></button></td></tr>
+            <tr><td><code>ticket_updated</code></td><td>zh-TW</td><td>工單 #{{ticket.id}} 已更新</td><td>2026-07-25</td><td><button class="off-btn off-btn-ghost"><i class="ti ti-edit"></i></button></td></tr>
+            <tr><td><code>emergency_broadcast</code></td><td>zh-TW</td><td>【緊急】{{broadcast.title}}</td><td>2026-07-20</td><td><button class="off-btn off-btn-ghost"><i class="ti ti-edit"></i></button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>

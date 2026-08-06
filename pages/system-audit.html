@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>系統 · 審計追蹤 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-module="system" data-page="audit"
+      data-crumbs='[{"label":"系統","href":"system-audit.html"},{"label":"審計追蹤"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#a5b3c3,#5b6472)"><i class="ti ti-file-search"></i></span>
+        <div>
+          <div class="off-page-title-row"><h1>審計追蹤</h1></div>
+          <p class="off-page-desc">系統操作歷程：Who / When / Where / What</p>
+        </div>
+        <div class="off-page-actions">
+          <button class="off-filter-pill"><i class="ti ti-calendar"></i> 最近 7 天 <i class="ti ti-chevron-down"></i></button>
+          <button class="off-btn"><i class="ti ti-download"></i> 匯出</button>
+        </div>
+      </div>
+
+      <div class="off-panel" style="padding:0">
+        <table class="off-table">
+          <thead>
+            <tr><th>時間</th><th>執行者</th><th>動作</th><th>目標</th><th>IP</th><th>裝置</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>2026-08-03 14:22:05</td><td><span class="off-avatar solid-purple">I</span> Ingrid</td><td><span class="off-chip chip-primary">CREATE</span></td><td>Reservation #4021（會議室 A · 8/4 10:00-11:00）</td><td>10.0.1.24</td><td>Chrome · macOS</td></tr>
+            <tr><td>2026-08-03 13:11:42</td><td><span class="off-avatar solid-orange">I</span> Ingridiaim</td><td><span class="off-chip chip-yellow">UPDATE</span></td><td>User Group #12（支援職員）</td><td>10.0.1.24</td><td>Safari · iPad</td></tr>
+            <tr><td>2026-08-03 09:45:19</td><td><span class="off-avatar solid-green">新</span> 維修 A</td><td><span class="off-chip chip-green">RESOLVE</span></td><td>Ticket #221（投影機開不起來）</td><td>172.16.0.5</td><td>Chrome · Windows</td></tr>
+            <tr><td>2026-08-02 22:03:11</td><td><span class="off-avatar">S</span> System</td><td><span class="off-chip">LOGIN_FAILED</span></td><td>—</td><td>203.0.113.4</td><td>Bot</td></tr>
+            <tr><td>2026-08-02 18:19:00</td><td><span class="off-avatar solid-purple">I</span> Ingrid</td><td><span class="off-chip chip-red">DELETE</span></td><td>Resource #78（舊桌位）</td><td>10.0.1.24</td><td>Chrome · macOS</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>工單管理 · 工單政策 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-module="ticket" data-page="policies"
+      data-crumbs='[{"label":"工單管理","href":"ticket-dashboard.html"},{"label":"工單政策"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#ffb17a,#f26a5c)"><i class="ti ti-shield-check"></i></span>
+        <div>
+          <div class="off-page-title-row">
+            <h1>工單政策</h1>
+            <button class="off-btn off-btn-primary"><i class="ti ti-plus"></i> 新增政策</button>
+          </div>
+          <p class="off-page-desc">定義不同資源類型的處理流程與 SLA、指派給哪些支援職員 / 群組</p>
+        </div>
+      </div>
+
+      <div class="off-panel" style="padding:0">
+        <table class="off-table">
+          <thead>
+            <tr>
+              <th>政策名稱</th><th>資源型別</th><th>預設處理群組</th><th>首次回應 SLA</th><th>解決 SLA</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>房間故障 SOP</td><td><span class="off-chip chip-primary">房間</span></td><td>維修組 A</td><td>30 分鐘</td><td>4 小時</td>
+              <td><button class="off-btn off-btn-ghost"><i class="ti ti-edit"></i></button></td></tr>
+            <tr><td>設備損壞</td><td><span class="off-chip chip-purple">設備</span></td><td>IT 支援</td><td>15 分鐘</td><td>2 小時</td>
+              <td><button class="off-btn off-btn-ghost"><i class="ti ti-edit"></i></button></td></tr>
+            <tr><td>車位問題</td><td><span class="off-chip">車位</span></td><td>行政</td><td>60 分鐘</td><td>1 日</td>
+              <td><button class="off-btn off-btn-ghost"><i class="ti ti-edit"></i></button></td></tr>
+            <tr><td>辦公桌清潔</td><td><span class="off-chip chip-yellow">辦公桌</span></td><td>清潔組</td><td>20 分鐘</td><td>2 小時</td>
+              <td><button class="off-btn off-btn-ghost"><i class="ti ti-edit"></i></button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>

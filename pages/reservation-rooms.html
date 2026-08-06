@@ -1,0 +1,777 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>預約管理 · 標準房間 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-module="reservation" data-page="standard"
+      data-crumbs='[{"label":"預約管理","href":"reservation-dashboard.html"},{"label":"標準房間"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#58c7f5,#1f80f0)">
+          <i class="ti ti-door"></i>
+        </span>
+        <div>
+          <div class="off-page-title-row">
+            <h1>標準房間</h1>
+            <button class="off-btn off-btn-primary" onclick="offOpenModal('modal-new-room')">
+              <i class="ti ti-plus"></i> 新增
+            </button>
+            <button class="off-btn"><i class="ti ti-upload"></i> 匯入</button>
+          </div>
+          <p class="off-page-desc">管理標準房間及其設定</p>
+        </div>
+        <div class="off-page-actions">
+          <button class="off-btn"><i class="ti ti-qrcode"></i> QR 碼管理</button>
+          <button class="off-btn"><i class="ti ti-adjustments-alt"></i> 排序 / 欄位</button>
+        </div>
+      </div>
+
+      <div class="off-panel" style="padding:0">
+        <table class="off-table">
+          <thead>
+            <tr>
+              <th style="width:40px"><input type="checkbox"></th>
+              <th class="off-search-cell"><input placeholder="🔍 名稱"></th>
+              <th>容量</th>
+              <th>類別 <i class="ti ti-filter"></i></th>
+              <th>位置 <i class="ti ti-filter"></i></th>
+            </tr>
+          </thead>
+          <tbody id="rooms-tbody">
+            <tr><td colspan="5" style="text-align:center; padding:24px; color:var(--off-text-muted)">
+              <i class="ti ti-loader-2"></i> 讀取中…
+            </td></tr>
+          </tbody>
+        </table>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px">
+          <button class="off-btn"><i class="ti ti-trash"></i> 資源回收筒 <span class="off-chip">19</span></button>
+          <div style="display:flex; align-items:center; gap:10px; color:var(--off-text-muted); font-size:13px">
+            <span>30 <i class="ti ti-chevron-down"></i></span>
+            <span id="room-count">1 - 0 / 0</span>
+            <button class="off-btn off-btn-ghost"><i class="ti ti-chevron-left"></i></button>
+            <button class="off-btn off-btn-ghost"><i class="ti ti-chevron-right"></i></button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: 新增房間 -->
+  <div class="off-modal-back" id="modal-new-room">
+    <div class="off-modal off-modal-wrap" style="grid-template-columns:1fr; width:min(520px, 92vw)">
+      <button class="off-modal-close" onclick="offCloseModal('modal-new-room')"><i class="ti ti-x"></i></button>
+      <div class="off-modal-body">
+        <h3 style="margin:0 0 16px">新增房間</h3>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-tag"></i> 名稱</span><input id="new-room-name" placeholder="例：會議室 C"></div>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-users"></i> 容量</span><input id="new-room-cap" type="number" value="10"></div>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-category"></i> 類別</span>
+          <input id="new-room-cat" placeholder="會議室 / 培訓室 / 電話亭">
+        </div>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-map-pin"></i> 位置（樓層）</span>
+          <select id="new-room-loc"></select>
+        </div>
+        <div style="text-align:right; margin-top:16px">
+          <button class="off-btn off-btn-primary" id="new-room-save">儲存</button>
+        </div>
+        <div id="new-room-err" style="color:var(--off-red); font-size:13px; margin-top:8px; display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: 編輯房間（6 tab 分頁式） -->
+  <div class="off-modal-back" id="modal-edit-room">
+    <div class="off-modal off-modal-wrap" style="width:min(1040px, 94vw); max-height:92vh">
+      <button class="off-modal-close" onclick="offCloseModal('modal-edit-room')"><i class="ti ti-x"></i></button>
+      <input type="hidden" id="er-id">
+
+      <!-- 左側 avatar + 名稱 + 6 tabs -->
+      <aside class="off-modal-side" style="display:flex; flex-direction:column">
+        <div class="cbm-side-thumb" style="background:#f4f6fa; border-radius:14px; padding:16px; text-align:center; margin-bottom:12px">
+          <div class="ph" style="width:100%; aspect-ratio:4/3; background:#eef1f6; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; color:#cfd4de; font-size:40px; margin-bottom:12px">
+            <i class="ti ti-photo"></i>
+          </div>
+          <div class="btns" style="display:flex; gap:6px; justify-content:center">
+            <button style="width:34px; height:34px; padding:0; border:0; background:#f2f4f8; color:#4b525f; border-radius:50%; cursor:pointer; display:inline-flex; align-items:center; justify-content:center"><i class="ti ti-upload"></i></button>
+            <button style="border:0; padding:8px 14px; border-radius:999px; cursor:pointer; font-size:12px; display:inline-flex; align-items:center; gap:4px; background:var(--off-primary); color:#fff; font-weight:500">
+              <i class="ti ti-folder"></i> 已上傳的文件
+            </button>
+          </div>
+        </div>
+        <div class="off-side-title" id="er-side-title" style="font-size:20px; font-weight:700">—</div>
+        <div class="off-side-sub" style="margin-bottom:12px">
+          設定此資源的位置，以及團隊預約它的方式。
+        </div>
+
+        <div class="off-tab active" data-tab="basic">
+          <i class="ti ti-adjustments-horizontal"></i><span>基本</span>
+          <i class="ti ti-chevron-right off-tab-arrow"></i>
+        </div>
+        <div class="off-tab" data-tab="rules">
+          <i class="ti ti-shield"></i><span>規則</span>
+          <i class="ti ti-chevron-right off-tab-arrow"></i>
+        </div>
+        <div class="off-tab disabled" data-tab="services" title="尚未開放">
+          <i class="ti ti-tools"></i><span>服務</span>
+          <i class="ti ti-chevron-right off-tab-arrow"></i>
+        </div>
+        <div class="off-tab disabled" data-tab="advanced" title="尚未開放">
+          <i class="ti ti-settings"></i><span>進階</span>
+          <i class="ti ti-chevron-right off-tab-arrow"></i>
+        </div>
+        <div class="off-tab" data-tab="blackouts">
+          <i class="ti ti-calendar-off"></i><span>暫停服務時間</span>
+          <i class="ti ti-chevron-right off-tab-arrow"></i>
+        </div>
+        <div class="off-tab disabled" data-tab="info" title="尚未開放">
+          <i class="ti ti-info-circle"></i><span>資訊</span>
+          <i class="ti ti-chevron-right off-tab-arrow"></i>
+        </div>
+
+        <div style="flex:1"></div>
+        <button class="off-btn" id="er-delete-side" style="color:var(--off-red); margin-top:16px; justify-content:flex-start">
+          <i class="ti ti-trash"></i> 刪除
+        </button>
+      </aside>
+
+      <!-- 右側分頁內容 -->
+      <div class="off-modal-body" style="padding:0; display:flex; flex-direction:column">
+
+        <!-- 基本 tab -->
+        <div class="er-pane" data-pane="basic" style="padding:24px; overflow-y:auto; flex:1">
+          <div class="cbm-field">
+            <span class="lbl"><i class="ti ti-tag"></i> 名稱</span>
+            <input id="er-name" placeholder="—">
+          </div>
+          <div class="cbm-field" style="align-items:flex-start">
+            <span class="lbl" style="padding-top:2px"><i class="ti ti-align-left"></i> 描述</span>
+            <textarea id="er-description" placeholder="—"></textarea>
+          </div>
+          <!-- 位置分組面板（沿用 cbm-combine 樣式） -->
+          <div class="cbm-field cbm-combine" id="er-location-wrap">
+            <span class="lbl"><i class="ti ti-map-pin"></i> 位置</span>
+            <span id="er-location-display" class="val">-</span>
+            <i class="ti ti-chevron-down caret"></i>
+            <div class="cbm-combine-panel" id="er-location-panel">
+              <div class="head">
+                <b>位置</b>
+                <button class="close" type="button" onclick="event.stopPropagation(); document.getElementById('er-location-wrap').classList.remove('open')"><i class="ti ti-x"></i></button>
+              </div>
+              <div class="search"><input id="er-location-search" placeholder="🔍 位置"></div>
+              <div id="er-location-list"></div>
+              <div class="foot">
+                <button type="button" id="er-location-clear">清除</button>
+                <button type="button" class="primary" id="er-location-done">完成</button>
+              </div>
+            </div>
+          </div>
+          <div class="cbm-row-2">
+            <div class="cbm-field">
+              <span class="lbl"><i class="ti ti-category"></i> 類別</span>
+              <input id="er-category" placeholder="-" style="text-align:right">
+              <i class="ti ti-chevron-down caret"></i>
+            </div>
+            <div class="cbm-field">
+              <span class="lbl"><i class="ti ti-users"></i> 容量</span>
+              <input id="er-capacity" type="number" min="0" value="10" style="width:60px; text-align:right">
+            </div>
+          </div>
+          <div class="cbm-field">
+            <span class="lbl"><i class="ti ti-devices"></i> 附屬設備</span>
+            <span id="er-facilities-chips" style="display:inline-flex; gap:4px; flex-wrap:wrap"></span>
+            <i class="ti ti-chevron-down caret"></i>
+          </div>
+          <div class="cbm-field">
+            <span class="lbl"><i class="ti ti-clock"></i> 營業時間</span>
+            <span id="er-hours-display" class="val">-</span>
+            <i class="ti ti-chevron-down caret"></i>
+          </div>
+          <div class="cbm-field">
+            <span class="lbl"><i class="ti ti-building-community"></i> 分支機構管理</span>
+            <select id="er-branch"><option value="">HQ</option></select>
+          </div>
+          <div class="cbm-field disabled">
+            <span class="lbl"><i class="ti ti-id-badge"></i> 訪問 ID</span>
+            <input placeholder="—" disabled>
+          </div>
+        </div>
+
+        <!-- 規則 tab -->
+        <div class="er-pane" data-pane="rules" style="padding:24px; overflow-y:auto; flex:1; display:none">
+          <label class="off-setting-row" style="border:0; padding:14px 16px; background:#f4f6fa; border-radius:12px; margin-bottom:8px; cursor:pointer">
+            <div class="off-setting-label" style="display:flex; align-items:center; gap:10px">
+              <i class="ti ti-lock" style="font-size:20px; color:#6b7280"></i>
+              <div>
+                <b>團隊空間</b>
+                <small>決定誰可以預約此資源。</small>
+              </div>
+            </div>
+            <div class="off-setting-control">
+              <label class="off-toggle"><input type="checkbox" id="er-team-space"><span class="off-toggle-slider"></span></label>
+            </div>
+          </label>
+
+          <label class="off-setting-row" style="border:0; padding:14px 16px; background:#f4f6fa; border-radius:12px; margin-bottom:8px; cursor:pointer">
+            <div class="off-setting-label" style="display:flex; align-items:center; gap:10px">
+              <i class="ti ti-stars" style="font-size:20px; color:#6b7280"></i>
+              <div>
+                <b>建議優先級</b>
+                <small>資源推薦等級 0（最低）到 5（最高）</small>
+              </div>
+            </div>
+            <div class="off-setting-control">
+              <select id="er-priority" style="padding:6px 12px; border:1px solid var(--off-border); border-radius:8px; font-size:14px; outline:none; background:#fff">
+                <option value="0">0</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+              </select>
+            </div>
+          </label>
+
+          <label class="off-setting-row" style="border:0; padding:14px 16px; background:#f4f6fa; border-radius:12px; margin-bottom:8px; cursor:pointer">
+            <div class="off-setting-label" style="display:flex; align-items:center; gap:10px">
+              <i class="ti ti-shield-check" style="font-size:20px; color:#6b7280"></i>
+              <div>
+                <b>需要批准政策</b>
+                <small>預約此資源需經管理員審批後生效。</small>
+              </div>
+            </div>
+            <div class="off-setting-control">
+              <label class="off-toggle"><input type="checkbox" id="er-requires-approval"><span class="off-toggle-slider"></span></label>
+            </div>
+          </label>
+        </div>
+
+        <!-- 服務 tab（disabled） -->
+        <div class="er-pane" data-pane="services" style="padding:60px 20px; display:none; text-align:center; color:var(--off-text-muted)">
+          <i class="ti ti-lock" style="font-size:40px; opacity:.4"></i>
+          <div style="margin-top:8px">「服務」尚未開放</div>
+        </div>
+
+        <!-- 進階 tab（disabled） -->
+        <div class="er-pane" data-pane="advanced" style="padding:60px 20px; display:none; text-align:center; color:var(--off-text-muted)">
+          <i class="ti ti-lock" style="font-size:40px; opacity:.4"></i>
+          <div style="margin-top:8px">「進階」尚未開放</div>
+        </div>
+
+        <!-- 暫停服務時間 tab -->
+        <div class="er-pane" data-pane="blackouts" style="padding:0; overflow-y:auto; flex:1; display:none">
+          <!-- 主畫面：清單 or 空狀態 -->
+          <div id="er-bo-list-view" style="padding:24px">
+            <div id="er-bo-list"></div>
+          </div>
+          <!-- 子面板：新增表單 -->
+          <div id="er-bo-form-view" style="display:none">
+            <div class="eu-subpanel-head">
+              <button class="back" id="er-bo-back" type="button"><i class="ti ti-arrow-left"></i></button>
+              <h3>新增暫停服務期間</h3>
+            </div>
+            <div style="padding:0 24px 24px">
+              <div style="font-size:13px; color:var(--off-text-muted); margin-bottom:6px">時期</div>
+              <div class="bk-time-row" style="display:grid; grid-template-columns:1.6fr 1fr; gap:6px; margin-bottom:6px">
+                <input type="date" id="er-bo-start-date" style="background:#fff; border:1px solid var(--off-border); border-radius:10px; padding:8px 12px; font-size:13px; outline:none">
+                <input type="time" id="er-bo-start-time" step="900" style="background:#fff; border:1px solid var(--off-border); border-radius:10px; padding:8px 12px; font-size:13px; outline:none">
+              </div>
+              <div class="bk-time-row" style="display:grid; grid-template-columns:1.6fr 1fr; gap:6px">
+                <input type="date" id="er-bo-end-date" style="background:#fff; border:1px solid var(--off-border); border-radius:10px; padding:8px 12px; font-size:13px; outline:none">
+                <input type="time" id="er-bo-end-time" step="900" style="background:#fff; border:1px solid var(--off-border); border-radius:10px; padding:8px 12px; font-size:13px; outline:none">
+              </div>
+              <div style="margin:12px 0">
+                <button type="button" class="off-btn" id="er-bo-allday" style="padding:4px 12px; font-size:12px">整日</button>
+              </div>
+              <label class="off-setting-row" style="border:0; padding:12px 14px; background:#f4f6fa; border-radius:12px; cursor:pointer; margin-bottom:8px">
+                <div class="off-setting-label" style="display:flex; align-items:center; gap:10px">
+                  <i class="ti ti-ban" style="font-size:20px; color:#6b7280"></i>
+                  <div>
+                    <b>在此時段封鎖預約</b>
+                    <small>與此時段重疊的預約將被拒絕。</small>
+                  </div>
+                </div>
+                <div class="off-setting-control">
+                  <label class="off-toggle" style="background:var(--off-red)">
+                    <input type="checkbox" id="er-bo-block" checked>
+                    <span class="off-toggle-slider" style="background:var(--off-red)"></span>
+                  </label>
+                </div>
+              </label>
+              <div class="cbm-field" style="align-items:flex-start; flex-direction:column">
+                <div class="lbl" style="width:100%; margin-bottom:8px"><i class="ti ti-message"></i> 備註</div>
+                <textarea id="er-bo-public-note" placeholder="顯示給在此時段嘗試預約此資源的使用者。" style="width:100%; min-height:80px; background:#fff; border:1px solid var(--off-border); border-radius:10px; padding:8px 12px; font-size:13px; outline:none; resize:vertical"></textarea>
+              </div>
+              <div class="cbm-field" style="align-items:flex-start; flex-direction:column">
+                <div class="lbl" style="width:100%; margin-bottom:8px"><i class="ti ti-lock"></i> 內部備註</div>
+                <textarea id="er-bo-internal-note" placeholder="僅供管理員在此查看，不會顯示給使用者。" style="width:100%; min-height:80px; background:#fff; border:1px solid var(--off-border); border-radius:10px; padding:8px 12px; font-size:13px; outline:none; resize:vertical"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 資訊 tab（disabled） -->
+        <div class="er-pane" data-pane="info" style="padding:60px 20px; display:none; text-align:center; color:var(--off-text-muted)">
+          <i class="ti ti-lock" style="font-size:40px; opacity:.4"></i>
+          <div style="margin-top:8px">「資訊」尚未開放</div>
+        </div>
+
+        <!-- Footer -->
+        <div class="off-modal-foot">
+          <div id="er-err" style="color:var(--off-red); font-size:13px; margin-right:auto; align-self:center; display:none"></div>
+          <button class="off-btn off-btn-primary" id="er-save">儲存</button>
+          <button class="off-btn off-btn-primary" id="er-bo-confirm" style="display:none">確認</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: 預約房間（舊入口，仍保留但列點擊不會觸發） -->
+  <div class="off-modal-back" id="modal-book">
+    <div class="off-modal off-modal-wrap" style="grid-template-columns:1fr; width:min(520px, 92vw)">
+      <button class="off-modal-close" onclick="offCloseModal('modal-book')"><i class="ti ti-x"></i></button>
+      <div class="off-modal-body">
+        <h3 style="margin:0 0 16px">預約房間 <span id="book-room-name" style="color:var(--off-primary)"></span></h3>
+        <div class="off-field"><span class="off-field-label">主題</span><input id="book-title" placeholder="週會 / 客戶討論 …"></div>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-clock"></i> 開始</span><input id="book-start" type="datetime-local"></div>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-clock-check"></i> 結束</span><input id="book-end" type="datetime-local"></div>
+        <div class="off-field" style="align-items:flex-start"><span class="off-field-label">備註</span></div>
+        <textarea id="book-notes" placeholder="與會者、議程…"></textarea>
+        <div style="text-align:right; margin-top:16px">
+          <button class="off-btn off-btn-primary" id="book-save">建立預約</button>
+        </div>
+        <div id="book-err" style="color:var(--off-red); font-size:13px; margin-top:8px; display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script>
+    // 需要登入
+    OffAuth.requireLogin();
+
+    let currentBookingRoomId = null;
+
+    function esc(s) { return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function initials(s) { return (s || '?').slice(0,1); }
+
+    async function loadRooms() {
+      const tbody = document.getElementById('rooms-tbody');
+      try {
+        const rooms = await OffAPI.rooms.list();
+        if (!rooms.length) {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:32px; color:var(--off-text-muted)">尚無房間，點右上「新增」建立第一間</td></tr>`;
+          document.getElementById('room-count').textContent = `1 - 0 / 0`;
+          return;
+        }
+        window.__rooms_cache = rooms;
+        tbody.innerHTML = rooms.map(r => `
+          <tr data-edit="${r.id}" style="cursor:pointer">
+            <td><input type="checkbox" onclick="event.stopPropagation()"></td>
+            <td>
+              <div style="display:flex; align-items:center; gap:8px">
+                <span class="off-avatar"><i class="ti ti-door"></i></span>
+                <span style="color:#111; font-weight:500">${esc(r.name)}</span>
+              </div>
+            </td>
+            <td><i class="ti ti-users"></i> ${r.capacity ?? 0}</td>
+            <td>${r.category ? `<span class="off-chip">${esc(r.category)}</span>` : '—'}</td>
+            <td>${r.location_name ? esc(r.location_name) : '—'}${r.branch_name ? ', ' + esc(r.branch_name) : ''}</td>
+          </tr>
+        `).join('');
+        document.getElementById('room-count').textContent = `1 - ${rooms.length} / ${rooms.length}`;
+
+        // 點列 → 開編輯 modal
+        tbody.querySelectorAll('tr[data-edit]').forEach(tr => {
+          tr.addEventListener('click', () => openEditRoom(parseInt(tr.dataset.edit, 10)));
+        });
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--off-red); padding:24px">讀取失敗：${esc(e.message)}</td></tr>`;
+      }
+    }
+
+    async function loadLocations() {
+      try {
+        const locs = await OffAPI.locations.list();
+        const sel = document.getElementById('new-room-loc');
+        sel.innerHTML = `<option value="">（不指定）</option>` +
+          locs.map(l => `<option value="${l.id}">${esc(l.name)}</option>`).join('');
+      } catch (e) { console.warn(e); }
+    }
+
+    document.getElementById('new-room-save').addEventListener('click', async () => {
+      const err = document.getElementById('new-room-err');
+      err.style.display = 'none';
+      try {
+        await OffAPI.rooms.create({
+          name: document.getElementById('new-room-name').value,
+          capacity: parseInt(document.getElementById('new-room-cap').value, 10) || 0,
+          category: document.getElementById('new-room-cat').value || null,
+          location_id: parseInt(document.getElementById('new-room-loc').value, 10) || null,
+          subtype: 'standard',
+          status: 'available',
+        });
+        offCloseModal('modal-new-room');
+        await loadRooms();
+      } catch (e) {
+        err.textContent = e.message; err.style.display = 'block';
+      }
+    });
+
+    document.getElementById('book-save').addEventListener('click', async () => {
+      const err = document.getElementById('book-err');
+      err.style.display = 'none';
+      try {
+        await OffAPI.reservations.create({
+          resource_id: currentBookingRoomId,
+          title: document.getElementById('book-title').value || '會議',
+          start_at: new Date(document.getElementById('book-start').value).toISOString(),
+          end_at:   new Date(document.getElementById('book-end').value).toISOString(),
+          type: 'normal',
+          notes: document.getElementById('book-notes').value || null,
+        });
+        offCloseModal('modal-book');
+        alert('預約成功！可到「預約管理 / 資訊主頁」查看儀表板。');
+      } catch (e) {
+        err.textContent = e.message; err.style.display = 'block';
+      }
+    });
+
+    loadRooms();
+    loadLocations();
+
+    // ============================================================
+    // 編輯房間 modal（6 tab 分頁式）
+    // ============================================================
+    let __erRoom = null;
+    let __erBranches = [];
+    let __erLocations = [];
+    let __erSelectedLocId = null;
+    let __erBlackouts = [];
+
+    async function openEditRoom(roomId) {
+      const room = (window.__rooms_cache || []).find(x => x.id === roomId);
+      if (!room) return;
+      __erRoom = room;
+      __erSelectedLocId = room.location_id || null;
+      __erBlackouts = [];
+
+      // 平行載入分支、位置、blackouts
+      const [branches, locations, blackouts] = await Promise.all([
+        OffAPI.branches.list().catch(() => []),
+        OffAPI.locations.list().catch(() => []),
+        OffAPI.rooms.blackouts.list(roomId).catch(() => []),
+      ]);
+      __erBranches = branches;
+      __erLocations = locations;
+      __erBlackouts = blackouts;
+
+      // 左側標題
+      document.getElementById('er-side-title').textContent = room.name;
+      document.getElementById('er-id').value = room.id;
+
+      // 基本欄位
+      document.getElementById('er-name').value = room.name || '';
+      document.getElementById('er-description').value = room.description || '';
+      document.getElementById('er-category').value = room.category || '';
+      document.getElementById('er-capacity').value = room.capacity ?? 10;
+
+      // 規則 tab
+      document.getElementById('er-team-space').checked = !!room.team_space;
+      document.getElementById('er-priority').value = String(room.priority ?? 0);
+      document.getElementById('er-requires-approval').checked = !!room.requires_approval;
+
+      // 分支下拉
+      const bSel = document.getElementById('er-branch');
+      bSel.innerHTML = branches.map(b =>
+        `<option value="${b.id}"${b.id === (room.branch_id || (locations.find(l => l.id === room.location_id) || {}).branch_id) ? ' selected' : ''}>${esc(b.name)}</option>`
+      ).join('');
+
+      // 附屬設備（從 attributes 讀，示範預設）
+      const facilities = (room.attributes && room.attributes.facilities) || ['投影機', '語音會議', '視像會議'];
+      document.getElementById('er-facilities-chips').innerHTML = facilities.map(f =>
+        `<span class="off-chip chip-primary">${esc(f)}</span>`).join(' ');
+
+      // 營業時間 placeholder
+      document.getElementById('er-hours-display').textContent = '營業時間 1 (週一-週五 09:00-18:00)';
+
+      // 位置面板
+      renderErLocationList();
+      updateErLocationDisplay();
+
+      // Blackouts
+      renderErBlackoutList();
+
+      // 切回基本
+      switchErTab('basic');
+      exitErBlackoutForm(true); // 確保子面板收起
+
+      document.getElementById('er-err').style.display = 'none';
+      offOpenModal('modal-edit-room');
+    }
+
+    function switchErTab(name) {
+      document.querySelectorAll('#modal-edit-room .off-tab').forEach(x =>
+        x.classList.toggle('active', x.dataset.tab === name));
+      document.querySelectorAll('#modal-edit-room .er-pane').forEach(p =>
+        p.style.display = p.dataset.pane === name ? '' : 'none');
+      // 切 tab 時關閉子面板
+      exitErBlackoutForm(true);
+    }
+    document.querySelectorAll('#modal-edit-room .off-tab:not(.disabled)').forEach(tab => {
+      tab.addEventListener('click', () => switchErTab(tab.dataset.tab));
+    });
+
+    // ---- 位置分組面板 ----
+    const erLocWrap = document.getElementById('er-location-wrap');
+    erLocWrap.addEventListener('click', (e) => {
+      if (e.target.closest('.cbm-combine-panel')) return;
+      erLocWrap.classList.toggle('open');
+    });
+    document.getElementById('er-location-search').addEventListener('input', renderErLocationList);
+    document.getElementById('er-location-clear').addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      __erSelectedLocId = null;
+      renderErLocationList(); updateErLocationDisplay();
+    });
+    document.getElementById('er-location-done').addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      erLocWrap.classList.remove('open');
+    });
+
+    function renderErLocationList() {
+      const q = (document.getElementById('er-location-search').value || '').toLowerCase();
+      const box = document.getElementById('er-location-list');
+      if (!__erLocations.length) {
+        box.innerHTML = '<div style="padding:16px; text-align:center; color:var(--off-text-muted); font-size:13px">此組織尚未建立地點</div>';
+        return;
+      }
+      const branchMap = {};
+      __erBranches.forEach(b => { branchMap[b.id] = b; });
+      const groups = new Map();
+      __erLocations
+        .filter(l => !q || l.name.toLowerCase().includes(q))
+        .forEach(l => {
+          const b = branchMap[l.branch_id];
+          if (!b) return;
+          if (!groups.has(b.id)) groups.set(b.id, { branch: b, locations: [] });
+          groups.get(b.id).locations.push(l);
+        });
+      if (!groups.size) {
+        box.innerHTML = '<div style="padding:16px; text-align:center; color:var(--off-text-muted); font-size:13px">沒有符合的位置</div>';
+        return;
+      }
+      let html = '';
+      for (const { branch, locations } of groups.values()) {
+        const label = branch.address && branch.address !== '—'
+          ? `${branch.name}　${branch.address}` : branch.name;
+        html += `<div class="cbm-loc-group">
+          <div class="cbm-loc-group-head">${esc(label)}</div>
+          ${locations.map(l => `
+            <div class="cbm-loc-item${l.id === __erSelectedLocId ? ' selected' : ''}" data-id="${l.id}">
+              <span class="name">${esc(l.name)}</span>
+              <button type="button" class="detail" onclick="event.stopPropagation()">詳細</button>
+            </div>`).join('')}
+        </div>`;
+      }
+      box.innerHTML = html;
+      box.querySelectorAll('.cbm-loc-item').forEach(el => {
+        el.addEventListener('click', (ev) => {
+          if (ev.target.classList.contains('detail')) return;
+          const id = parseInt(el.dataset.id, 10);
+          __erSelectedLocId = (__erSelectedLocId === id) ? null : id;
+          renderErLocationList(); updateErLocationDisplay();
+        });
+      });
+    }
+    function updateErLocationDisplay() {
+      const loc = __erLocations.find(l => l.id === __erSelectedLocId);
+      const el = document.getElementById('er-location-display');
+      if (loc) {
+        const b = __erBranches.find(x => x.id === loc.branch_id);
+        el.textContent = b ? `${b.name} · ${loc.name}` : loc.name;
+        el.style.color = '#111';
+      } else {
+        el.textContent = '-'; el.style.color = 'var(--off-text-muted)';
+      }
+    }
+
+    // ---- 儲存基本欄位 ----
+    document.getElementById('er-save').addEventListener('click', async () => {
+      const err = document.getElementById('er-err');
+      err.style.display = 'none';
+      if (!__erRoom) return;
+      const branchVal = document.getElementById('er-branch').value;
+      const payload = {
+        name: document.getElementById('er-name').value.trim() || __erRoom.name,
+        description: document.getElementById('er-description').value.trim() || null,
+        category: document.getElementById('er-category').value.trim() || null,
+        capacity: parseInt(document.getElementById('er-capacity').value, 10) || 0,
+        location_id: __erSelectedLocId,
+        branch_id: branchVal ? parseInt(branchVal, 10) : null,
+        team_space: document.getElementById('er-team-space').checked,
+        priority: parseInt(document.getElementById('er-priority').value, 10) || 0,
+        requires_approval: document.getElementById('er-requires-approval').checked,
+      };
+      try {
+        await OffAPI.rooms.patch(__erRoom.id, payload);
+        offCloseModal('modal-edit-room');
+        await loadRooms();
+      } catch (e) {
+        err.textContent = e.message || '儲存失敗'; err.style.display = 'block';
+      }
+    });
+
+    // ---- 刪除房間 ----
+    document.getElementById('er-delete-side').addEventListener('click', async () => {
+      if (!__erRoom) return;
+      if (!confirm(`確定要刪除房間「${__erRoom.name}」？`)) return;
+      try {
+        await OffAPI.rooms.remove(__erRoom.id);
+        offCloseModal('modal-edit-room');
+        await loadRooms();
+      } catch (e) {
+        alert('刪除失敗：' + e.message);
+      }
+    });
+
+    // ============================================================
+    // 暫停服務時間 tab
+    // ============================================================
+    function renderErBlackoutList() {
+      const box = document.getElementById('er-bo-list');
+      if (!__erBlackouts.length) {
+        box.innerHTML = `
+          <div class="off-tab-empty">
+            <i class="ti ti-calendar-off"></i>
+            <div style="font-size:15px; color:#2b2f3a; margin-top:6px">沒有暫停服務時間</div>
+            <div style="font-size:13px; color:var(--off-text-muted); margin:6px 0 16px">設定此資源無法預約的時段（例如維修或保養期間）。</div>
+            <button class="off-btn off-btn-primary" id="er-bo-add-empty">
+              <i class="ti ti-plus"></i> 新增暫停服務期間
+            </button>
+          </div>`;
+        document.getElementById('er-bo-add-empty').addEventListener('click', enterErBlackoutForm);
+      } else {
+        box.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px">
+            <div style="color:var(--off-text-muted); font-size:13px">暫停服務時間 · ${__erBlackouts.length}</div>
+            <button class="off-btn off-btn-primary" id="er-bo-add-more">
+              <i class="ti ti-plus"></i> 新增
+            </button>
+          </div>
+          ${__erBlackouts.map(bo => {
+            const s = new Date(bo.start_at), e = new Date(bo.end_at);
+            const range = `${s.toLocaleString('zh-TW')} — ${e.toLocaleString('zh-TW')}`;
+            return `
+              <div class="off-blackout-card">
+                <div class="info">
+                  <b>${esc(range)}</b>
+                  <small>${bo.block_reservations ? '在此時段封鎖預約' : '僅告知，不封鎖'}${bo.public_note ? ' · ' + esc(bo.public_note) : ''}</small>
+                </div>
+                <div class="actions">
+                  <button data-remove="${bo.id}" title="刪除"><i class="ti ti-trash"></i></button>
+                </div>
+              </div>`;
+          }).join('')}`;
+        document.getElementById('er-bo-add-more').addEventListener('click', enterErBlackoutForm);
+        box.querySelectorAll('[data-remove]').forEach(btn => {
+          btn.addEventListener('click', async (ev) => {
+            ev.stopPropagation();
+            const id = parseInt(btn.dataset.remove, 10);
+            if (!confirm('確定要刪除這筆暫停服務時間？')) return;
+            try {
+              await OffAPI.rooms.blackouts.remove(id);
+              __erBlackouts = __erBlackouts.filter(x => x.id !== id);
+              renderErBlackoutList();
+            } catch (e) { alert('刪除失敗：' + e.message); }
+          });
+        });
+      }
+    }
+
+    function pad(n) { return n.toString().padStart(2, '0'); }
+    function toDateInput(d) { return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+    function toTimeInput(d) { return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+    function combineDT(dateStr, timeStr) {
+      const [y, mo, d] = dateStr.split('-').map(Number);
+      const [h, mi] = timeStr.split(':').map(Number);
+      return new Date(y, mo - 1, d, h, mi, 0, 0);
+    }
+
+    function enterErBlackoutForm() {
+      // 預設：今日 00:00 - 23:59
+      const now = new Date();
+      document.getElementById('er-bo-start-date').value = toDateInput(now);
+      document.getElementById('er-bo-start-time').value = '00:00';
+      document.getElementById('er-bo-end-date').value = toDateInput(now);
+      document.getElementById('er-bo-end-time').value = '23:59';
+      document.getElementById('er-bo-block').checked = true;
+      document.getElementById('er-bo-public-note').value = '';
+      document.getElementById('er-bo-internal-note').value = '';
+
+      document.getElementById('er-bo-list-view').style.display = 'none';
+      document.getElementById('er-bo-form-view').style.display = '';
+      document.getElementById('er-save').style.display = 'none';
+      document.getElementById('er-bo-confirm').style.display = '';
+    }
+
+    function exitErBlackoutForm(silent) {
+      document.getElementById('er-bo-list-view').style.display = '';
+      document.getElementById('er-bo-form-view').style.display = 'none';
+      document.getElementById('er-save').style.display = '';
+      document.getElementById('er-bo-confirm').style.display = 'none';
+    }
+    document.getElementById('er-bo-back').addEventListener('click', () => exitErBlackoutForm());
+
+    // 整日
+    document.getElementById('er-bo-allday').addEventListener('click', () => {
+      const sd = document.getElementById('er-bo-start-date').value;
+      const ed = document.getElementById('er-bo-end-date').value || sd;
+      document.getElementById('er-bo-start-time').value = '00:00';
+      document.getElementById('er-bo-end-date').value = ed;
+      document.getElementById('er-bo-end-time').value = '23:59';
+    });
+
+    // 確認送出
+    document.getElementById('er-bo-confirm').addEventListener('click', async () => {
+      const err = document.getElementById('er-err');
+      err.style.display = 'none';
+      if (!__erRoom) return;
+      const sd = document.getElementById('er-bo-start-date').value;
+      const st = document.getElementById('er-bo-start-time').value;
+      const ed = document.getElementById('er-bo-end-date').value;
+      const et = document.getElementById('er-bo-end-time').value;
+      if (!sd || !st || !ed || !et) {
+        err.textContent = '請填寫完整時段'; err.style.display = 'block'; return;
+      }
+      const start = combineDT(sd, st), end = combineDT(ed, et);
+      if (end <= start) {
+        err.textContent = '結束時間必須晚於開始時間'; err.style.display = 'block'; return;
+      }
+      try {
+        const bo = await OffAPI.rooms.blackouts.create(__erRoom.id, {
+          start_at: start.toISOString(),
+          end_at: end.toISOString(),
+          block_reservations: document.getElementById('er-bo-block').checked,
+          public_note: document.getElementById('er-bo-public-note').value.trim() || null,
+          internal_note: document.getElementById('er-bo-internal-note').value.trim() || null,
+        });
+        __erBlackouts = [bo, ...__erBlackouts];
+        renderErBlackoutList();
+        exitErBlackoutForm();
+      } catch (e) {
+        err.textContent = e.message || '新增失敗'; err.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>

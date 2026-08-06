@@ -1,0 +1,847 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>預約管理 · 預約審批 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+  <style>
+    /* 頁首 tab 切換 */
+    .ap-tabs { display:inline-flex; gap:6px; margin-left:12px; }
+    .ap-tabs button {
+      display:inline-flex; align-items:center; gap:6px;
+      background:#f2f4f8; color:#4b525f; border:0;
+      padding:6px 14px; border-radius:999px; cursor:pointer; font-size:13px;
+    }
+    .ap-tabs button.active { background:#111; color:#fff; }
+
+    /* 表格內的 utilization chip */
+    .ap-util {
+      display:inline-flex; align-items:center; gap:4px;
+      padding:2px 8px; border-radius:999px;
+      background:#ffe1e4; color:var(--off-red); font-size:12px;
+    }
+    .ap-row-actions button {
+      width:26px; height:26px; border-radius:50%;
+      border:1px solid var(--off-border); background:#fff;
+      display:inline-flex; align-items:center; justify-content:center;
+      cursor:pointer; margin-right:4px;
+    }
+    .ap-row-actions button.ok { color:#12a97e; border-color:#c7ebd8; }
+    .ap-row-actions button.ok:hover { background:#d7f5ee; }
+    .ap-row-actions button.no { color:var(--off-red); border-color:#f6d3d6; }
+    .ap-row-actions button.no:hover { background:#ffe1e4; }
+
+    /* Drawer 內容區的區塊樣式 */
+    .apd-head-actions { display:flex; gap:6px; padding:12px 20px; border-bottom:1px solid var(--off-border); }
+    .apd-head-actions button {
+      display:inline-flex; align-items:center; gap:4px;
+      padding:6px 12px; border-radius:999px;
+      border:0; cursor:pointer; font-size:13px; font-weight:500;
+    }
+    .apd-head-actions .btn-approve { background:#d7f5ee; color:#12a97e; }
+    .apd-head-actions .btn-approve:hover { background:#b9edd9; }
+    .apd-head-actions .btn-reject  { background:#ffe1e4; color:var(--off-red); }
+    .apd-head-actions .btn-reject:hover  { background:#ffcdd0; }
+    .apd-head-actions .btn-edit    { background:#f2f4f8; color:#4b525f; }
+    .apd-head-actions .btn-edit:hover    { background:#e4e8ef; }
+
+    .apd-section { padding:14px 20px; border-bottom:1px solid var(--off-border); }
+    .apd-section .lbl { color:var(--off-text-muted); font-size:12px; margin-bottom:6px; }
+    .apd-section .val { font-size:14px; color:#111; }
+    .apd-section .val small { color:var(--off-text-muted); font-size:12px; display:block; margin-top:2px; }
+    .apd-organizer-row {
+      display:flex; align-items:center; gap:10px;
+      padding:8px 10px; background:#f4f6fa; border-radius:10px;
+    }
+    .apd-organizer-row .av {
+      width:32px; height:32px; border-radius:50%;
+      display:inline-flex; align-items:center; justify-content:center;
+      color:#fff; font-weight:600; font-size:13px;
+      background:#12a97e;
+    }
+    .apd-organizer-row b { display:block; font-size:14px; }
+    .apd-organizer-row small { color:var(--off-text-muted); font-size:12px; }
+    .apd-organizer-row .ext { margin-left:auto; color:#9aa3b0; cursor:pointer; }
+
+    /* 編輯 modal — 共用 bk-section / bk-row 樣式，但先寫 modal 專屬容器 */
+    .ape-modal {
+      grid-template-columns:1fr; width:min(720px, 94vw); max-height:92vh;
+      display:flex; flex-direction:column;
+    }
+    .ape-head { padding:20px 24px 8px; }
+    .ape-head h3 { margin:0; font-size:22px; font-weight:700; }
+    .ape-body { padding:12px 20px; overflow-y:auto; flex:1; }
+    .ape-body .bk-section { background:#f4f6fa; border-radius:14px; padding:10px 14px; margin-bottom:8px; }
+    .ape-body .bk-row { display:flex; align-items:center; gap:10px; min-height:32px; }
+    .ape-body .bk-row > i { color:#6b7280; }
+    .ape-body .bk-row .label { color:#4b525f; font-size:14px; min-width:80px; }
+    .ape-body .bk-section input, .ape-body .bk-section textarea, .ape-body .bk-section select {
+      border:0; background:transparent; outline:none;
+      font-size:14px; color:#111; flex:1; width:100%;
+    }
+    .ape-body .bk-collapse { cursor:pointer; }
+    .ape-body .bk-content { display:none; margin-top:8px; }
+    .ape-body .bk-section.open .bk-content { display:block; }
+    .ape-body .bk-chev { margin-left:auto; color:#6b7280; transition:transform .15s; }
+    .ape-body .bk-section.open .bk-chev { transform:rotate(180deg); }
+
+    .ape-time-row { display:grid; grid-template-columns:1.6fr 1fr; gap:6px; margin-top:6px; }
+    .ape-time-row input {
+      background:#fff; border:1px solid var(--off-border);
+      border-radius:10px; padding:8px 12px; font-size:13px; outline:none;
+    }
+    .ape-title-row { display:flex; align-items:center; gap:8px; }
+    .ape-private-btn {
+      display:inline-flex; align-items:center; gap:4px;
+      padding:4px 10px; border-radius:999px;
+      background:#fff; border:1px solid var(--off-border);
+      color:#4b525f; font-size:12px; cursor:pointer;
+    }
+    .ape-private-btn.active { background:var(--off-primary-soft); color:var(--off-primary); border-color:var(--off-primary); }
+
+    /* 會議室下拉 popover */
+    .ape-room-summary {
+      display:inline-flex; align-items:center; gap:6px;
+      background:var(--off-primary-soft); color:var(--off-primary);
+      padding:2px 8px; border-radius:6px; font-size:13px;
+    }
+    .ape-room-summary .rm { margin-left:4px; cursor:pointer; color:var(--off-primary); }
+
+    /* 會議室 & 與會者 list */
+    .bk-list { max-height:280px; overflow-y:auto; margin-top:8px; }
+    .bk-list-item {
+      display:flex; align-items:center; gap:10px;
+      padding:8px 10px; border-radius:10px; cursor:pointer;
+    }
+    .bk-list-item:hover { background:rgba(31,128,240,.06); }
+    .bk-list-item.selected { background:rgba(31,128,240,.12); }
+    .bk-list-item .star { color:#cfd4de; }
+    .bk-list-item .dot { width:8px; height:8px; border-radius:50%; background:#12a97e; display:inline-block; }
+    .bk-list-item .name { flex:1; font-size:14px; }
+    .bk-list-item .capacity {
+      display:inline-flex; align-items:center; gap:4px;
+      background:#eef1f6; color:#4b525f; padding:2px 8px; border-radius:999px;
+      font-size:12px;
+    }
+    .bk-list-item .approve-icon { color:#f39c3d; }
+    .bk-list-item .combine { color:var(--off-primary); }
+
+    .ape-attendee-item {
+      display:flex; align-items:center; gap:10px;
+      padding:10px; margin-bottom:4px;
+      background:#fff; border-radius:10px; cursor:pointer;
+      border:1px solid transparent;
+    }
+    .ape-attendee-item.selected { border-color:var(--off-primary); background:var(--off-primary-soft); }
+    .ape-attendee-item .avatar {
+      width:32px; height:32px; border-radius:50%;
+      display:inline-flex; align-items:center; justify-content:center;
+      color:#fff; font-weight:600; font-size:13px;
+    }
+    .ape-attendee-item .avatar.green  { background:#12a97e; }
+    .ape-attendee-item .avatar.purple { background:#7c67f4; }
+    .ape-attendee-item .avatar.orange { background:#f39c3d; }
+    .ape-attendee-item .avatar.blue   { background:var(--off-primary); }
+    .ape-attendee-item b { display:block; font-size:14px; }
+    .ape-attendee-item small { color:var(--off-text-muted); font-size:12px; }
+
+    /* 備忘錄 rich-text 假 toolbar（純視覺） */
+    .ape-notes-toolbar {
+      display:flex; flex-wrap:wrap; align-items:center; gap:4px;
+      padding:8px 8px 4px; color:#6b7280; font-size:12px;
+    }
+    .ape-notes-toolbar span { padding:4px 6px; border-radius:6px; }
+    .ape-notes-toolbar i { font-size:14px; }
+    .ape-notes-toolbar .divider { width:1px; height:14px; background:var(--off-border); margin:0 4px; }
+    .ape-notes-body {
+      width:100%; min-height:80px; padding:8px 12px;
+      background:transparent; border:0; outline:none;
+      font-size:14px; color:#111; resize:vertical;
+    }
+
+    /* 底部審批提示條 */
+    .ape-approval {
+      display:flex; align-items:flex-start; gap:12px;
+      padding:14px 16px; background:#fff8e5;
+      border:1px solid #f6d97a; border-radius:12px;
+      margin:12px 20px 0; font-size:13px;
+    }
+    .ape-approval .dot { width:8px; height:8px; border-radius:50%; background:var(--off-orange); flex-shrink:0; margin-top:6px; }
+    .ape-approval b { display:block; color:#7a5b00; }
+    .ape-approval small { color:#7a5b00; }
+    .ape-foot {
+      display:flex; justify-content:flex-end; gap:8px;
+      padding:14px 20px;
+      border-top:1px solid var(--off-border);
+    }
+  </style>
+</head>
+<body data-module="reservation" data-page="approval"
+      data-crumbs='[{"label":"預約管理","href":"reservation-dashboard.html"},{"label":"預約"},{"label":"預約審批"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#58c7f5,#1f80f0)"><i class="ti ti-checks"></i></span>
+        <div>
+          <div class="off-page-title-row">
+            <h1>預約審批</h1>
+            <span class="off-new-tag">NEW</span>
+            <div class="ap-tabs">
+              <button class="active" data-tab="pending"><i class="ti ti-hourglass-low"></i> 等待批核 <span id="ap-count-pending" class="off-chip" style="margin-left:4px">0</span></button>
+              <button data-tab="history"><i class="ti ti-history"></i> 批核紀錄</button>
+            </div>
+          </div>
+          <p class="off-page-desc">審核待處理的預約，並進行批准或拒絕</p>
+        </div>
+        <div class="off-page-actions">
+          <button class="off-btn"><i class="ti ti-adjustments-alt"></i> 排序 / 欄位</button>
+        </div>
+      </div>
+
+      <div class="off-panel" style="padding:0">
+        <table class="off-table">
+          <thead>
+            <tr>
+              <th style="width:40px"><input type="checkbox"></th>
+              <th>操作</th>
+              <th class="off-search-cell"><input placeholder="🔍 搜尋" id="ap-search"></th>
+              <th>預約 ID</th>
+              <th>資源 <i class="ti ti-filter"></i></th>
+              <th>日期 <i class="ti ti-filter"></i></th>
+              <th>時間</th>
+              <th>發起人 <i class="ti ti-filter"></i></th>
+              <th>與會者</th>
+              <th>創建日期</th>
+            </tr>
+          </thead>
+          <tbody id="ap-tbody">
+            <tr><td colspan="10" style="text-align:center; padding:24px; color:var(--off-text-muted)">
+              <i class="ti ti-loader-2"></i> 讀取中…
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- 右側 Drawer -->
+  <div class="off-drawer-back" id="apd-back">
+    <aside class="off-drawer" style="width:min(460px, 96vw)">
+      <div class="off-drawer-head" style="padding-bottom:14px">
+        <button class="off-drawer-close" id="apd-close"><i class="ti ti-x"></i></button>
+        <div class="off-drawer-title-row">
+          <span class="off-avatar" id="apd-icon" style="background:#eef1f6; color:#5b6472; width:36px; height:36px"><i class="ti ti-calendar-event"></i></span>
+          <div>
+            <h3 class="off-drawer-title" id="apd-title">—</h3>
+            <div id="apd-bk-id" style="color:var(--off-text-muted); font-size:12px; margin-top:2px; font-family:monospace">BK—</div>
+          </div>
+        </div>
+      </div>
+      <div class="apd-head-actions">
+        <button class="btn-approve" id="apd-approve"><i class="ti ti-check"></i> 批准</button>
+        <button class="btn-reject"  id="apd-reject"><i class="ti ti-x"></i> 拒絕</button>
+        <button class="btn-edit"    id="apd-edit"><i class="ti ti-pencil"></i> 編輯</button>
+      </div>
+      <div class="off-drawer-body" style="padding:0">
+        <div class="apd-section">
+          <div class="lbl">資源 · <span id="apd-res-count">1</span></div>
+          <div style="display:flex; align-items:center; gap:8px">
+            <i class="ti ti-door" style="color:#6b7280"></i>
+            <span class="val" id="apd-room-name">—</span>
+            <span class="ap-util" id="apd-util"></span>
+          </div>
+        </div>
+        <div class="apd-section">
+          <div class="lbl">時間</div>
+          <div class="val" style="font-weight:600" id="apd-day">—</div>
+          <div class="val" id="apd-time">—</div>
+          <div class="val"><small id="apd-dur">—</small></div>
+        </div>
+        <div class="apd-section">
+          <div class="lbl">發起人</div>
+          <div class="apd-organizer-row">
+            <span class="av" id="apd-org-av">?</span>
+            <div>
+              <b id="apd-org-name">—</b>
+              <small id="apd-org-email">—</small>
+            </div>
+            <i class="ti ti-external-link ext"></i>
+          </div>
+        </div>
+        <div class="apd-section">
+          <div class="lbl">創建日期</div>
+          <div class="val" id="apd-created">—</div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- 編輯預約 Modal -->
+  <div class="off-modal-back" id="ape-modal">
+    <div class="off-modal off-modal-wrap ape-modal">
+      <button class="off-modal-close" onclick="offCloseModal('ape-modal')"><i class="ti ti-x"></i></button>
+      <input type="hidden" id="ape-id">
+      <div class="ape-head"><h3>編輯預約</h3></div>
+      <div class="ape-body">
+
+        <!-- 發起人（唯讀） -->
+        <div class="bk-section">
+          <div class="bk-row">
+            <i class="ti ti-id-badge"></i>
+            <span class="label">發起人</span>
+            <span id="ape-organizer" style="color:var(--off-primary); font-weight:500">—</span>
+          </div>
+        </div>
+
+        <!-- 標題 + 私人 -->
+        <div class="bk-section">
+          <div class="bk-row ape-title-row">
+            <i class="ti ti-typography"></i>
+            <input id="ape-title" placeholder="標題">
+            <button class="ape-private-btn" id="ape-private-btn" type="button">
+              <i class="ti ti-eye-off"></i> 私人預約
+            </button>
+          </div>
+        </div>
+
+        <!-- 時段 -->
+        <div class="bk-section open" id="ape-time-section">
+          <div class="bk-row bk-collapse" data-toggle="ape-time-section">
+            <i class="ti ti-clock"></i>
+            <span id="ape-time-summary" style="flex:1; color:#111; font-weight:500">—</span>
+            <button type="button" class="off-btn" id="ape-allday" style="padding:4px 12px; font-size:12px">整日</button>
+            <i class="ti ti-chevron-down bk-chev"></i>
+          </div>
+          <div class="bk-content">
+            <div class="ape-time-row">
+              <input type="date" id="ape-start-date">
+              <input type="time" id="ape-start-time" step="900">
+            </div>
+            <div class="ape-time-row" style="margin-top:6px">
+              <input type="date" id="ape-end-date">
+              <input type="time" id="ape-end-time" step="900">
+            </div>
+          </div>
+        </div>
+
+        <!-- 會議室（可改） -->
+        <div class="bk-section" id="ape-room-section">
+          <div class="bk-row bk-collapse" data-toggle="ape-room-section">
+            <i class="ti ti-door" style="color:var(--off-red)"></i>
+            <span class="ape-room-summary" id="ape-room-summary">
+              <span class="dot" style="width:6px; height:6px; border-radius:50%; background:#12a97e; display:inline-block"></span>
+              <b id="ape-room-summary-name">—</b>
+              <i class="ti ti-x rm" id="ape-room-clear"></i>
+            </span>
+            <span style="flex:1"></span>
+            <i class="ti ti-chevron-down bk-chev"></i>
+          </div>
+          <div class="bk-content">
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px">
+              <input id="ape-room-search" placeholder="🔍 搜尋"
+                     style="flex:1; background:#fff; border:1px solid var(--off-border); border-radius:10px; padding:8px 12px; font-size:13px; outline:none">
+              <button class="off-btn" style="padding:6px 12px; font-size:12px"><i class="ti ti-devices"></i> 設備</button>
+            </div>
+            <div class="bk-list" id="ape-room-list"></div>
+          </div>
+        </div>
+
+        <!-- 要求服務 (反白) -->
+        <div class="bk-section" style="opacity:.55; pointer-events:none">
+          <div class="bk-row">
+            <i class="ti ti-list-check" style="color:#12a97e"></i>
+            <span style="color:#4b525f">要求服務 (1 選項)</span>
+            <i class="ti ti-chevron-down bk-chev" style="margin-left:auto"></i>
+          </div>
+        </div>
+
+        <!-- 邀請與會者 -->
+        <div class="bk-section" id="ape-att-section">
+          <div class="bk-row bk-collapse" data-toggle="ape-att-section">
+            <i class="ti ti-users"></i>
+            <span id="ape-att-summary" style="flex:1; color:var(--off-text-muted)">邀請與會者</span>
+            <i class="ti ti-chevron-down bk-chev"></i>
+          </div>
+          <div class="bk-content">
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px">
+              <input id="ape-att-search" placeholder="🔍 搜尋人員"
+                     style="flex:1; background:#fff; border:1px solid var(--off-border); border-radius:10px; padding:8px 12px; font-size:13px; outline:none">
+              <button class="off-btn" style="padding:6px 12px; font-size:12px"><i class="ti ti-dots"></i></button>
+              <button class="off-btn" style="padding:6px 12px; font-size:12px"><i class="ti ti-calendar"></i></button>
+            </div>
+            <div class="bk-list" id="ape-att-list"></div>
+          </div>
+        </div>
+
+        <!-- 備忘錄（含假 toolbar）-->
+        <div class="bk-section" id="ape-notes-section">
+          <div class="bk-row bk-collapse" data-toggle="ape-notes-section">
+            <i class="ti ti-note"></i>
+            <span style="flex:1; color:#111; font-weight:500">會議備忘錄</span>
+            <i class="ti ti-chevron-down bk-chev"></i>
+          </div>
+          <div class="bk-content">
+            <div class="ape-notes-toolbar">
+              <span title="復原"><i class="ti ti-arrow-back-up"></i></span>
+              <span title="取消復原"><i class="ti ti-arrow-forward-up"></i></span>
+              <span class="divider"></span>
+              <span>預設 <i class="ti ti-chevron-down"></i></span>
+              <span>16 <i class="ti ti-chevron-down"></i></span>
+              <span class="divider"></span>
+              <span title="粗體"><b>B</b></span>
+              <span title="斜體"><i>I</i></span>
+              <span title="底線"><u>U</u></span>
+              <span title="刪除線"><s>S</s></span>
+              <span title="字色"><i class="ti ti-palette"></i></span>
+              <span title="背景色"><i class="ti ti-highlight"></i></span>
+              <span class="divider"></span>
+              <span title="對齊"><i class="ti ti-align-left"></i> <i class="ti ti-chevron-down"></i></span>
+              <span title="有序清單"><i class="ti ti-list-numbers"></i></span>
+              <span title="無序清單"><i class="ti ti-list"></i></span>
+              <span title="縮排"><i class="ti ti-indent-increase"></i></span>
+              <span title="…">99</span>
+              <span class="divider"></span>
+              <span title="表格"><i class="ti ti-table"></i></span>
+              <span title="清除格式"><i class="ti ti-clear-formatting"></i></span>
+            </div>
+            <textarea class="ape-notes-body" id="ape-notes" placeholder="輸入會議備忘錄"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- 需要審批提示條 -->
+      <div class="ape-approval">
+        <span class="dot"></span>
+        <div>
+          <b>需要審批</b>
+          <small>作為管理員，您可以直接批准此預約或保存以供稍後審查。</small>
+        </div>
+      </div>
+
+      <div class="ape-foot">
+        <div id="ape-err" style="color:var(--off-red); font-size:13px; margin-right:auto; align-self:center; display:none"></div>
+        <button class="off-btn off-btn-primary" id="ape-save-pending"><i class="ti ti-clock"></i> 保存待審批</button>
+        <button class="off-btn off-btn-primary" id="ape-save-approve"><i class="ti ti-shield-check"></i> 直接批准</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script>
+    OffAuth.requireLogin();
+    const esc = s => (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    // ==================== 頁首 tab ====================
+    let currentTab = 'pending';
+    document.querySelectorAll('.ap-tabs button').forEach(b => {
+      b.addEventListener('click', () => {
+        document.querySelectorAll('.ap-tabs button').forEach(x => x.classList.toggle('active', x === b));
+        currentTab = b.dataset.tab;
+        loadList();
+      });
+    });
+
+    // ==================== 表格 ====================
+    let __reservations = [];
+    let __rooms = [];
+    let __users = [];
+    let __attendeeCache = {}; // user_id -> user
+
+    function humanDate(d) {
+      const wd = ['日','一','二','三','四','五','六'][d.getDay()];
+      return `${d.getMonth()+1}月${d.getDate()}日${wd ? ' (星期'+wd+')' : ''}`;
+    }
+    function humanTime(d) {
+      const h = d.getHours(), m = d.getMinutes();
+      const ap = h < 12 ? '上午' : '下午';
+      const hh = h % 12 === 0 ? 12 : h % 12;
+      return `${ap}${hh}:${m.toString().padStart(2,'0')}`;
+    }
+    function humanDur(startAt, endAt) {
+      const diff = (endAt - startAt) / 60000;
+      const h = Math.floor(diff / 60); const m = diff % 60;
+      if (h && m) return `${h}h ${m}m`;
+      if (h) return `${h}h`;
+      return `${m}m`;
+    }
+    function avatarClass(id) {
+      return ['green','purple','orange','blue'][id % 4];
+    }
+
+    async function loadList() {
+      const tbody = document.getElementById('ap-tbody');
+      tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:24px; color:var(--off-text-muted)"><i class="ti ti-loader-2"></i> 讀取中…</td></tr>`;
+      try {
+        const [reservations, rooms, users] = await Promise.all([
+          currentTab === 'pending'
+            ? OffAPI.reservations.list({ status_filter: 'pending', approvable_by_me: 'true' })
+            : OffAPI.reservations.list({ approvable_by_me: 'true' }).then(all =>
+                all.filter(r => r.status === 'approved' || r.status === 'rejected' || r.status === 'cancelled')),
+          __rooms.length ? __rooms : OffAPI.rooms.list(),
+          __users.length ? __users : OffAPI.users.list(),
+        ]);
+        __reservations = reservations;
+        __rooms = rooms;
+        __users = users;
+        __users.forEach(u => { __attendeeCache[u.id] = u; });
+        renderList();
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--off-red); padding:24px">讀取失敗：${esc(e.message)}</td></tr>`;
+      }
+    }
+
+    function renderList() {
+      const q = (document.getElementById('ap-search').value || '').toLowerCase();
+      const list = __reservations.filter(r =>
+        !q || r.title.toLowerCase().includes(q) ||
+              (r.resource_name || '').toLowerCase().includes(q) ||
+              (r.organizer_name || '').toLowerCase().includes(q));
+
+      document.getElementById('ap-count-pending').textContent =
+        __reservations.filter(r => r.status === 'pending').length;
+
+      const tbody = document.getElementById('ap-tbody');
+      if (!list.length) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:32px; color:var(--off-text-muted)">
+          ${currentTab === 'pending' ? '目前沒有待審批的預約' : '尚無批核紀錄'}
+        </td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = list.map(r => {
+        const s = new Date(r.start_at), e = new Date(r.end_at);
+        const room = __rooms.find(x => x.id === r.resource_id);
+        const util = room && room.capacity > 0
+          ? Math.round(((r.attendees ? r.attendees.length : 0) + 1) / room.capacity * 100)
+          : 0;
+        const created = new Date(r.created_at);
+        const organizer = r.organizer_name || '—';
+        const oEmail = __attendeeCache[r.organizer_id] ? __attendeeCache[r.organizer_id].email : '';
+        return `
+          <tr data-id="${r.id}" style="cursor:pointer">
+            <td><input type="checkbox" onclick="event.stopPropagation()"></td>
+            <td>
+              <div class="ap-row-actions" onclick="event.stopPropagation()">
+                ${currentTab === 'pending' ? `
+                  <button class="ok" data-act="approve" data-id="${r.id}" title="批准"><i class="ti ti-check"></i></button>
+                  <button class="no" data-act="reject"  data-id="${r.id}" title="拒絕"><i class="ti ti-x"></i></button>
+                ` : `
+                  <span class="off-chip ${r.status === 'approved' ? 'chip-green' : r.status === 'rejected' ? 'chip-red' : ''}">${r.status}</span>
+                `}
+              </div>
+            </td>
+            <td>
+              <div style="display:flex; align-items:center; gap:8px">
+                <i class="ti ti-calendar-event" style="color:#6b7280"></i>
+                <b>${esc(r.title)}</b>
+              </div>
+            </td>
+            <td style="font-family:monospace">BK${r.id.toString().padStart(4,'0')}</td>
+            <td>
+              <div style="display:flex; align-items:center; gap:6px">
+                <i class="ti ti-door" style="color:#6b7280"></i>
+                <span>${esc(r.resource_name || '—')}</span>
+                ${util > 0 ? `<span class="ap-util"><i class="ti ti-users" style="font-size:11px"></i> ${util}%</span>` : ''}
+              </div>
+            </td>
+            <td>${s.getMonth()+1}月${s.getDate()}日</td>
+            <td>
+              ${humanTime(s)} - ${humanTime(e)}
+              <div style="color:var(--off-text-muted); font-size:12px">${humanDur(s, e)}</div>
+            </td>
+            <td>
+              <div>${esc(organizer)}</div>
+              <div style="color:var(--off-text-muted); font-size:12px">${esc(oEmail)}</div>
+            </td>
+            <td>—</td>
+            <td>${created.getMonth()+1}月${created.getDate()}日 ${humanTime(created)}</td>
+          </tr>`;
+      }).join('');
+
+      tbody.querySelectorAll('tr[data-id]').forEach(tr => {
+        tr.addEventListener('click', () => openDrawer(parseInt(tr.dataset.id, 10)));
+      });
+      tbody.querySelectorAll('button[data-act]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = parseInt(btn.dataset.id, 10);
+          const approve = btn.dataset.act === 'approve';
+          if (!confirm(approve ? '確定批准此預約？' : '確定拒絕此預約？')) return;
+          try {
+            await OffAPI.reservations.approve(id, { approve });
+            loadList();
+          } catch (e) { alert(e.message); }
+        });
+      });
+    }
+    document.getElementById('ap-search').addEventListener('input', renderList);
+
+    // ==================== Drawer ====================
+    let __currentResv = null;
+
+    function openDrawer(id) {
+      const r = __reservations.find(x => x.id === id);
+      if (!r) return;
+      __currentResv = r;
+      document.getElementById('apd-title').textContent = r.title;
+      document.getElementById('apd-bk-id').textContent = `BK${r.id.toString().padStart(4,'0')}`;
+
+      const room = __rooms.find(x => x.id === r.resource_id);
+      const util = room && room.capacity > 0
+        ? Math.round(((r.attendees ? r.attendees.length : 0) + 1) / room.capacity * 100)
+        : 0;
+      document.getElementById('apd-room-name').textContent = r.resource_name || '—';
+      const utilEl = document.getElementById('apd-util');
+      utilEl.innerHTML = util > 0 ? `<i class="ti ti-users" style="font-size:11px"></i> ${util}%` : '';
+
+      const s = new Date(r.start_at), e = new Date(r.end_at);
+      document.getElementById('apd-day').textContent = humanDate(s).split('日')[0] + '日'; // 只顯示 8月12日
+      document.getElementById('apd-time').textContent = `${humanTime(s)} - ${humanTime(e)}`;
+      document.getElementById('apd-dur').textContent = humanDur(s, e);
+
+      document.getElementById('apd-org-name').textContent = r.organizer_name || '—';
+      const org = __attendeeCache[r.organizer_id];
+      document.getElementById('apd-org-email').textContent = org ? org.email : '';
+      const av = document.getElementById('apd-org-av');
+      const cls = avatarClass(r.organizer_id || 0);
+      av.style.background =
+        ({green:'#12a97e', purple:'#7c67f4', orange:'#f39c3d', blue:'#1f80f0'})[cls];
+      av.textContent = (r.organizer_name || '?').slice(0,1);
+
+      const created = new Date(r.created_at);
+      document.getElementById('apd-created').textContent =
+        `${created.getMonth()+1}月${created.getDate()}日 ${humanTime(created)}`;
+
+      document.getElementById('apd-back').classList.add('open');
+    }
+    document.getElementById('apd-close').addEventListener('click', () => {
+      document.getElementById('apd-back').classList.remove('open');
+    });
+    document.getElementById('apd-back').addEventListener('click', ev => {
+      if (ev.target.id === 'apd-back') document.getElementById('apd-back').classList.remove('open');
+    });
+
+    document.getElementById('apd-approve').addEventListener('click', async () => {
+      if (!__currentResv) return;
+      try {
+        await OffAPI.reservations.approve(__currentResv.id, { approve: true });
+        document.getElementById('apd-back').classList.remove('open');
+        loadList();
+      } catch (e) { alert(e.message); }
+    });
+    document.getElementById('apd-reject').addEventListener('click', async () => {
+      if (!__currentResv) return;
+      if (!confirm('確定拒絕此預約？')) return;
+      try {
+        await OffAPI.reservations.approve(__currentResv.id, { approve: false });
+        document.getElementById('apd-back').classList.remove('open');
+        loadList();
+      } catch (e) { alert(e.message); }
+    });
+    document.getElementById('apd-edit').addEventListener('click', () => {
+      if (!__currentResv) return;
+      openEditModal(__currentResv);
+    });
+
+    // ==================== 編輯 Modal ====================
+    let __apeSelectedRoomId = null;
+    let __apeAttendees = new Set();
+    let __apePrivate = false;
+
+    function pad(n) { return n.toString().padStart(2, '0'); }
+    function toDateInput(d) { return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+    function toTimeInput(d) { return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+    function combineDT(dateStr, timeStr) {
+      const [y, mo, d] = dateStr.split('-').map(Number);
+      const [h, mi] = timeStr.split(':').map(Number);
+      return new Date(y, mo - 1, d, h, mi, 0, 0);
+    }
+
+    function openEditModal(r) {
+      document.getElementById('ape-id').value = r.id;
+      document.getElementById('ape-organizer').textContent = r.organizer_name || '—';
+      document.getElementById('ape-title').value = r.title || '';
+      document.getElementById('ape-notes').value = r.notes || '';
+      document.getElementById('ape-err').style.display = 'none';
+
+      const s = new Date(r.start_at), e = new Date(r.end_at);
+      document.getElementById('ape-start-date').value = toDateInput(s);
+      document.getElementById('ape-start-time').value = toTimeInput(s);
+      document.getElementById('ape-end-date').value = toDateInput(e);
+      document.getElementById('ape-end-time').value = toTimeInput(e);
+      updateTimeSummary();
+
+      __apeSelectedRoomId = r.resource_id;
+      __apeAttendees = new Set((r.attendees || []).map(a => a.user_id).filter(Boolean));
+      __apePrivate = (r.type === 'private');
+      document.getElementById('ape-private-btn').classList.toggle('active', __apePrivate);
+
+      renderRoomList();
+      updateRoomSummary();
+      renderAttendeeList();
+      updateAttendeeSummary();
+
+      // 展開狀態
+      document.getElementById('ape-time-section').classList.add('open');
+      document.getElementById('ape-room-section').classList.remove('open');
+      document.getElementById('ape-att-section').classList.remove('open');
+      document.getElementById('ape-notes-section').classList.remove('open');
+
+      offOpenModal('ape-modal');
+    }
+
+    // 摺疊
+    document.querySelectorAll('#ape-modal [data-toggle]').forEach(el => {
+      el.addEventListener('click', (ev) => {
+        if (ev.target.closest('button, input')) return;
+        if (ev.target.classList.contains('rm')) return;
+        document.getElementById(el.dataset.toggle).classList.toggle('open');
+      });
+    });
+
+    // 私人
+    document.getElementById('ape-private-btn').addEventListener('click', () => {
+      __apePrivate = !__apePrivate;
+      document.getElementById('ape-private-btn').classList.toggle('active', __apePrivate);
+    });
+
+    // 整日
+    document.getElementById('ape-allday').addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const sd = document.getElementById('ape-start-date').value;
+      document.getElementById('ape-start-time').value = '00:00';
+      document.getElementById('ape-end-date').value = sd;
+      document.getElementById('ape-end-time').value = '23:59';
+      updateTimeSummary();
+    });
+
+    ['ape-start-date','ape-start-time','ape-end-date','ape-end-time'].forEach(id => {
+      document.getElementById(id).addEventListener('change', updateTimeSummary);
+    });
+
+    function updateTimeSummary() {
+      const sd = document.getElementById('ape-start-date').value;
+      const st = document.getElementById('ape-start-time').value;
+      const ed = document.getElementById('ape-end-date').value;
+      const et = document.getElementById('ape-end-time').value;
+      if (!sd || !st || !ed || !et) { document.getElementById('ape-time-summary').textContent = '—'; return; }
+      const s = combineDT(sd, st), e = combineDT(ed, et);
+      const sameDay = sd === ed;
+      document.getElementById('ape-time-summary').textContent = sameDay
+        ? `${humanDate(s)}　${humanTime(s)} - ${humanTime(e)}`
+        : `${humanDate(s)} ${humanTime(s)} - ${humanDate(e)} ${humanTime(e)}`;
+    }
+
+    // 會議室清單
+    function renderRoomList() {
+      const q = (document.getElementById('ape-room-search').value || '').toLowerCase();
+      const list = __rooms.filter(r => !q || r.name.toLowerCase().includes(q));
+      const box = document.getElementById('ape-room-list');
+      if (!list.length) { box.innerHTML = '<div style="padding:16px; text-align:center; color:var(--off-text-muted); font-size:13px">沒有符合的房間</div>'; return; }
+      box.innerHTML = list.map(r => `
+        <div class="bk-list-item${r.id === __apeSelectedRoomId ? ' selected' : ''}" data-id="${r.id}">
+          <i class="ti ${r.id === __apeSelectedRoomId ? 'ti-check' : 'ti-star'} star"></i>
+          <span class="dot"></span>
+          <span class="name">${esc(r.name)}</span>
+          <span class="capacity"><i class="ti ti-users"></i> ${r.capacity}</span>
+          ${r.subtype === 'combinable' ? '<i class="ti ti-copy combine" title="可合併"></i>' : ''}
+          ${r.requires_approval ? '<i class="ti ti-shield-check approve-icon" title="需要批准"></i>' : ''}
+        </div>`).join('');
+      box.querySelectorAll('.bk-list-item').forEach(el => {
+        el.addEventListener('click', () => {
+          __apeSelectedRoomId = parseInt(el.dataset.id, 10);
+          renderRoomList(); updateRoomSummary();
+        });
+      });
+    }
+    document.getElementById('ape-room-search').addEventListener('input', renderRoomList);
+    document.getElementById('ape-room-clear').addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      __apeSelectedRoomId = null;
+      renderRoomList(); updateRoomSummary();
+    });
+    function updateRoomSummary() {
+      const r = __rooms.find(x => x.id === __apeSelectedRoomId);
+      const box = document.getElementById('ape-room-summary');
+      const nameEl = document.getElementById('ape-room-summary-name');
+      if (r) { nameEl.textContent = r.name; box.style.visibility = 'visible'; }
+      else { nameEl.textContent = '—'; }
+    }
+
+    // 與會者
+    function renderAttendeeList() {
+      const q = (document.getElementById('ape-att-search').value || '').toLowerCase();
+      const list = __users.filter(u => !q || u.display_name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
+      const box = document.getElementById('ape-att-list');
+      if (!list.length) { box.innerHTML = '<div style="padding:16px; text-align:center; color:var(--off-text-muted); font-size:13px">沒有符合的用戶</div>'; return; }
+      box.innerHTML = list.map(u => `
+        <div class="ape-attendee-item${__apeAttendees.has(u.id) ? ' selected' : ''}" data-id="${u.id}">
+          <span class="avatar ${avatarClass(u.id)}">${esc((u.display_name || '?').slice(0,1))}</span>
+          <div style="flex:1">
+            <b>${esc(u.display_name)}</b>
+            <small>${esc(u.email)}</small>
+          </div>
+          ${__apeAttendees.has(u.id) ? '<i class="ti ti-check" style="color:var(--off-primary)"></i>' : ''}
+        </div>`).join('');
+      box.querySelectorAll('.ape-attendee-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const id = parseInt(el.dataset.id, 10);
+          if (__apeAttendees.has(id)) __apeAttendees.delete(id);
+          else __apeAttendees.add(id);
+          renderAttendeeList(); updateAttendeeSummary();
+        });
+      });
+    }
+    document.getElementById('ape-att-search').addEventListener('input', renderAttendeeList);
+    function updateAttendeeSummary() {
+      const n = __apeAttendees.size;
+      const el = document.getElementById('ape-att-summary');
+      if (n > 0) { el.textContent = `${n} 位與會者`; el.style.color = '#111'; el.style.fontWeight = '500'; }
+      else       { el.textContent = '邀請與會者'; el.style.color = 'var(--off-text-muted)'; el.style.fontWeight = ''; }
+    }
+
+    // 儲存
+    async function submit(mode) {
+      // mode: 'pending' | 'approve'
+      const err = document.getElementById('ape-err');
+      err.style.display = 'none';
+      const id = parseInt(document.getElementById('ape-id').value, 10);
+      const sd = document.getElementById('ape-start-date').value;
+      const st = document.getElementById('ape-start-time').value;
+      const ed = document.getElementById('ape-end-date').value;
+      const et = document.getElementById('ape-end-time').value;
+      const payload = {
+        title: document.getElementById('ape-title').value.trim(),
+        start_at: combineDT(sd, st).toISOString(),
+        end_at:   combineDT(ed, et).toISOString(),
+        notes: document.getElementById('ape-notes').value.trim() || null,
+        resource_id: __apeSelectedRoomId,
+        type: __apePrivate ? 'private' : 'normal',
+        attendee_user_ids: [...__apeAttendees],
+      };
+      try {
+        await OffAPI.reservations.patch(id, payload);
+        if (mode === 'approve') {
+          await OffAPI.reservations.approve(id, { approve: true });
+        }
+        offCloseModal('ape-modal');
+        document.getElementById('apd-back').classList.remove('open');
+        loadList();
+      } catch (e) {
+        err.textContent = e.message || '儲存失敗';
+        err.style.display = 'block';
+      }
+    }
+    document.getElementById('ape-save-pending').addEventListener('click', () => submit('pending'));
+    document.getElementById('ape-save-approve').addEventListener('click', () => submit('approve'));
+
+    loadList();
+  </script>
+</body>
+</html>

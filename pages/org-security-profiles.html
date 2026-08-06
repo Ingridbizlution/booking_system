@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>組織目錄 · 安全性 · 用戶安全設定檔 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-module="org" data-page="sec-profile"
+      data-crumbs='[{"label":"組織目錄","href":"org-users.html"},{"label":"安全性"},{"label":"用戶安全設定檔"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#ffa6c1,#e75d84)"><i class="ti ti-shield-check"></i></span>
+        <div>
+          <div class="off-page-title-row">
+            <h1>用戶安全設定檔</h1>
+            <span class="off-new-tag">NEW</span>
+            <button class="off-btn off-btn-primary" onclick="offOpenModal('modal-new-profile')">
+              <i class="ti ti-plus"></i> 新增設定檔
+            </button>
+          </div>
+          <p class="off-page-desc off-new-note">
+            <b>新增：</b>為<b>特定用戶群組／部門</b>套用差異化的安全政策
+            —— MFA、IP 白/黑名單、登入時段、SSO / SAML —— 覆寫 <a href="org-security-password-policy.html">全域密碼政策</a>。
+          </p>
+        </div>
+      </div>
+
+      <!-- Profile 列表 -->
+      <div class="off-panel" style="padding:0">
+        <table class="off-table">
+          <thead>
+            <tr>
+              <th style="width:40px"><input type="checkbox"></th>
+              <th class="off-search-cell"><input placeholder="🔍 設定檔名稱"></th>
+              <th>套用對象</th>
+              <th>MFA</th>
+              <th>SSO</th>
+              <th>已啟用</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><input type="checkbox"></td>
+              <td>
+                <div style="display:flex; align-items:center; gap:8px">
+                  <span class="off-avatar" style="background:#e8f1ff; color:#1f80f0"><i class="ti ti-shield-check"></i></span>
+                  <span style="font-weight:500">預設（全體）</span>
+                </div>
+              </td>
+              <td><span class="off-chip">所有用戶</span></td>
+              <td><span class="off-chip chip-yellow">選用</span></td>
+              <td><span class="off-chip">關閉</span></td>
+              <td><label class="off-toggle"><input type="checkbox" checked><span class="off-toggle-slider"></span></label></td>
+              <td><button class="off-btn off-btn-ghost"><i class="ti ti-edit"></i></button></td>
+            </tr>
+            <tr>
+              <td><input type="checkbox"></td>
+              <td>
+                <div style="display:flex; align-items:center; gap:8px">
+                  <span class="off-avatar" style="background:#ffe1e4; color:#e03848"><i class="ti ti-shield-lock"></i></span>
+                  <span style="font-weight:500">管理者（強化）</span>
+                  <span class="off-new-tag">NEW</span>
+                </div>
+              </td>
+              <td><span class="off-chip chip-red">管理者</span> <span class="off-chip chip-red">支援</span></td>
+              <td><span class="off-chip chip-red">強制</span></td>
+              <td><span class="off-chip chip-primary">SAML</span></td>
+              <td><label class="off-toggle"><input type="checkbox" checked><span class="off-toggle-slider"></span></label></td>
+              <td><button class="off-btn off-btn-ghost"><i class="ti ti-edit"></i></button></td>
+            </tr>
+            <tr>
+              <td><input type="checkbox"></td>
+              <td>
+                <div style="display:flex; align-items:center; gap:8px">
+                  <span class="off-avatar" style="background:#d7f5ee; color:#12a97e"><i class="ti ti-map-pin"></i></span>
+                  <span style="font-weight:500">辦公室內網（IP 限制）</span>
+                  <span class="off-new-tag">NEW</span>
+                </div>
+              </td>
+              <td><span class="off-chip chip-primary">部門</span></td>
+              <td><span class="off-chip chip-yellow">選用</span></td>
+              <td><span class="off-chip">關閉</span></td>
+              <td><label class="off-toggle"><input type="checkbox" checked><span class="off-toggle-slider"></span></label></td>
+              <td><button class="off-btn off-btn-ghost"><i class="ti ti-edit"></i></button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Profile 詳細（設計預覽） -->
+      <div class="off-panel">
+        <div class="off-panel-head">
+          <span class="off-panel-icon" style="background:#ffe1e4; color:var(--off-red)"><i class="ti ti-shield-lock"></i></span>
+          <h3 class="off-panel-title">設定檔明細 · 管理者（強化） <span class="off-new-tag">NEW</span></h3>
+        </div>
+
+        <h4 style="font-size:13px; color:var(--off-text-muted); margin:8px 0 4px; letter-spacing:.5px">套用範圍</h4>
+        <div class="off-setting-row">
+          <div class="off-setting-label">
+            <b>套用對象</b>
+            <small>以「用戶群組」或「用戶屬性」選擇成員</small>
+          </div>
+          <div class="off-setting-control" style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end">
+            <span class="off-chip chip-red">管理者</span>
+            <span class="off-chip chip-red">支援</span>
+            <button class="off-btn off-btn-ghost"><i class="ti ti-plus"></i> 加入</button>
+          </div>
+        </div>
+        <div class="off-setting-row">
+          <div class="off-setting-label">
+            <b>覆寫全域密碼政策</b>
+            <small>本設定檔內的規則會蓋過全域設定</small>
+          </div>
+          <div class="off-setting-control">
+            <label class="off-toggle"><input type="checkbox" checked><span class="off-toggle-slider"></span></label>
+          </div>
+        </div>
+
+        <!-- 差異化密碼政策 -->
+        <h4 style="font-size:13px; color:var(--off-text-muted); margin:16px 0 4px; letter-spacing:.5px">差異化密碼政策 <span class="off-new-tag">NEW</span></h4>
+        <div class="off-setting-row">
+          <div class="off-setting-label"><b>最短長度</b><small>覆寫全域 12 → 16</small></div>
+          <div class="off-setting-control"><input type="number" min="8" max="128" value="16"> 個字元</div>
+        </div>
+        <div class="off-setting-row">
+          <div class="off-setting-label"><b>有效期</b><small>覆寫全域 90 → 30 天</small></div>
+          <div class="off-setting-control"><input type="number" min="0" max="365" value="30"> 天</div>
+        </div>
+        <div class="off-setting-row">
+          <div class="off-setting-label"><b>密碼歷史</b></div>
+          <div class="off-setting-control"><input type="number" min="0" max="24" value="12"> 個</div>
+        </div>
+
+        <!-- MFA -->
+        <h4 style="font-size:13px; color:var(--off-text-muted); margin:16px 0 4px; letter-spacing:.5px">多因素驗證 (MFA) <span class="off-new-tag">NEW</span></h4>
+        <div class="off-setting-row">
+          <div class="off-setting-label">
+            <b>MFA 模式</b>
+            <small>選用 = 用戶自願開；強制 = 未設定將無法登入</small>
+          </div>
+          <div class="off-setting-control">
+            <select>
+              <option>停用</option>
+              <option>選用</option>
+              <option selected>強制</option>
+            </select>
+          </div>
+        </div>
+        <div class="off-setting-row">
+          <div class="off-setting-label">
+            <b>可用因子</b>
+            <small>至少啟用 1 種</small>
+          </div>
+          <div class="off-setting-control" style="display:flex; flex-direction:column; gap:6px; align-items:flex-end">
+            <label style="display:flex; align-items:center; gap:6px; font-size:13px"><input type="checkbox" checked> TOTP（Google Authenticator）</label>
+            <label style="display:flex; align-items:center; gap:6px; font-size:13px"><input type="checkbox" checked> Passkey / WebAuthn</label>
+            <label style="display:flex; align-items:center; gap:6px; font-size:13px"><input type="checkbox"> 電郵 OTP</label>
+            <label style="display:flex; align-items:center; gap:6px; font-size:13px"><input type="checkbox"> SMS OTP</label>
+            <label style="display:flex; align-items:center; gap:6px; font-size:13px"><input type="checkbox"> 備援碼</label>
+          </div>
+        </div>
+        <div class="off-setting-row">
+          <div class="off-setting-label">
+            <b>信任裝置</b>
+            <small>在信任裝置上多久不再要求 MFA</small>
+          </div>
+          <div class="off-setting-control">
+            <input type="number" min="0" max="90" value="7"> 天
+          </div>
+        </div>
+
+        <!-- IP 白/黑名單 -->
+        <h4 style="font-size:13px; color:var(--off-text-muted); margin:16px 0 4px; letter-spacing:.5px">IP 白／黑名單 <span class="off-new-tag">NEW</span></h4>
+        <div class="off-setting-row" style="align-items:flex-start">
+          <div class="off-setting-label">
+            <b>白名單 (Allow)</b>
+            <small>僅這些網段可登入；空白 = 不限制</small>
+          </div>
+          <div class="off-setting-control">
+            <textarea placeholder="203.0.113.0/24&#10;198.51.100.10">203.0.113.0/24
+198.51.100.10</textarea>
+          </div>
+        </div>
+        <div class="off-setting-row" style="align-items:flex-start">
+          <div class="off-setting-label">
+            <b>黑名單 (Deny)</b>
+            <small>這些網段一律禁止登入</small>
+          </div>
+          <div class="off-setting-control">
+            <textarea placeholder="每行一個 IP 或 CIDR"></textarea>
+          </div>
+        </div>
+        <div class="off-setting-row">
+          <div class="off-setting-label">
+            <b>地區限制</b>
+            <small>僅允許以下地區登入</small>
+          </div>
+          <div class="off-setting-control">
+            <select multiple size="3" style="width:220px">
+              <option selected>台灣 (TW)</option>
+              <option selected>香港 (HK)</option>
+              <option>新加坡 (SG)</option>
+              <option>日本 (JP)</option>
+              <option>美國 (US)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 登入時段 -->
+        <h4 style="font-size:13px; color:var(--off-text-muted); margin:16px 0 4px; letter-spacing:.5px">登入時段 <span class="off-new-tag">NEW</span></h4>
+        <div class="off-setting-row">
+          <div class="off-setting-label">
+            <b>限制登入時段</b>
+            <small>僅指定時段內可登入</small>
+          </div>
+          <div class="off-setting-control">
+            <label class="off-toggle"><input type="checkbox" checked><span class="off-toggle-slider"></span></label>
+          </div>
+        </div>
+        <div class="off-setting-row">
+          <div class="off-setting-label"><b>星期</b><small>可勾選多個</small></div>
+          <div class="off-setting-control" style="display:flex; gap:4px; flex-wrap:wrap; max-width:260px; justify-content:flex-end">
+            <label class="off-chip"><input type="checkbox" checked style="margin-right:4px">一</label>
+            <label class="off-chip"><input type="checkbox" checked style="margin-right:4px">二</label>
+            <label class="off-chip"><input type="checkbox" checked style="margin-right:4px">三</label>
+            <label class="off-chip"><input type="checkbox" checked style="margin-right:4px">四</label>
+            <label class="off-chip"><input type="checkbox" checked style="margin-right:4px">五</label>
+            <label class="off-chip"><input type="checkbox" style="margin-right:4px">六</label>
+            <label class="off-chip"><input type="checkbox" style="margin-right:4px">日</label>
+          </div>
+        </div>
+        <div class="off-setting-row">
+          <div class="off-setting-label"><b>時段</b><small>本地時區 (UTC+8)</small></div>
+          <div class="off-setting-control" style="display:flex; gap:6px; align-items:center">
+            <input type="text" value="08:00" style="min-width:80px; text-align:center"> —
+            <input type="text" value="22:00" style="min-width:80px; text-align:center">
+          </div>
+        </div>
+        <div class="off-setting-row">
+          <div class="off-setting-label">
+            <b>時段外行為</b>
+            <small>時段外登入的處理方式</small>
+          </div>
+          <div class="off-setting-control">
+            <select>
+              <option>直接拒絕</option>
+              <option selected>需二次核可 (Approver)</option>
+              <option>僅寄告警不阻擋</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- SSO / SAML -->
+        <h4 style="font-size:13px; color:var(--off-text-muted); margin:16px 0 4px; letter-spacing:.5px">SSO / SAML <span class="off-new-tag">NEW</span></h4>
+        <div class="off-setting-row">
+          <div class="off-setting-label">
+            <b>啟用 SSO</b>
+            <small>啟用後密碼登入將被停用（除備援管理者）</small>
+          </div>
+          <div class="off-setting-control">
+            <label class="off-toggle"><input type="checkbox" checked><span class="off-toggle-slider"></span></label>
+          </div>
+        </div>
+        <div class="off-setting-row">
+          <div class="off-setting-label"><b>協定</b></div>
+          <div class="off-setting-control">
+            <select>
+              <option selected>SAML 2.0</option>
+              <option>OpenID Connect (OIDC)</option>
+            </select>
+          </div>
+        </div>
+        <div class="off-setting-row">
+          <div class="off-setting-label"><b>Identity Provider (IdP)</b><small>常見：Okta / Azure AD / Google Workspace</small></div>
+          <div class="off-setting-control">
+            <select>
+              <option>自訂</option>
+              <option selected>Microsoft Entra ID (Azure AD)</option>
+              <option>Okta</option>
+              <option>Google Workspace</option>
+              <option>JumpCloud</option>
+            </select>
+          </div>
+        </div>
+        <div class="off-setting-row">
+          <div class="off-setting-label"><b>Entity ID (Issuer)</b></div>
+          <div class="off-setting-control">
+            <input type="text" value="https://sts.windows.net/tenant-id/" style="min-width:280px">
+          </div>
+        </div>
+        <div class="off-setting-row">
+          <div class="off-setting-label"><b>SSO Login URL</b><small>IdP 提供的 SAML 端點</small></div>
+          <div class="off-setting-control">
+            <input type="text" value="https://login.microsoftonline.com/…/saml2" style="min-width:280px">
+          </div>
+        </div>
+        <div class="off-setting-row">
+          <div class="off-setting-label"><b>SLO Logout URL</b><small>單一登出端點（選填）</small></div>
+          <div class="off-setting-control">
+            <input type="text" placeholder="https://…/saml2/logout" style="min-width:280px">
+          </div>
+        </div>
+        <div class="off-setting-row" style="align-items:flex-start">
+          <div class="off-setting-label"><b>簽章憑證 (x.509)</b><small>PEM 格式；用於驗證 IdP 回應</small></div>
+          <div class="off-setting-control">
+            <textarea placeholder="-----BEGIN CERTIFICATE-----&#10;…&#10;-----END CERTIFICATE-----" style="width:320px; min-height:88px"></textarea>
+          </div>
+        </div>
+        <div class="off-setting-row">
+          <div class="off-setting-label">
+            <b>NameID 格式</b>
+            <small>與 IdP 一致；常用 emailAddress</small>
+          </div>
+          <div class="off-setting-control">
+            <select>
+              <option selected>emailAddress</option>
+              <option>persistent</option>
+              <option>transient</option>
+              <option>unspecified</option>
+            </select>
+          </div>
+        </div>
+        <div class="off-setting-row">
+          <div class="off-setting-label">
+            <b>屬性對應</b>
+            <small>SAML Attribute → Offision 欄位</small>
+          </div>
+          <div class="off-setting-control" style="display:flex; flex-direction:column; gap:6px; align-items:flex-end; font-size:12px; color:var(--off-text-muted)">
+            <span><code>mail</code> → email</span>
+            <span><code>displayName</code> → display_name</span>
+            <span><code>groups</code> → user_groups</span>
+            <button class="off-btn off-btn-ghost"><i class="ti ti-plus"></i> 加對應</button>
+          </div>
+        </div>
+        <div class="off-setting-row">
+          <div class="off-setting-label">
+            <b>自動佈建 (JIT Provisioning)</b>
+            <small>登入時若不存在則自動建立用戶</small>
+          </div>
+          <div class="off-setting-control">
+            <label class="off-toggle"><input type="checkbox" checked><span class="off-toggle-slider"></span></label>
+          </div>
+        </div>
+        <div class="off-setting-row">
+          <div class="off-setting-label">
+            <b>強制加密簽章</b>
+            <small>SAML AuthnRequest / Response 必須簽章</small>
+          </div>
+          <div class="off-setting-control">
+            <label class="off-toggle"><input type="checkbox" checked><span class="off-toggle-slider"></span></label>
+          </div>
+        </div>
+
+        <!-- Service Provider 資訊（提供給 IdP）-->
+        <h4 style="font-size:13px; color:var(--off-text-muted); margin:16px 0 4px; letter-spacing:.5px">
+          Service Provider 資訊 <small style="font-weight:400">（提供給 IdP 端設定用）</small>
+        </h4>
+        <div class="off-setting-row">
+          <div class="off-setting-label"><b>ACS URL</b></div>
+          <div class="off-setting-control" style="font-family:monospace; font-size:12px; color:#4b525f">
+            https://offision.example.com/saml/acs
+          </div>
+        </div>
+        <div class="off-setting-row">
+          <div class="off-setting-label"><b>SP Entity ID</b></div>
+          <div class="off-setting-control" style="font-family:monospace; font-size:12px; color:#4b525f">
+            urn:offision:sp:hq
+          </div>
+        </div>
+
+        <div style="text-align:right; margin-top:16px">
+          <button class="off-btn"><i class="ti ti-arrow-back"></i> 取消</button>
+          <button class="off-btn off-btn-primary"><i class="ti ti-device-floppy"></i> 儲存設定檔</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: 新增設定檔 -->
+  <div class="off-modal-back" id="modal-new-profile">
+    <div class="off-modal off-modal-wrap" style="grid-template-columns:1fr; width:min(520px, 92vw)">
+      <button class="off-modal-close" onclick="offCloseModal('modal-new-profile')"><i class="ti ti-x"></i></button>
+      <div class="off-modal-body">
+        <h3 style="margin:0 0 16px">新增用戶安全設定檔 <span class="off-new-tag">NEW</span></h3>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-tag"></i> 名稱</span>
+          <input placeholder="例：外部承包商（受限）">
+        </div>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-users"></i> 套用對象</span>
+          <select>
+            <option>用戶群組：外部承包商</option>
+            <option>屬性：employment_type = contractor</option>
+            <option>個別用戶</option>
+          </select>
+        </div>
+        <div class="off-field" style="align-items:flex-start"><span class="off-field-label">說明</span></div>
+        <textarea placeholder="這個設定檔的用途 …"></textarea>
+        <div style="text-align:right; margin-top:16px">
+          <button class="off-btn off-btn-primary" onclick="offCloseModal('modal-new-profile')">建立</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>

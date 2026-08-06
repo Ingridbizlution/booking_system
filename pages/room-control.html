@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>房間控制 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-module="control" data-page="home"
+      data-crumbs='[{"label":"房間控制","href":"room-control.html"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#58f5cd,#23c1a9)"><i class="ti ti-device-remote"></i></span>
+        <div>
+          <div class="off-page-title-row"><h1>房間控制</h1></div>
+          <p class="off-page-desc">將實體房間對應到智慧控制群組（燈、空調、投影、窗簾、音響）</p>
+        </div>
+        <div class="off-page-actions">
+          <button class="off-btn off-btn-primary"><i class="ti ti-plus"></i> 新增控制空間</button>
+        </div>
+      </div>
+
+      <div class="off-grid cols-3">
+        <div class="off-panel">
+          <div class="off-panel-head"><span class="off-panel-icon" style="background:#d7f5ee; color:#12a97e"><i class="ti ti-door"></i></span><h3 class="off-panel-title">會議室 A</h3></div>
+          <p style="color:var(--off-text-muted); font-size:13px">處理器：Extron IPCP · 4 個裝置</p>
+          <div style="display:flex; gap:6px; flex-wrap:wrap">
+            <span class="off-chip chip-primary"><i class="ti ti-bulb"></i> 燈光</span>
+            <span class="off-chip chip-primary"><i class="ti ti-snowflake"></i> 空調</span>
+            <span class="off-chip chip-primary"><i class="ti ti-projector"></i> 投影</span>
+            <span class="off-chip chip-primary"><i class="ti ti-window"></i> 窗簾</span>
+          </div>
+          <div style="margin-top:12px; display:flex; gap:6px; flex-wrap:wrap">
+            <button class="off-btn">會議</button>
+            <button class="off-btn">簡報</button>
+            <button class="off-btn">影片</button>
+            <button class="off-btn">清潔</button>
+          </div>
+        </div>
+        <div class="off-panel">
+          <div class="off-panel-head"><span class="off-panel-icon" style="background:#efe9ff; color:#7c67f4"><i class="ti ti-door"></i></span><h3 class="off-panel-title">董事長會議室</h3></div>
+          <p style="color:var(--off-text-muted); font-size:13px">處理器：Crestron 3 系列 · 5 個裝置</p>
+          <div style="display:flex; gap:6px; flex-wrap:wrap">
+            <span class="off-chip chip-purple">燈光</span><span class="off-chip chip-purple">空調</span><span class="off-chip chip-purple">投影</span><span class="off-chip chip-purple">窗簾</span><span class="off-chip chip-purple">音響</span>
+          </div>
+        </div>
+        <div class="off-panel">
+          <div class="off-panel-head"><span class="off-panel-icon" style="background:#fff2cd; color:#b7891b"><i class="ti ti-door"></i></span><h3 class="off-panel-title">培訓室</h3></div>
+          <p style="color:var(--off-text-muted); font-size:13px">處理器：QSC Core · 3 個裝置</p>
+          <div style="display:flex; gap:6px; flex-wrap:wrap">
+            <span class="off-chip chip-yellow">燈光</span><span class="off-chip chip-yellow">空調</span><span class="off-chip chip-yellow">音響</span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>地圖 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-module="map" data-page="map"
+      data-crumbs='[{"label":"地圖","href":"map.html"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#7cd6a7,#12a97e)"><i class="ti ti-map-2"></i></span>
+        <div>
+          <div class="off-page-title-row"><h1>地圖</h1></div>
+          <p class="off-page-desc">以樓層平面圖標示設施、房間、辦公桌與車位</p>
+        </div>
+        <div class="off-page-actions">
+          <button class="off-filter-pill">bizlution 辦公室 <i class="ti ti-chevron-down"></i></button>
+          <button class="off-filter-pill">一樓 <i class="ti ti-chevron-down"></i></button>
+        </div>
+      </div>
+
+      <div class="off-grid" style="grid-template-columns: 1fr 320px; gap:16px">
+        <div class="off-panel" style="padding:0; overflow:hidden">
+          <div style="position:relative; height:520px; background:
+            linear-gradient(180deg, #eef4fa, #dfeaf3);
+            border-radius:12px; margin:14px">
+            <svg viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg" style="width:100%; height:100%">
+              <rect x="10" y="10" width="180" height="110" fill="#fff" stroke="#c9d5e3"/>
+              <text x="20" y="30" font-size="11" fill="#4b525f">會議室 A</text>
+              <rect x="200" y="10" width="180" height="110" fill="#fff" stroke="#c9d5e3"/>
+              <text x="210" y="30" font-size="11" fill="#4b525f">會議室 B</text>
+              <rect x="10" y="130" width="180" height="120" fill="#fff" stroke="#c9d5e3"/>
+              <text x="20" y="150" font-size="11" fill="#4b525f">培訓室</text>
+              <rect x="200" y="130" width="180" height="120" fill="#fff" stroke="#c9d5e3"/>
+              <text x="210" y="150" font-size="11" fill="#4b525f">創新實驗室</text>
+              <circle cx="80" cy="70" r="8" fill="#1f80f0"/>
+              <circle cx="260" cy="60" r="8" fill="#12a97e"/>
+              <circle cx="100" cy="200" r="8" fill="#f39c3d"/>
+              <circle cx="290" cy="200" r="8" fill="#7c67f4"/>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <div class="off-panel">
+            <div class="off-panel-head"><span class="off-panel-icon"><i class="ti ti-map-pin"></i></span><h3 class="off-panel-title">圖釘資訊</h3></div>
+            <p style="color:var(--off-text-muted); font-size:13px">點擊平面圖上的圖釘以檢視資源即時狀態。</p>
+            <ul style="list-style:none; padding:0; margin:0">
+              <li style="display:flex; align-items:center; gap:8px; padding:8px 0"><span class="off-chip chip-primary">房間</span> 會議室 A · 可用</li>
+              <li style="display:flex; align-items:center; gap:8px; padding:8px 0"><span class="off-chip chip-green">房間</span> 會議室 B · 使用中</li>
+              <li style="display:flex; align-items:center; gap:8px; padding:8px 0"><span class="off-chip chip-yellow">桌</span> 培訓室 · 待預約</li>
+              <li style="display:flex; align-items:center; gap:8px; padding:8px 0"><span class="off-chip chip-purple">設備</span> 創新實驗室 · 維護</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>

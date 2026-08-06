@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>廣播 · 緊急 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-module="broadcast" data-page="emergency"
+      data-crumbs='[{"label":"廣播","href":"broadcast-announcements.html"},{"label":"緊急"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#ff9a8b,#e03848)"><i class="ti ti-alert-triangle"></i></span>
+        <div>
+          <div class="off-page-title-row">
+            <h1>緊急廣播</h1>
+            <button class="off-btn off-btn-primary" onclick="offOpenModal('modal-emg')"><i class="ti ti-plus"></i> 新增</button>
+          </div>
+          <p class="off-page-desc">觸發緊急事件、疏散或安全提醒</p>
+        </div>
+      </div>
+
+      <div class="off-panel" style="padding:0">
+        <table class="off-table">
+          <thead>
+            <tr><th>標題</th><th>層級</th><th>範圍</th><th>顯示通道</th><th>觸發者</th><th>時間</th><th>狀態</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>火警演習</td><td><span class="off-chip chip-yellow">中</span></td><td>HQ / 一樓</td><td>App、電子標牌、Email</td><td>Ingrid</td><td>7/29 14:00</td><td><span class="off-chip chip-green">已結束</span></td></tr>
+            <tr><td>電力異常</td><td><span class="off-chip chip-red">高</span></td><td>台北分公司</td><td>App、電子標牌、簡訊</td><td>Admin</td><td>7/12 09:15</td><td><span class="off-chip chip-green">已結束</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <div class="off-modal-back" id="modal-emg">
+    <div class="off-modal off-modal-wrap">
+      <button class="off-modal-close" onclick="offCloseModal('modal-emg')"><i class="ti ti-x"></i></button>
+      <aside class="off-modal-side">
+        <h3>新增緊急廣播</h3>
+        <p>依照 5 步驟建立一則緊急事件。</p>
+        <div class="off-step active"><span class="off-step-no">1</span><div>資訊</div></div>
+        <div class="off-step"><span class="off-step-no">2</span><div>詳細</div></div>
+        <div class="off-step"><span class="off-step-no">3</span><div>範圍 1</div></div>
+        <div class="off-step"><span class="off-step-no">4</span><div>範圍 2</div></div>
+        <div class="off-step"><span class="off-step-no">5</span><div>顯示</div></div>
+      </aside>
+      <div class="off-modal-body">
+        <div class="off-field"><span class="off-field-label">標題</span><input placeholder="例：火警演習"></div>
+        <div class="off-field"><span class="off-field-label">緊急層級</span>
+          <select><option>低</option><option>中</option><option selected>高</option><option>極高</option></select>
+        </div>
+        <div class="off-field" style="align-items:flex-start"><span class="off-field-label">訊息內容</span></div>
+        <textarea placeholder="請輸入緊急訊息…"></textarea>
+        <div class="off-modal-foot"><button class="off-btn off-btn-primary">下一個 <i class="ti ti-arrow-right"></i></button></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>

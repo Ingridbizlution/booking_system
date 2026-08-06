@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>廣播 · 公告 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-module="broadcast" data-page="announcements"
+      data-crumbs='[{"label":"廣播","href":"broadcast-announcements.html"},{"label":"公告"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#f4c96b,#f39c3d)"><i class="ti ti-speakerphone"></i></span>
+        <div>
+          <div class="off-page-title-row">
+            <h1>公告</h1>
+            <button class="off-btn off-btn-primary" onclick="offOpenModal('modal-ann')"><i class="ti ti-plus"></i> 增加公告</button>
+          </div>
+          <p class="off-page-desc">向團隊與裝置即時廣播訊息</p>
+        </div>
+      </div>
+
+      <div class="off-panel" style="padding:0">
+        <table class="off-table">
+          <thead>
+            <tr><th style="width:40px"><input type="checkbox"></th><th>標題</th><th>置頂</th><th>生效期間</th><th>目標</th><th>建立者</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><input type="checkbox"></td><td>系統維護通知</td><td><span class="off-chip chip-primary">是</span></td><td>8/1 - 8/31</td><td><span class="off-chip">全公司</span></td><td>Ingrid</td></tr>
+            <tr><td><input type="checkbox"></td><td>颱風放假公告</td><td><span class="off-chip">否</span></td><td>7/28 - 7/29</td><td><span class="off-chip">HQ</span></td><td>Ingrid</td></tr>
+            <tr><td><input type="checkbox"></td><td>Q3 全員大會</td><td><span class="off-chip">否</span></td><td>9/1 - 9/2</td><td><span class="off-chip">主管群組</span></td><td>Ingrid</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <div class="off-modal-back" id="modal-ann">
+    <div class="off-modal off-modal-wrap">
+      <button class="off-modal-close" onclick="offCloseModal('modal-ann')"><i class="ti ti-x"></i></button>
+      <aside class="off-modal-side">
+        <h3>增加公告</h3>
+        <p>向團隊與裝置即時廣播訊息，觸達用戶界面、行動應用程式以及每個預約面板。</p>
+        <div class="off-step active"><span class="off-step-no"><i class="ti ti-writing"></i></span><div>內容</div></div>
+        <div class="off-step"><span class="off-step-no"><i class="ti ti-adjustments"></i></span><div>條件</div></div>
+      </aside>
+      <div class="off-modal-body">
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-arrow-up"></i> 置頂<br><small style="color:var(--off-text-muted)">公告將始終顯示在列表頂部</small></span><label class="form-switch"><input type="checkbox"></label></div>
+        <label style="font-size:14px; font-weight:600; margin:12px 0 6px; display:block">公告</label>
+        <div class="off-panel" style="padding:0; margin:0">
+          <div style="display:flex; gap:12px; padding:10px 14px; border-bottom:1px solid var(--off-border); color:#5b6472">
+            <i class="ti ti-arrow-back-up"></i><i class="ti ti-arrow-forward-up"></i>
+            <span style="width:1px; background:var(--off-border)"></span>
+            <i class="ti ti-bold"></i><i class="ti ti-italic"></i><i class="ti ti-underline"></i><i class="ti ti-strikethrough"></i>
+            <span style="width:1px; background:var(--off-border)"></span>
+            <i class="ti ti-align-left"></i><i class="ti ti-list-numbers"></i><i class="ti ti-list"></i><i class="ti ti-quote"></i><i class="ti ti-table"></i>
+          </div>
+          <textarea style="padding:14px" placeholder="輸入公告內容…"></textarea>
+        </div>
+        <div class="off-modal-foot"><button class="off-btn off-btn-primary">儲存</button></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>

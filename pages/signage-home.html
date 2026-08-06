@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>電子標牌 · 首頁 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-module="signage" data-page="home"
+      data-crumbs='[{"label":"電子標牌","href":"signage-home.html"},{"label":"首頁"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-panel" style="background:linear-gradient(135deg,#fff5f8,#fff); border:1px solid #ffe1e6">
+        <h1 style="color:#e75d84; margin:0 0 8px">歡迎使用數位看板模組</h1>
+        <p style="color:var(--off-text-muted)">管理您的數位看板顯示器，以在組織內傳遞資訊、公告和即時數據</p>
+      </div>
+
+      <h2 style="font-size:18px; margin:24px 0 12px">快速查看</h2>
+      <div class="off-grid cols-2">
+        <div class="off-panel">
+          <div class="off-panel-head"><span class="off-panel-icon"><i class="ti ti-device-tv"></i></span><h3 class="off-panel-title">看板狀態</h3><span class="off-chip" style="margin-left:auto">2 螢幕</span></div>
+          <div style="display:flex; align-items:center; gap:20px">
+            <div style="width:120px; height:120px; border-radius:50%; background:conic-gradient(#e03848 0 100%, #12a97e 0 0); display:flex; align-items:center; justify-content:center">
+              <div style="width:80px; height:80px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; font-weight:600">0%</div>
+            </div>
+            <ul style="list-style:none; padding:0; margin:0; font-size:14px">
+              <li><span style="display:inline-block; width:10px; height:10px; background:#12a97e; border-radius:50%; margin-right:8px"></span>線上 &nbsp; 0</li>
+              <li><span style="display:inline-block; width:10px; height:10px; background:#e03848; border-radius:50%; margin-right:8px"></span>離線 &nbsp; 2</li>
+            </ul>
+          </div>
+          <div style="margin-top:14px"><a href="#" style="color:var(--off-primary); font-size:13px">查看所有看板 →</a></div>
+        </div>
+
+        <div class="off-panel">
+          <div class="off-panel-head"><span class="off-panel-icon" style="background:#ffe1e4; color:#e03848"><i class="ti ti-alert-triangle"></i></span><h3 class="off-panel-title">離線設備</h3><span class="off-chip chip-red" style="margin-left:auto">2 裝置</span></div>
+          <ul style="list-style:none; padding:0; margin:0; font-size:14px">
+            <li style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--off-border)"><span><i class="ti ti-device-desktop"></i> 接待處與大堂 1</span><i class="ti ti-chevron-right"></i></li>
+            <li style="display:flex; justify-content:space-between; padding:10px 0"><span><i class="ti ti-device-desktop"></i> 接待處與大堂 2</span><i class="ti ti-chevron-right"></i></li>
+          </ul>
+          <div style="margin-top:14px"><a href="#" style="color:var(--off-primary); font-size:13px">查看監控 →</a></div>
+        </div>
+      </div>
+
+      <h2 style="font-size:18px; margin:24px 0 12px">入門指南</h2>
+      <div class="off-grid cols-3">
+        <div class="off-panel">
+          <span class="off-chip chip-primary">步驟 1</span>
+          <h3 style="margin:8px 0 4px">新增內容</h3>
+          <p style="color:var(--off-text-muted); font-size:13px">上傳圖片、影片與多媒體內容以供顯示</p>
+        </div>
+        <div class="off-panel">
+          <span class="off-chip chip-primary">步驟 2</span>
+          <h3 style="margin:8px 0 4px">建立播放清單</h3>
+          <p style="color:var(--off-text-muted); font-size:13px">將內容排序並定於指定時間播放</p>
+        </div>
+        <div class="off-panel">
+          <span class="off-chip chip-primary">步驟 3</span>
+          <h3 style="margin:8px 0 4px">新增看板設備</h3>
+          <p style="color:var(--off-text-muted); font-size:13px">綁定實際看板裝置與播放清單</p>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>

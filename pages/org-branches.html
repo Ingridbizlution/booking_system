@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>組織目錄 · 分支機構管理 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+  <style>
+    .branch-card {
+      background:#fff; border:1px solid var(--off-border); border-radius:14px;
+      margin-bottom:14px; overflow:hidden;
+    }
+    .branch-head {
+      display:flex; align-items:center; gap:12px;
+      padding:14px 18px; border-bottom:1px solid var(--off-border);
+      background:#fbfcff;
+    }
+    .branch-head .off-avatar { background:var(--off-primary-soft); color:var(--off-primary); }
+    .branch-head .name { font-weight:600; font-size:15px; color:#111; }
+    .branch-head .meta { color:var(--off-text-muted); font-size:12px; margin-top:2px; }
+    .branch-head .actions { margin-left:auto; display:flex; gap:8px; }
+    .loc-list { padding:8px 18px 14px; }
+    .loc-item {
+      display:flex; align-items:center; gap:10px;
+      padding:8px 12px; border-radius:10px;
+      background:#f8f9fc; margin-top:6px; font-size:14px;
+    }
+    .loc-item .loc-type { font-size:11px; color:#7a8394; }
+    .loc-empty {
+      padding:10px 12px; color:var(--off-text-muted);
+      font-size:13px; font-style:italic;
+    }
+  </style>
+</head>
+<body data-module="org" data-page="branches"
+      data-crumbs='[{"label":"組織目錄","href":"org-users.html"},{"label":"分支機構管理"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#ffa6c1,#e75d84)"><i class="ti ti-building-community"></i></span>
+        <div>
+          <div class="off-page-title-row">
+            <h1>分支機構管理</h1>
+            <button class="off-btn off-btn-primary" onclick="offOpenModal('modal-new-branch')">
+              <i class="ti ti-plus"></i> 新增分支
+            </button>
+          </div>
+          <p class="off-page-desc">組織 → 分支 → 樓層</p>
+        </div>
+      </div>
+
+      <div id="branches-list">
+        <div style="text-align:center; padding:40px; color:var(--off-text-muted)">
+          <i class="ti ti-loader-2"></i> 讀取中…
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: 新增分支 -->
+  <div class="off-modal-back" id="modal-new-branch">
+    <div class="off-modal off-modal-wrap" style="grid-template-columns:1fr; width:min(520px, 92vw)">
+      <button class="off-modal-close" onclick="offCloseModal('modal-new-branch')"><i class="ti ti-x"></i></button>
+      <div class="off-modal-body">
+        <h3 style="margin:0 0 16px">新增分支機構</h3>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-building"></i> 分支名稱</span>
+          <input id="nb-name" placeholder="例：台中分公司">
+        </div>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-map-pin"></i> 地址</span>
+          <input id="nb-addr" placeholder="選填">
+        </div>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-world"></i> 時區</span>
+          <input id="nb-tz" value="Asia/Taipei">
+        </div>
+        <div style="text-align:right; margin-top:16px">
+          <button class="off-btn off-btn-primary" id="nb-save">建立</button>
+        </div>
+        <div id="nb-err" style="color:var(--off-red); font-size:13px; margin-top:8px; display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: 新增樓層 -->
+  <div class="off-modal-back" id="modal-new-loc">
+    <div class="off-modal off-modal-wrap" style="grid-template-columns:1fr; width:min(520px, 92vw)">
+      <button class="off-modal-close" onclick="offCloseModal('modal-new-loc')"><i class="ti ti-x"></i></button>
+      <div class="off-modal-body">
+        <h3 style="margin:0 0 16px">新增樓層 / 地點</h3>
+        <p style="color:var(--off-text-muted); font-size:13px; margin-top:-8px">
+          隸屬分支：<b id="nl-branch-name"></b>
+        </p>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-tag"></i> 名稱</span>
+          <input id="nl-name" placeholder="例：3F、B1、東翼">
+        </div>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-category"></i> 類型</span>
+          <select id="nl-type">
+            <option value="floor">樓層（floor）</option>
+            <option value="building">建築（building）</option>
+            <option value="area">區域（area）</option>
+          </select>
+        </div>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-photo"></i> 平面圖 URL</span>
+          <input id="nl-plan" placeholder="選填">
+        </div>
+        <div style="text-align:right; margin-top:16px">
+          <button class="off-btn off-btn-primary" id="nl-save">建立</button>
+        </div>
+        <div id="nl-err" style="color:var(--off-red); font-size:13px; margin-top:8px; display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script>
+    OffAuth.requireLogin();
+
+    const esc = s => (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    let currentBranchIdForLoc = null;
+
+    async function loadAll() {
+      const box = document.getElementById('branches-list');
+      try {
+        const [branches, locations] = await Promise.all([
+          OffAPI.branches.list(),
+          OffAPI.locations.list(),
+        ]);
+        if (!branches.length) {
+          box.innerHTML = `<div style="text-align:center; padding:40px; color:var(--off-text-muted)">尚無分支，點右上「新增分支」建立第一個</div>`;
+          return;
+        }
+        const byBranch = {};
+        locations.forEach(l => {
+          (byBranch[l.branch_id] = byBranch[l.branch_id] || []).push(l);
+        });
+
+        box.innerHTML = branches.map(b => {
+          const locs = (byBranch[b.id] || []).sort((a, b) => a.id - b.id);
+          return `
+            <div class="branch-card">
+              <div class="branch-head">
+                <span class="off-avatar"><i class="ti ti-building"></i></span>
+                <div>
+                  <div class="name">${esc(b.name)}</div>
+                  <div class="meta">
+                    <i class="ti ti-map-pin"></i> ${esc(b.address || '—')}
+                    &nbsp;·&nbsp;<i class="ti ti-world"></i> ${esc(b.timezone)}
+                    &nbsp;·&nbsp;${locs.length} 個樓層 / 地點
+                  </div>
+                </div>
+                <div class="actions">
+                  <button class="off-btn" data-add-loc="${b.id}" data-branch-name="${esc(b.name)}">
+                    <i class="ti ti-plus"></i> 新增樓層
+                  </button>
+                </div>
+              </div>
+              <div class="loc-list">
+                ${locs.length ? locs.map(l => `
+                  <div class="loc-item">
+                    <i class="ti ti-stairs" style="color:var(--off-primary)"></i>
+                    <span>${esc(l.name)}</span>
+                    <span class="loc-type">(${esc(l.type)})</span>
+                    ${l.floor_plan_url ? `<a href="${esc(l.floor_plan_url)}" target="_blank" style="margin-left:auto; font-size:12px; color:var(--off-primary)">平面圖 →</a>` : ''}
+                  </div>
+                `).join('') : `<div class="loc-empty">尚無樓層，可從右上「新增樓層」建立</div>`}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        box.querySelectorAll('[data-add-loc]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            currentBranchIdForLoc = parseInt(btn.dataset.addLoc, 10);
+            document.getElementById('nl-branch-name').textContent = btn.dataset.branchName;
+            document.getElementById('nl-name').value = '';
+            document.getElementById('nl-plan').value = '';
+            document.getElementById('nl-err').style.display = 'none';
+            offOpenModal('modal-new-loc');
+          });
+        });
+      } catch (e) {
+        box.innerHTML = `<div style="text-align:center; padding:40px; color:var(--off-red)">讀取失敗：${esc(e.message)}</div>`;
+      }
+    }
+
+    document.getElementById('nb-save').addEventListener('click', async () => {
+      const err = document.getElementById('nb-err');
+      err.style.display = 'none';
+      try {
+        await OffAPI.branches.create({
+          name: document.getElementById('nb-name').value.trim(),
+          address: document.getElementById('nb-addr').value.trim() || null,
+          timezone: document.getElementById('nb-tz').value.trim() || 'Asia/Taipei',
+        });
+        offCloseModal('modal-new-branch');
+        document.getElementById('nb-name').value = '';
+        document.getElementById('nb-addr').value = '';
+        await loadAll();
+      } catch (e) {
+        err.textContent = e.message; err.style.display = 'block';
+      }
+    });
+
+    document.getElementById('nl-save').addEventListener('click', async () => {
+      const err = document.getElementById('nl-err');
+      err.style.display = 'none';
+      try {
+        const res = await fetch(`${OFF_API_BASE}/locations`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${OffAuth.token()}`,
+          },
+          body: JSON.stringify({
+            branch_id: currentBranchIdForLoc,
+            name: document.getElementById('nl-name').value.trim(),
+            type: document.getElementById('nl-type').value,
+            floor_plan_url: document.getElementById('nl-plan').value.trim() || null,
+          }),
+        });
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}));
+          throw new Error(j.detail || res.statusText);
+        }
+        offCloseModal('modal-new-loc');
+        await loadAll();
+      } catch (e) {
+        err.textContent = e.message; err.style.display = 'block';
+      }
+    });
+
+    loadAll();
+  </script>
+</body>
+</html>

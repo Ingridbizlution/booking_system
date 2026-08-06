@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>組織目錄 · 分類 · 用戶屬性 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-module="org" data-page="cat-attrs"
+      data-crumbs='[{"label":"組織目錄","href":"org-users.html"},{"label":"分類"},{"label":"用戶屬性"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#ffa6c1,#e75d84)"><i class="ti ti-list-details"></i></span>
+        <div>
+          <div class="off-page-title-row">
+            <h1>用戶屬性</h1>
+            <span class="off-new-tag">NEW</span>
+            <button class="off-btn off-btn-primary" onclick="offOpenModal('modal-new-attr')">
+              <i class="ti ti-plus"></i> 新增屬性
+            </button>
+          </div>
+          <p class="off-page-desc off-new-note">
+            <b>新增：</b>為用戶個人資料自訂欄位（例如：員工編號、生日、緊急聯絡人）。
+            屬性可控制是否顯示於個人資料、是否允許用戶自行編輯、以及對其他用戶的可見性。
+          </p>
+        </div>
+      </div>
+
+      <!-- 空狀態 -->
+      <div class="off-panel">
+        <div class="off-empty">
+          <i class="ti ti-list-search"></i>
+          <div style="font-size:15px; color:#2b2f3a; margin-bottom:4px">尚未建立任何用戶屬性</div>
+          <div class="off-new-note" style="max-width:520px; margin:8px auto 16px">
+            系統預設欄位（姓名、電郵、頭像、狀態、群組）皆已內建於用戶頁；
+            <b>用戶屬性</b>用來擴充 <b>額外</b> 的自訂欄位，例如「員工編號」「到職日」「膳食偏好」…
+          </div>
+          <button class="off-btn off-btn-primary" onclick="offOpenModal('modal-new-attr')">
+            <i class="ti ti-plus"></i> 新增第一個屬性
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal：新增屬性（表單，非子頁面） -->
+  <div class="off-modal-back" id="modal-new-attr">
+    <div class="off-modal off-modal-wrap" style="grid-template-columns:1fr; width:min(600px, 92vw)">
+      <button class="off-modal-close" onclick="offCloseModal('modal-new-attr')"><i class="ti ti-x"></i></button>
+      <div class="off-modal-body">
+        <h3 style="margin:0 0 4px">新增屬性 <span class="off-new-tag">NEW</span></h3>
+        <p class="off-new-note" style="margin:0 0 16px">
+          此為<b>表單</b>，不是子頁面 — 完成後回到「用戶屬性」清單。
+        </p>
+
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-tag"></i> 名稱 <span style="color:red">*</span></span>
+          <input placeholder="例：員工編號">
+        </div>
+        <div class="off-field" style="align-items:flex-start"><span class="off-field-label"><i class="ti ti-file-description"></i> 描述</span></div>
+        <textarea placeholder="說明此屬性的用途（顯示於編輯區的提示）"></textarea>
+
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-icons"></i> 圖標</span>
+          <input placeholder="ti-id-badge / ti-cake / …" value="ti-input">
+        </div>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-forms"></i> 欄位類型 <span style="color:red">*</span></span>
+          <select>
+            <option>單行文字 (text)</option>
+            <option>多行文字 (textarea)</option>
+            <option>數字 (number)</option>
+            <option>日期 (date)</option>
+            <option>下拉選單 (select)</option>
+            <option>多選 (multi-select)</option>
+            <option>開關 (boolean)</option>
+            <option>電話 (phone)</option>
+            <option>電郵 (email)</option>
+            <option>URL</option>
+          </select>
+        </div>
+
+        <div style="border-top:1px solid var(--off-border); margin-top:12px; padding-top:8px">
+          <h4 style="font-size:13px; color:var(--off-text-muted); margin:8px 0 4px; letter-spacing:.5px">
+            設定
+          </h4>
+
+          <div class="off-setting-row">
+            <div class="off-setting-label">
+              <b>在個人資料中可見</b>
+              <small>是否顯示於用戶「個人資料」頁的欄位區塊</small>
+            </div>
+            <div class="off-setting-control">
+              <label class="off-toggle"><input type="checkbox" checked><span class="off-toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="off-setting-row">
+            <div class="off-setting-label">
+              <b>允許用戶編輯</b>
+              <small>關閉則僅管理者可修改（唯讀）</small>
+            </div>
+            <div class="off-setting-control">
+              <label class="off-toggle"><input type="checkbox" checked><span class="off-toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="off-setting-row">
+            <div class="off-setting-label">
+              <b>對其他用戶可見</b>
+              <small>關閉則僅本人與管理者可見（隱私欄位）</small>
+            </div>
+            <div class="off-setting-control">
+              <label class="off-toggle"><input type="checkbox"><span class="off-toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="off-setting-row">
+            <div class="off-setting-label">
+              <b>已啟用</b>
+              <small>停用後不會出現於個人資料與匯入匯出欄位</small>
+            </div>
+            <div class="off-setting-control">
+              <label class="off-toggle"><input type="checkbox" checked><span class="off-toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="off-setting-row">
+            <div class="off-setting-label">
+              <b>分支機構管理</b>
+              <small>允許分支機構管理員（Branch Admin）覆寫此屬性值</small>
+            </div>
+            <div class="off-setting-control">
+              <label class="off-toggle"><input type="checkbox"><span class="off-toggle-slider"></span></label>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px">
+          <button class="off-btn" onclick="offCloseModal('modal-new-attr')">取消</button>
+          <button class="off-btn off-btn-primary" onclick="offCloseModal('modal-new-attr')">建立屬性</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>

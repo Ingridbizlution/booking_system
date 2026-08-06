@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>顯示與篩選 · 附屬設備 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+  <style>
+    .am-thumb {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: #f2f4f8; display: inline-flex; align-items: center; justify-content: center;
+      color: #6b7280; font-size: 18px;
+    }
+    .am-rooms-cell { color: #111; font-size: 13px; }
+    .am-rooms-cell .more { color: var(--off-text-muted); font-size: 12px; }
+
+    /* Drawer */
+    .amd-preview {
+      background: #f4f6fa; border-radius: 14px;
+      padding: 32px; text-align: center;
+      margin: 0 20px 12px;
+    }
+    .amd-preview .ph {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 80px; height: 80px;
+      background: #eef1f6; border-radius: 16px; color: #cfd4de; font-size: 40px;
+    }
+    .amd-title-row { padding: 0 20px 6px; }
+    .amd-title-row h3 { margin: 0; font-size: 20px; font-weight: 700; }
+    .amd-actions {
+      display: flex; gap: 6px; padding: 8px 20px 12px;
+    }
+    .amd-actions button {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 6px 14px; border-radius: 999px;
+      border: 0; cursor: pointer; font-size: 13px;
+    }
+    .amd-actions .btn-edit { background: var(--off-primary); color: #fff; font-weight: 500; }
+    .amd-actions .btn-copy { background: #f2f4f8; color: #4b525f; }
+    .amd-field {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      padding: 12px 20px; border-bottom: 1px solid var(--off-border);
+      font-size: 14px; gap: 10px;
+    }
+    .amd-field .lbl { color: var(--off-text-muted); font-size: 12px; }
+    .amd-field .val { color: #111; margin-top: 2px; }
+    .amd-field .val.muted { color: var(--off-text-muted); }
+    .amd-field .pencil { color: #9aa3b0; cursor: pointer; background: transparent; border: 0; padding: 4px; }
+    .amd-field .pencil:hover { color: var(--off-primary); }
+    .amd-uid-box {
+      margin: 8px 20px;
+      background: #f8f9fc; padding: 10px 12px;
+      border-radius: 8px; font-family: monospace; font-size: 12px; color: #4b525f;
+    }
+    .amd-uid-box div { display: flex; justify-content: space-between; padding: 3px 0; }
+    .amd-uid-box b { color: #111; }
+    .amd-foot {
+      padding: 14px 20px;
+      border-top: 1px solid var(--off-border);
+    }
+    .amd-foot .btn-del {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: transparent; color: var(--off-red);
+      border: 0; padding: 6px 12px; cursor: pointer; font-size: 13px;
+    }
+    .amd-foot .btn-del:hover { text-decoration: underline; }
+
+    /* Edit modal: icon picker */
+    .icon-grid {
+      display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px;
+      padding: 8px 0;
+    }
+    .icon-grid .icon-opt {
+      width: 100%; aspect-ratio: 1; border: 1.5px solid var(--off-border);
+      border-radius: 10px; background: #fff; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 22px; color: #6b7280;
+    }
+    .icon-grid .icon-opt:hover { background: #f4f6fa; }
+    .icon-grid .icon-opt.selected { border-color: var(--off-primary); background: var(--off-primary-soft); color: var(--off-primary); }
+
+    /* Edit modal: resource assign list */
+    .assign-search { padding: 0 0 12px; }
+    .assign-search input {
+      width: 100%; padding: 8px 12px; border: 1px solid var(--off-border);
+      border-radius: 10px; font-size: 13px; outline: none; background: #f9fafc;
+    }
+    .assign-search input:focus { border-color: var(--off-primary); }
+    .assign-group { margin-bottom: 8px; }
+    .assign-group-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 4px 4px; font-size: 13px; color: var(--off-text-muted);
+      border-bottom: 1px solid var(--off-border);
+    }
+    .assign-group-head .sel-all { color: var(--off-primary); font-size: 12px; cursor: pointer; }
+    .assign-group-head .sel-all:hover { text-decoration: underline; }
+    .assign-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 8px; border-radius: 10px; cursor: pointer;
+    }
+    .assign-item:hover { background: #f4f6fa; }
+    .assign-item .radio {
+      width: 20px; height: 20px; border-radius: 50%;
+      border: 2px solid #cfd4de; display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: all .15s;
+    }
+    .assign-item.selected .radio {
+      border-color: var(--off-primary);
+      background: var(--off-primary);
+    }
+    .assign-item.selected .radio::after {
+      content: ""; width: 8px; height: 8px; border-radius: 50%; background: #fff;
+    }
+    .assign-item .name { font-size: 14px; color: #2b2f3a; }
+
+    /* sub-nav disabled child fix */
+    .off-nav .off-sub li a.disabled {
+      opacity: .4 !important; cursor: not-allowed !important;
+      pointer-events: auto;
+    }
+    .off-nav .off-sub li a.disabled:hover { background: transparent !important; }
+  </style>
+</head>
+<body data-module="reservation" data-page="display-amenities"
+      data-crumbs='[{"label":"預約管理","href":"reservation-dashboard.html"},{"label":"顯示與篩選"},{"label":"附屬設備"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#58c7f5,#1f80f0)"><i class="ti ti-puzzle"></i></span>
+        <div>
+          <div class="off-page-title-row">
+            <h1>附屬設備</h1>
+            <button class="off-btn off-btn-primary" id="btn-new-am">
+              <i class="ti ti-plus"></i> 新增
+            </button>
+          </div>
+          <p class="off-page-desc">資源附加項目列表，可協助用戶找到最理想的空間</p>
+        </div>
+        <div class="off-page-actions">
+          <button class="off-btn"><i class="ti ti-adjustments-alt"></i> 排序 / 欄位</button>
+        </div>
+      </div>
+
+      <div class="off-panel" style="padding:0">
+        <table class="off-table">
+          <thead>
+            <tr>
+              <th style="width:40px"><input type="checkbox" id="am-check-all"></th>
+              <th class="off-search-cell"><input placeholder="🔍 名稱" id="am-search"></th>
+              <th>房間 <i class="ti ti-filter"></i></th>
+              <th>辦公桌 <i class="ti ti-filter"></i></th>
+              <th>車位 <i class="ti ti-filter"></i></th>
+            </tr>
+          </thead>
+          <tbody id="am-tbody">
+            <tr><td colspan="5" style="text-align:center; padding:24px; color:var(--off-text-muted)">
+              <i class="ti ti-loader-2"></i> 讀取中…
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- ==================== 右側 Drawer ==================== -->
+  <div class="off-drawer-back" id="amd-back">
+    <aside class="off-drawer" style="width:min(440px, 96vw)">
+      <button class="off-drawer-close" id="amd-close" style="position:absolute; top:12px; right:12px; z-index:2"><i class="ti ti-x"></i></button>
+
+      <div class="off-drawer-body" style="padding:20px 0 0; overflow-y:auto">
+        <div class="amd-preview">
+          <div class="ph" id="amd-icon-ph"><i class="ti ti-box"></i></div>
+        </div>
+        <div class="amd-title-row">
+          <h3 id="amd-title">—</h3>
+        </div>
+        <div class="amd-actions">
+          <button class="btn-edit" id="amd-edit"><i class="ti ti-pencil"></i> 編輯</button>
+          <button class="btn-copy" id="amd-copy"><i class="ti ti-copy"></i> 複製</button>
+        </div>
+
+        <!-- 房間 -->
+        <div class="amd-field">
+          <div>
+            <div class="lbl">房間</div>
+            <div class="val" id="amd-rooms">—</div>
+          </div>
+          <button class="pencil" title="編輯"><i class="ti ti-pencil"></i></button>
+        </div>
+
+        <!-- 分支機構管理 -->
+        <div class="amd-field">
+          <div>
+            <div class="lbl">分支機構管理</div>
+            <div class="val" id="amd-branch">—</div>
+          </div>
+        </div>
+
+        <!-- 創建者 -->
+        <div class="amd-field">
+          <div>
+            <div class="lbl">創建者</div>
+            <div class="val" id="amd-creator">—</div>
+            <small style="color:var(--off-text-muted); font-size:12px" id="amd-created-at">—</small>
+          </div>
+        </div>
+
+        <!-- 修改者 -->
+        <div class="amd-field">
+          <div>
+            <div class="lbl">修改者</div>
+            <div class="val" id="amd-updater">—</div>
+          </div>
+        </div>
+
+        <!-- 識別碼 -->
+        <div class="lbl" style="padding:12px 20px 4px; color:var(--off-text-muted); font-size:12px">識別碼</div>
+        <div class="amd-uid-box">
+          <div><span>ID</span><b id="amd-id">—</b></div>
+          <div><span>UID</span><b id="amd-uid">—</b></div>
+          <div><span>訪問ID</span><b id="amd-access-id">—</b></div>
+        </div>
+      </div>
+
+      <div class="amd-foot">
+        <button class="btn-del" id="amd-del"><i class="ti ti-trash"></i> 刪除</button>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ==================== 新增 Modal ==================== -->
+  <div class="off-modal-back" id="modal-new-am">
+    <div class="off-modal off-modal-wrap" style="grid-template-columns:1fr; width:min(480px, 92vw)">
+      <button class="off-modal-close" onclick="offCloseModal('modal-new-am')"><i class="ti ti-x"></i></button>
+      <div class="off-modal-body">
+        <h3 style="margin:0 0 16px">新增附屬設備</h3>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-tag"></i> 名稱 <span style="color:red">*</span></span><input id="new-am-name" placeholder="例：Wi-Fi"></div>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-building-community"></i> 分支機構</span>
+          <select id="new-am-branch"><option value="">— 不指定 —</option></select>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px">
+          <button class="off-btn" onclick="offCloseModal('modal-new-am')">取消</button>
+          <button class="off-btn off-btn-primary" id="new-am-save">建立</button>
+        </div>
+        <div id="new-am-err" style="color:var(--off-red); font-size:13px; margin-top:8px; display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 編輯 Modal（多 tab） ==================== -->
+  <div class="off-modal-back" id="modal-edit-am">
+    <div class="off-modal off-modal-wrap" style="width:min(1040px, 94vw); max-height:92vh">
+      <button class="off-modal-close" onclick="offCloseModal('modal-edit-am')"><i class="ti ti-x"></i></button>
+      <input type="hidden" id="ea-id">
+
+      <!-- 左側 -->
+      <aside class="off-modal-side" style="display:flex; flex-direction:column">
+        <div style="background:#f4f6fa; border-radius:14px; padding:24px; text-align:center; margin-bottom:12px">
+          <div id="ea-side-icon" style="width:80px; height:80px; margin:0 auto; background:#eef1f6; border-radius:16px; display:inline-flex; align-items:center; justify-content:center; color:#cfd4de; font-size:40px">
+            <i class="ti ti-box"></i>
+          </div>
+        </div>
+        <div class="off-side-title" id="ea-side-title" style="font-size:20px; font-weight:700">—</div>
+        <div class="off-side-sub" style="margin-bottom:12px">
+          將此附屬設備連結至可預約資源——儲存後即時套用至所有已連結資源。
+        </div>
+
+        <div class="off-tab active" data-tab="settings">
+          <i class="ti ti-adjustments-horizontal"></i><span>設定</span>
+          <i class="ti ti-chevron-right off-tab-arrow"></i>
+        </div>
+        <div class="off-tab" data-tab="info">
+          <i class="ti ti-info-circle"></i><span>資訊</span>
+          <i class="ti ti-chevron-right off-tab-arrow"></i>
+        </div>
+
+        <div style="color:var(--off-text-muted); font-size:12px; padding:14px 12px 4px">已指派資源</div>
+        <div class="off-tab" data-tab="rooms">
+          <i class="ti ti-door"></i><span>房間</span>
+          <span class="off-tab-count" id="ea-room-count">0</span>
+        </div>
+        <div class="off-tab disabled" data-tab="desks" title="尚未開放">
+          <i class="ti ti-grid-dots"></i><span>辦公桌</span>
+          <span class="off-tab-count">0</span>
+        </div>
+        <div class="off-tab" data-tab="equipment">
+          <i class="ti ti-device-tv"></i><span>設備</span>
+          <span class="off-tab-count" id="ea-eq-count">0</span>
+        </div>
+        <div class="off-tab disabled" data-tab="parking" title="尚未開放">
+          <i class="ti ti-parking"></i><span>車位</span>
+          <span class="off-tab-count">0</span>
+        </div>
+        <div class="off-tab disabled" data-tab="other" title="尚未開放">
+          <i class="ti ti-box"></i><span>其他資源</span>
+          <span class="off-tab-count">0</span>
+        </div>
+
+        <div style="flex:1"></div>
+        <button class="off-btn" id="ea-delete-side" style="color:var(--off-red); margin-top:16px; justify-content:flex-start">
+          <i class="ti ti-trash"></i> 刪除
+        </button>
+      </aside>
+
+      <!-- 右側 -->
+      <div class="off-modal-body" style="padding:0; display:flex; flex-direction:column">
+
+        <!-- 設定 -->
+        <div class="ea-pane" data-pane="settings" style="padding:24px; overflow-y:auto; flex:1">
+          <div class="cbm-field">
+            <span class="lbl"><i class="ti ti-tag"></i> 名稱</span>
+            <input id="ea-name" placeholder="—">
+          </div>
+          <div class="cbm-field" style="align-items:flex-start; flex-direction:column; gap:8px">
+            <span class="lbl"><i class="ti ti-icons"></i> 圖標</span>
+            <div class="icon-grid" id="ea-icon-grid"></div>
+          </div>
+          <div class="cbm-field">
+            <span class="lbl"><i class="ti ti-building-community"></i> 分支機構管理</span>
+            <select id="ea-branch"><option value="">HQ</option></select>
+          </div>
+        </div>
+
+        <!-- 資訊 -->
+        <div class="ea-pane" data-pane="info" style="padding:20px; overflow-y:auto; flex:1; display:none">
+          <div class="off-info-heading">詳細</div>
+          <div class="off-info-row mono"><span class="lbl"><i class="ti ti-hash"></i> ID</span><span class="val" id="ea-info-id">—</span></div>
+          <div class="off-info-row mono"><span class="lbl"><i class="ti ti-hash"></i> 訪問ID</span><span class="val" id="ea-info-access-id">-</span></div>
+          <div class="off-info-row mono"><span class="lbl"><i class="ti ti-fingerprint"></i> UID</span><span class="val" id="ea-info-uid">—</span></div>
+
+          <div class="off-info-heading" style="margin-top:12px">資訊</div>
+          <div class="off-info-row"><span class="lbl"><i class="ti ti-user-plus"></i> 創建者</span><span class="val" id="ea-info-created-by">-</span></div>
+          <div class="off-info-row"><span class="lbl"><i class="ti ti-clock"></i> 創建日期</span><span class="val" id="ea-info-created-at">—</span></div>
+          <div class="off-info-row"><span class="lbl"><i class="ti ti-edit"></i> 修改者</span><span class="val" id="ea-info-updated-by">-</span></div>
+          <div class="off-info-row"><span class="lbl"><i class="ti ti-history"></i> 修改日期</span><span class="val" id="ea-info-updated-at">-</span></div>
+        </div>
+
+        <!-- 房間 -->
+        <div class="ea-pane" data-pane="rooms" style="padding:20px; overflow-y:auto; flex:1; display:none">
+          <div class="assign-search"><input id="ea-room-search" placeholder="🔍 搜尋"></div>
+          <div id="ea-room-list"></div>
+        </div>
+
+        <!-- 辦公桌（反白） -->
+        <div class="ea-pane" data-pane="desks" style="padding:60px 20px; display:none; text-align:center; color:var(--off-text-muted)">
+          <i class="ti ti-lock" style="font-size:40px; opacity:.4"></i>
+          <div style="margin-top:8px">「辦公桌」尚未開放</div>
+        </div>
+
+        <!-- 設備 -->
+        <div class="ea-pane" data-pane="equipment" style="padding:20px; overflow-y:auto; flex:1; display:none">
+          <div class="assign-search"><input id="ea-eq-search" placeholder="🔍 搜尋"></div>
+          <div id="ea-eq-list"></div>
+        </div>
+
+        <!-- 車位（反白） -->
+        <div class="ea-pane" data-pane="parking" style="padding:60px 20px; display:none; text-align:center; color:var(--off-text-muted)">
+          <i class="ti ti-lock" style="font-size:40px; opacity:.4"></i>
+          <div style="margin-top:8px">「車位」尚未開放</div>
+        </div>
+
+        <!-- 其他資源（反白） -->
+        <div class="ea-pane" data-pane="other" style="padding:60px 20px; display:none; text-align:center; color:var(--off-text-muted)">
+          <i class="ti ti-lock" style="font-size:40px; opacity:.4"></i>
+          <div style="margin-top:8px">「其他資源」尚未開放</div>
+        </div>
+
+        <!-- Footer -->
+        <div class="off-modal-foot">
+          <div id="ea-err" style="color:var(--off-red); font-size:13px; margin-right:auto; align-self:center; display:none"></div>
+          <button class="off-btn off-btn-primary" id="ea-save">儲存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script>
+    OffAuth.requireLogin();
+    const esc = s => (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    const ICON_OPTIONS = [
+      'wifi', 'presentation', 'device-projector', 'video', 'phone-call',
+      'device-tv', 'microphone', 'microphone-2', 'headphones', 'camera',
+      'printer', 'keyboard', 'mouse', 'screen-share', 'cast',
+      'air-conditioning', 'coffee', 'armchair', 'whiteboard', 'clipboard',
+      'plug', 'usb', 'bluetooth', 'box',
+    ];
+
+    let __amenities = [];
+    let __branches  = [];
+    let __rooms     = [];
+    let __equipment = [];
+
+    // ==================== Demo 資料（後端離線時使用） ====================
+    const DEMO_BRANCHES = [
+      { id: 1, name: 'HQ', timezone: 'Asia/Taipei', address: '—' },
+      { id: 2, name: '台北分公司', timezone: 'Asia/Taipei', address: '台北市內湖區' },
+      { id: 3, name: '新竹分公司', timezone: 'Asia/Taipei', address: '新竹市' },
+    ];
+    const DEMO_ROOMS = [
+      { id: 1, name: '會議室 A', type: 'room', branch_name: 'BIZLUTION 辦公室', location_name: '一樓' },
+      { id: 2, name: '會議室 B', type: 'room', branch_name: 'BIZLUTION 辦公室', location_name: '一樓' },
+      { id: 3, name: '培訓室', type: 'room', branch_name: 'BIZLUTION 辦公室', location_name: '一樓' },
+      { id: 4, name: '創新實驗室', type: 'room', branch_name: 'BIZLUTION 辦公室', location_name: '一樓' },
+      { id: 5, name: '會議室 A + B', type: 'room', branch_name: 'BIZLUTION 辦公室', location_name: '一樓' },
+      { id: 6, name: '董事長會議室', type: 'room', branch_name: 'BIZLUTION 辦公室', location_name: '一樓' },
+      { id: 7, name: '尾牙場地 A+B', type: 'room', branch_name: 'BIZLUTION 辦公室', location_name: '一樓' },
+      { id: 8, name: '台北分公司會議室B', type: 'room', branch_name: 'BIZLUTION 辦公室', location_name: '停車場' },
+      { id: 9, name: '可合併會議室1', type: 'room', branch_name: 'BIZLUTION 辦公室', location_name: '停車場' },
+      { id: 10, name: '房間 - 新竹分公司維修人員 A', type: 'room', branch_name: 'BIZLUTION 辦公室', location_name: '停車場' },
+      { id: 11, name: '房間 - Ingrid', type: 'room', branch_name: 'BIZLUTION 辦公室', location_name: '停車場' },
+      { id: 12, name: '房間 - 新竹分公司維修人員 A', type: 'room', branch_name: 'BIZLUTION 辦公室', location_name: '停車場' },
+      { id: 13, name: '房間 10', type: 'room', branch_name: 'BIZLUTION 辦公室', location_name: '停車場' },
+      { id: 14, name: '房間 11', type: 'room', branch_name: 'BIZLUTION 辦公室', location_name: '停車場' },
+      { id: 15, name: '新竹分公司會議室A', type: 'room', branch_name: '台北分公司內湖辦公大樓', location_name: '一樓' },
+    ];
+    const DEMO_EQUIPMENT = [
+      { id: 101, name: '直立式機櫃', type: 'equipment', branch_name: 'BIZLUTION 辦公室', location_name: '停車場' },
+      { id: 102, name: '電子桌牌T7-1', type: 'equipment', branch_name: 'BIZLUTION 辦公室', location_name: '停車場' },
+      { id: 103, name: '設備 8', type: 'equipment', branch_name: 'BIZLUTION 辦公室', location_name: '停車場' },
+      { id: 104, name: '三星顯示器1', type: 'equipment', branch_name: 'BIZLUTION 辦公室', location_name: '停車場' },
+      { id: 105, name: '筆記型電腦推車', type: 'equipment', branch_name: null, location_name: null },
+      { id: 106, name: '投影設備', type: 'equipment', branch_name: null, location_name: null },
+      { id: 107, name: '視訊會議套件', type: 'equipment', branch_name: null, location_name: null },
+      { id: 108, name: '音訊設備', type: 'equipment', branch_name: null, location_name: null },
+      { id: 109, name: '簡報套件', type: 'equipment', branch_name: null, location_name: null },
+    ];
+    const DEMO_AMENITIES = [
+      { id: 1, organization_id: 1, name: '1234', icon: 'info-circle', branch_id: 1, branch_name: 'hq',
+        created_at: '2025-07-20T07:54:00Z', updated_at: '2025-07-20T07:54:00Z',
+        room_ids: [1, 8], desk_ids: [], equipment_ids: [], parking_ids: [], other_ids: [] },
+      { id: 2, organization_id: 1, name: '2 2 3 4', icon: 'info-circle', branch_id: 1, branch_name: 'hq',
+        created_at: '2025-07-20T07:54:00Z', updated_at: '2025-07-20T07:54:00Z',
+        room_ids: [1], desk_ids: [], equipment_ids: [], parking_ids: [], other_ids: [] },
+      { id: 3, organization_id: 1, name: 'Wi-Fi', icon: 'wifi', branch_id: 1, branch_name: 'hq',
+        created_at: '2025-07-20T07:54:00Z', updated_at: '2025-07-20T07:54:00Z',
+        room_ids: [2, 3, 4, 8, 6], desk_ids: [], equipment_ids: [], parking_ids: [], other_ids: [] },
+      { id: 4, organization_id: 1, name: '投影屏幕', icon: 'presentation', branch_id: 1, branch_name: 'hq',
+        created_at: '2025-07-20T07:54:00Z', updated_at: '2025-07-20T07:54:00Z',
+        room_ids: [15, 6], desk_ids: [], equipment_ids: [], parking_ids: [], other_ids: [] },
+      { id: 5, organization_id: 1, name: '投影機', icon: 'device-projector', branch_id: 1, branch_name: 'hq',
+        created_at: '2025-07-20T07:54:00Z', updated_at: '2025-07-20T07:54:00Z',
+        room_ids: [1, 4, 15, 8], desk_ids: [], equipment_ids: [], parking_ids: [], other_ids: [] },
+      { id: 6, organization_id: 1, name: '視像會議', icon: 'video', branch_id: 1, branch_name: 'hq',
+        created_at: '2025-07-20T07:54:00Z', updated_at: '2025-07-20T07:54:00Z',
+        room_ids: [1, 15, 6], desk_ids: [], equipment_ids: [], parking_ids: [], other_ids: [] },
+      { id: 7, organization_id: 1, name: '語音會議', icon: 'phone-call', branch_id: 1, branch_name: 'hq',
+        created_at: '2025-07-20T07:54:00Z', updated_at: '2025-07-20T07:54:00Z',
+        room_ids: [1, 2, 3, 4, 8, 6], desk_ids: [], equipment_ids: [], parking_ids: [], other_ids: [] },
+      { id: 8, organization_id: 1, name: '電視', icon: 'device-tv', branch_id: 1, branch_name: 'hq',
+        created_at: '2025-07-20T07:54:00Z', updated_at: '2025-07-20T07:54:00Z',
+        room_ids: [3, 15, 6], desk_ids: [], equipment_ids: [], parking_ids: [], other_ids: [] },
+      { id: 9, organization_id: 1, name: '麥克風', icon: 'microphone', branch_id: 1, branch_name: 'hq',
+        created_at: '2025-07-20T07:54:00Z', updated_at: '2025-07-20T07:54:00Z',
+        room_ids: [2, 15, 6], desk_ids: [], equipment_ids: [], parking_ids: [], other_ids: [] },
+    ];
+
+    // ==================== 頁面載入 ====================
+    async function loadPage() {
+      const tbody = document.getElementById('am-tbody');
+      try {
+        [__amenities, __branches, __rooms, __equipment] = await Promise.all([
+          OffAPI.amenities.list(),
+          OffAPI.branches.list().catch(() => []),
+          OffAPI.rooms.list().catch(() => []),
+          OffAPI.equipment.list().catch(() => []),
+        ]);
+      } catch (e) {
+        __amenities = DEMO_AMENITIES;
+        __branches  = DEMO_BRANCHES;
+        __rooms     = DEMO_ROOMS;
+        __equipment = DEMO_EQUIPMENT;
+      }
+      const nbSel = document.getElementById('new-am-branch');
+      nbSel.innerHTML = '<option value="">— 不指定 —</option>' +
+        __branches.map(b => `<option value="${b.id}"${b.name === 'HQ' ? ' selected' : ''}>${esc(b.name)}</option>`).join('');
+      renderTable();
+    }
+
+    // ==================== 列表 ====================
+    function renderTable() {
+      const q = (document.getElementById('am-search').value || '').trim().toLowerCase();
+      const list = q ? __amenities.filter(x => x.name.toLowerCase().includes(q)) : __amenities;
+      const tbody = document.getElementById('am-tbody');
+      if (!list.length) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:32px; color:var(--off-text-muted)">尚無附屬設備，點右上「新增」建立第一個</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = list.map(a => {
+        const roomNames = a.room_ids.map(id => {
+          const r = __rooms.find(x => x.id === id);
+          return r ? r.name : `#${id}`;
+        });
+        const roomDisplay = roomNames.length
+          ? (roomNames.length <= 2
+              ? roomNames.join('，')
+              : roomNames.slice(0, 2).join('，') + ` <span class="more">+${roomNames.length - 2}</span>`)
+          : '—';
+
+        return `
+          <tr data-id="${a.id}" style="cursor:pointer">
+            <td><input type="checkbox" onclick="event.stopPropagation()"></td>
+            <td>
+              <div style="display:flex; align-items:center; gap:10px">
+                <span class="am-thumb"><i class="ti ti-${esc(a.icon || 'box')}"></i></span>
+                <b>${esc(a.name)}</b>
+              </div>
+            </td>
+            <td class="am-rooms-cell">${roomDisplay}</td>
+            <td style="color:var(--off-text-muted)">—</td>
+            <td style="color:var(--off-text-muted)">—</td>
+          </tr>`;
+      }).join('');
+      tbody.querySelectorAll('tr[data-id]').forEach(tr => {
+        tr.addEventListener('click', () => openDrawer(parseInt(tr.dataset.id, 10)));
+      });
+    }
+    document.getElementById('am-search').addEventListener('input', renderTable);
+
+    // ==================== Drawer ====================
+    let __currentAm = null;
+
+    function openDrawer(id) {
+      const a = __amenities.find(x => x.id === id);
+      if (!a) return;
+      __currentAm = a;
+
+      document.getElementById('amd-icon-ph').innerHTML = `<i class="ti ti-${esc(a.icon || 'box')}"></i>`;
+      document.getElementById('amd-title').textContent = a.name;
+
+      const roomNames = a.room_ids.map(rid => {
+        const r = __rooms.find(x => x.id === rid);
+        return r ? r.name : `#${rid}`;
+      });
+      document.getElementById('amd-rooms').textContent = roomNames.length ? roomNames.join('\n') : '—';
+      document.getElementById('amd-rooms').style.whiteSpace = 'pre-line';
+
+      document.getElementById('amd-branch').textContent = a.branch_name || 'hq';
+
+      const me = OffAuth.user();
+      document.getElementById('amd-creator').textContent = '—';
+      const created = a.created_at ? new Date(a.created_at) : null;
+      document.getElementById('amd-created-at').textContent = created
+        ? `${created.getMonth()+1}月${created.getDate()}日 上午${(created.getHours() % 12 || 12).toString().padStart(2,'0')}:${created.getMinutes().toString().padStart(2,'0')}`
+        : '—';
+      document.getElementById('amd-updater').textContent = '—';
+
+      document.getElementById('amd-id').textContent = a.id;
+      const hex = a.id.toString(16).toUpperCase().padStart(8, '0');
+      document.getElementById('amd-uid').textContent = `${hex}-3F1F-4798-8CD3-6D0CAE7AD7D0`;
+      document.getElementById('amd-access-id').textContent = '—';
+
+      document.getElementById('amd-back').classList.add('open');
+    }
+
+    document.getElementById('amd-close').addEventListener('click', () => {
+      document.getElementById('amd-back').classList.remove('open');
+    });
+    document.getElementById('amd-back').addEventListener('click', ev => {
+      if (ev.target.id === 'amd-back') document.getElementById('amd-back').classList.remove('open');
+    });
+
+    document.getElementById('amd-del').addEventListener('click', async () => {
+      if (!__currentAm) return;
+      if (!confirm(`確定要刪除「${__currentAm.name}」？`)) return;
+      try {
+        await OffAPI.amenities.remove(__currentAm.id);
+        document.getElementById('amd-back').classList.remove('open');
+        await loadPage();
+      } catch (e) { alert(e.message); }
+    });
+
+    document.getElementById('amd-edit').addEventListener('click', () => {
+      if (!__currentAm) return;
+      openEditAmenity(__currentAm);
+    });
+    document.getElementById('amd-copy').addEventListener('click', async () => {
+      if (!__currentAm) return;
+      try {
+        await OffAPI.amenities.create({
+          name: `${__currentAm.name} (副本)`,
+          icon: __currentAm.icon,
+          branch_id: __currentAm.branch_id,
+        });
+        await loadPage();
+      } catch (err) { alert(err.message); }
+    });
+
+    // ==================== 新增 ====================
+    document.getElementById('btn-new-am').addEventListener('click', () => {
+      document.getElementById('new-am-name').value = '';
+      document.getElementById('new-am-err').style.display = 'none';
+      offOpenModal('modal-new-am');
+    });
+    document.getElementById('new-am-save').addEventListener('click', async () => {
+      const err = document.getElementById('new-am-err');
+      err.style.display = 'none';
+      const name = document.getElementById('new-am-name').value.trim();
+      if (!name) { err.textContent = '請輸入名稱'; err.style.display = 'block'; return; }
+      const branchVal = document.getElementById('new-am-branch').value;
+      try {
+        await OffAPI.amenities.create({
+          name,
+          icon: 'box',
+          branch_id: branchVal ? parseInt(branchVal, 10) : null,
+        });
+        offCloseModal('modal-new-am');
+        await loadPage();
+      } catch (e) {
+        err.textContent = e.message || '建立失敗'; err.style.display = 'block';
+      }
+    });
+
+    // ==================== 編輯 Modal ====================
+    let __eaSelectedIcon = 'box';
+    let __eaSelectedRoomIds = new Set();
+    let __eaSelectedEqIds = new Set();
+
+    function openEditAmenity(am) {
+      document.getElementById('ea-id').value = am.id;
+      document.getElementById('ea-side-title').textContent = am.name;
+      document.getElementById('ea-name').value = am.name || '';
+      __eaSelectedIcon = am.icon || 'box';
+      __eaSelectedRoomIds = new Set(am.room_ids || []);
+      __eaSelectedEqIds = new Set(am.equipment_ids || []);
+
+      document.getElementById('ea-side-icon').innerHTML = `<i class="ti ti-${esc(am.icon || 'box')}"></i>`;
+
+      renderIconGrid();
+
+      const bSel = document.getElementById('ea-branch');
+      bSel.innerHTML = __branches.map(b =>
+        `<option value="${b.id}"${b.id === am.branch_id ? ' selected' : ''}>${esc(b.name)}</option>`
+      ).join('');
+
+      document.getElementById('ea-room-count').textContent = __eaSelectedRoomIds.size;
+      document.getElementById('ea-eq-count').textContent = __eaSelectedEqIds.size;
+
+      document.getElementById('ea-info-id').textContent = `#${am.id}`;
+      document.getElementById('ea-info-access-id').textContent = '-';
+      const hex = am.id.toString(16).toUpperCase().padStart(8, '0');
+      document.getElementById('ea-info-uid').textContent = `${hex}-3F1F-4798-8CD3-6D0CAE7AD7D0`;
+      const created = am.created_at ? new Date(am.created_at) : null;
+      document.getElementById('ea-info-created-at').textContent = created
+        ? `${created.getMonth()+1}月${created.getDate()}日 上午${(created.getHours() % 12 || 12).toString().padStart(2,'0')}:${created.getMinutes().toString().padStart(2,'0')}`
+        : '—';
+      document.getElementById('ea-info-created-by').textContent = '-';
+      document.getElementById('ea-info-updated-by').textContent = '-';
+      document.getElementById('ea-info-updated-at').textContent = '-';
+
+      renderEaRoomList();
+      renderEaEquipmentList();
+
+      switchEaTab('settings');
+      document.getElementById('ea-err').style.display = 'none';
+      document.getElementById('amd-back').classList.remove('open');
+      offOpenModal('modal-edit-am');
+    }
+
+    function renderIconGrid() {
+      const grid = document.getElementById('ea-icon-grid');
+      grid.innerHTML = ICON_OPTIONS.map(ic =>
+        `<button type="button" class="icon-opt${ic === __eaSelectedIcon ? ' selected' : ''}" data-icon="${ic}">
+          <i class="ti ti-${ic}"></i>
+        </button>`
+      ).join('');
+      grid.querySelectorAll('.icon-opt').forEach(btn => {
+        btn.addEventListener('click', () => {
+          __eaSelectedIcon = btn.dataset.icon;
+          grid.querySelectorAll('.icon-opt').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          document.getElementById('ea-side-icon').innerHTML = `<i class="ti ti-${__eaSelectedIcon}"></i>`;
+        });
+      });
+    }
+
+    function switchEaTab(name) {
+      document.querySelectorAll('#modal-edit-am .off-tab').forEach(x =>
+        x.classList.toggle('active', x.dataset.tab === name));
+      document.querySelectorAll('#modal-edit-am .ea-pane').forEach(p =>
+        p.style.display = p.dataset.pane === name ? '' : 'none');
+    }
+    document.querySelectorAll('#modal-edit-am .off-tab:not(.disabled)').forEach(tab => {
+      tab.addEventListener('click', () => switchEaTab(tab.dataset.tab));
+    });
+
+    // ---- 房間指派面板 ----
+    function renderEaRoomList() {
+      const q = (document.getElementById('ea-room-search').value || '').toLowerCase();
+      const box = document.getElementById('ea-room-list');
+
+      const branchMap = {};
+      __branches.forEach(b => { branchMap[b.id] = b; });
+
+      const groups = new Map();
+      __rooms
+        .filter(r => !q || r.name.toLowerCase().includes(q))
+        .forEach(r => {
+          const bName = r.branch_name || '未分類';
+          const locName = r.location_name || '';
+          const key = `${bName} · ${locName}`;
+          if (!groups.has(key)) groups.set(key, { label: key, rooms: [] });
+          groups.get(key).rooms.push(r);
+        });
+
+      if (!groups.size) {
+        box.innerHTML = '<div style="padding:24px; text-align:center; color:var(--off-text-muted)">沒有符合的房間</div>';
+        return;
+      }
+
+      let html = '';
+      for (const [key, { label, rooms }] of groups) {
+        html += `<div class="assign-group">
+          <div class="assign-group-head">
+            <span>${esc(label)}</span>
+            <span class="sel-all" data-group="${esc(key)}">全選</span>
+          </div>
+          ${rooms.map(r => `
+            <div class="assign-item${__eaSelectedRoomIds.has(r.id) ? ' selected' : ''}" data-rid="${r.id}">
+              <span class="radio"></span>
+              <span class="name">${esc(r.name)}</span>
+            </div>`).join('')}
+        </div>`;
+      }
+      box.innerHTML = html;
+
+      box.querySelectorAll('.assign-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const id = parseInt(el.dataset.rid, 10);
+          if (__eaSelectedRoomIds.has(id)) __eaSelectedRoomIds.delete(id);
+          else __eaSelectedRoomIds.add(id);
+          el.classList.toggle('selected');
+          document.getElementById('ea-room-count').textContent = __eaSelectedRoomIds.size;
+        });
+      });
+
+      box.querySelectorAll('.sel-all').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const group = btn.closest('.assign-group');
+          group.querySelectorAll('.assign-item').forEach(el => {
+            const id = parseInt(el.dataset.rid, 10);
+            __eaSelectedRoomIds.add(id);
+            el.classList.add('selected');
+          });
+          document.getElementById('ea-room-count').textContent = __eaSelectedRoomIds.size;
+        });
+      });
+    }
+    document.getElementById('ea-room-search').addEventListener('input', renderEaRoomList);
+
+    // ---- 設備指派面板 ----
+    function renderEaEquipmentList() {
+      const q = (document.getElementById('ea-eq-search').value || '').toLowerCase();
+      const box = document.getElementById('ea-eq-list');
+
+      const groups = new Map();
+      __equipment
+        .filter(e => !q || e.name.toLowerCase().includes(q))
+        .forEach(e => {
+          const loc = e.branch_name
+            ? `${e.branch_name} · ${e.location_name || ''}`
+            : '沒有位置';
+          if (!groups.has(loc)) groups.set(loc, { label: loc, items: [] });
+          groups.get(loc).items.push(e);
+        });
+
+      if (!groups.size) {
+        box.innerHTML = '<div style="padding:24px; text-align:center; color:var(--off-text-muted)">沒有符合的設備</div>';
+        return;
+      }
+
+      let html = '';
+      for (const [key, { label, items }] of groups) {
+        html += `<div class="assign-group">
+          <div class="assign-group-head">
+            <span>${esc(label)}</span>
+            <span class="sel-all" data-group="${esc(key)}">全選</span>
+          </div>
+          ${items.map(e => `
+            <div class="assign-item${__eaSelectedEqIds.has(e.id) ? ' selected' : ''}" data-eid="${e.id}">
+              <span class="radio"></span>
+              <span class="name">${esc(e.name)}</span>
+            </div>`).join('')}
+        </div>`;
+      }
+      box.innerHTML = html;
+
+      box.querySelectorAll('.assign-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const id = parseInt(el.dataset.eid, 10);
+          if (__eaSelectedEqIds.has(id)) __eaSelectedEqIds.delete(id);
+          else __eaSelectedEqIds.add(id);
+          el.classList.toggle('selected');
+          document.getElementById('ea-eq-count').textContent = __eaSelectedEqIds.size;
+        });
+      });
+
+      box.querySelectorAll('.sel-all').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const group = btn.closest('.assign-group');
+          group.querySelectorAll('.assign-item').forEach(el => {
+            const id = parseInt(el.dataset.eid, 10);
+            __eaSelectedEqIds.add(id);
+            el.classList.add('selected');
+          });
+          document.getElementById('ea-eq-count').textContent = __eaSelectedEqIds.size;
+        });
+      });
+    }
+    document.getElementById('ea-eq-search').addEventListener('input', renderEaEquipmentList);
+
+    // ---- 儲存 ----
+    document.getElementById('ea-save').addEventListener('click', async () => {
+      const err = document.getElementById('ea-err');
+      err.style.display = 'none';
+      const id = parseInt(document.getElementById('ea-id').value, 10);
+      const name = document.getElementById('ea-name').value.trim();
+      if (!name) { err.textContent = '請輸入名稱'; err.style.display = 'block'; return; }
+      const branchVal = document.getElementById('ea-branch').value;
+
+      try {
+        await OffAPI.amenities.patch(id, {
+          name,
+          icon: __eaSelectedIcon,
+          branch_id: branchVal ? parseInt(branchVal, 10) : null,
+        });
+        await OffAPI.amenities.setRooms(id, [...__eaSelectedRoomIds]);
+        await OffAPI.amenities.setEquipment(id, [...__eaSelectedEqIds]);
+
+        offCloseModal('modal-edit-am');
+        await loadPage();
+      } catch (e) {
+        err.textContent = e.message || '儲存失敗'; err.style.display = 'block';
+      }
+    });
+
+    // ---- 側欄刪除 ----
+    document.getElementById('ea-delete-side').addEventListener('click', async () => {
+      const id = parseInt(document.getElementById('ea-id').value, 10);
+      const am = __amenities.find(x => x.id === id);
+      if (!am) return;
+      if (!confirm(`確定要刪除「${am.name}」？`)) return;
+      try {
+        await OffAPI.amenities.remove(id);
+        offCloseModal('modal-edit-am');
+        await loadPage();
+      } catch (e) { alert(e.message); }
+    });
+
+    loadPage();
+  </script>
+</body>
+</html>

@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>預約管理 · 可合併房間 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+  <style>
+    /* 可合併房間清單 */
+    .cb-cell-name { display: flex; align-items: center; gap: 12px; }
+    .cb-cell-name .cb-thumb {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: #f2f4f8; display: inline-flex; align-items: center; justify-content: center;
+      color: #6b7280;
+    }
+    .cb-cell-name b { display: block; font-size: 14px; }
+    .cb-cell-name small { color: #12a97e; font-size: 12px; }
+    .cb-capacity {
+      display: inline-flex; align-items: center; gap: 4px;
+      color: #4b525f; font-size: 13px;
+    }
+
+    /* Modal — 左側 tab（無編號、圖片上傳、名稱＋描述） */
+    .cbm-side-thumb {
+      background: #f4f6fa; border-radius: 14px;
+      padding: 16px; text-align: center;
+      margin-bottom: 12px;
+    }
+    .cbm-side-thumb .ph {
+      width: 100%; aspect-ratio: 4/3;
+      background: #eef1f6; border-radius: 12px;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: #cfd4de; font-size: 40px;
+      margin-bottom: 12px;
+    }
+    .cbm-side-thumb .btns { display: flex; gap: 6px; justify-content: center; }
+    .cbm-side-thumb .btns button {
+      border: 0; padding: 8px 14px; border-radius: 999px; cursor: pointer;
+      font-size: 12px; display: inline-flex; align-items: center; gap: 4px;
+    }
+    .cbm-side-thumb .btn-upload {
+      background: #f2f4f8; color: #4b525f;
+      width: 34px; height: 34px; padding: 0; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .cbm-side-thumb .btn-existing {
+      background: var(--off-primary); color: #fff; font-weight: 500;
+    }
+
+    /* 右側欄位（Offision 風格：淡灰底、單行 label + value） */
+    .cbm-field {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; background: #f4f6fa;
+      border-radius: 10px; margin-bottom: 8px; font-size: 14px;
+      gap: 8px;
+    }
+    .cbm-field .lbl {
+      display: flex; align-items: center; gap: 8px;
+      color: #4b525f;
+    }
+    .cbm-field .lbl .req { color: var(--off-red); font-size: 10px; margin-left: -6px; align-self: flex-start; }
+    .cbm-field input, .cbm-field select, .cbm-field textarea {
+      border: 0; background: transparent; text-align: right;
+      outline: none; font-size: 14px; color: #111;
+      max-width: 60%;
+    }
+    .cbm-field textarea {
+      resize: none; min-height: 40px; width: 100%; max-width: 60%; text-align: left;
+    }
+    .cbm-field .val {
+      color: var(--off-text-muted); font-size: 14px;
+    }
+    .cbm-field.disabled { opacity: .55; pointer-events: none; }
+    .cbm-field .caret { color: var(--off-text-muted); }
+    .cbm-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    /* 結合下拉：內嵌一個小選單樣式 */
+    .cbm-combine {
+      position: relative;
+    }
+    .cbm-combine-panel {
+      position: absolute; z-index: 20;
+      top: calc(100% + 4px); left: 0; right: 0;
+      background: #fff; border-radius: 12px;
+      border: 1px solid var(--off-border);
+      box-shadow: 0 10px 30px rgba(0,0,0,.1);
+      padding: 8px; max-height: 320px; overflow-y: auto;
+      display: none;
+    }
+    .cbm-combine.open .cbm-combine-panel { display: block; }
+    .cbm-combine-panel .head {
+      display: flex; align-items: center; padding: 4px 8px 8px;
+      border-bottom: 1px solid var(--off-border); margin-bottom: 6px;
+    }
+    .cbm-combine-panel .head b { font-weight: 600; font-size: 13px; }
+    .cbm-combine-panel .head .close {
+      margin-left: auto; border: 0; background: transparent; cursor: pointer;
+      color: #9aa3b0;
+    }
+    .cbm-combine-panel .search {
+      padding: 0 4px 8px;
+    }
+    .cbm-combine-panel .search input {
+      width: 100%; padding: 6px 10px; border: 0; background: #f4f6fa;
+      border-radius: 8px; font-size: 12px; outline: none;
+    }
+    .cbm-combine-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px; border-radius: 8px; cursor: pointer;
+      font-size: 13px;
+    }
+    .cbm-combine-item:hover { background: #f4f6fa; }
+    .cbm-combine-item.selected { background: #eef4ff; }
+    .cbm-combine-item .radio {
+      width: 16px; height: 16px; border-radius: 50%;
+      border: 1.5px solid #cfd4de; display: inline-block; flex-shrink: 0;
+    }
+    .cbm-combine-item.selected .radio {
+      border-color: var(--off-primary);
+      box-shadow: inset 0 0 0 3px var(--off-primary);
+    }
+    .cbm-combine-item .name { flex: 1; }
+    .cbm-combine-item .detail {
+      color: var(--off-primary); font-size: 12px; cursor: pointer;
+    }
+    .cbm-combine-panel .foot {
+      display: flex; justify-content: space-between; padding: 8px 4px 0;
+      border-top: 1px solid var(--off-border); margin-top: 6px;
+    }
+    .cbm-combine-panel .foot button {
+      border: 0; background: transparent; cursor: pointer;
+      color: #4b525f; font-size: 12px; padding: 4px 12px;
+    }
+    .cbm-combine-panel .foot button.primary {
+      color: var(--off-primary); font-weight: 500;
+    }
+
+    /* 位置 分組面板（依分支/建築物分區） */
+    .cbm-loc-group { margin-top: 6px; }
+    .cbm-loc-group-head {
+      padding: 8px 10px 4px;
+      color: #4b525f; font-size: 13px; font-weight: 600;
+      border-bottom: 1px solid var(--off-border);
+    }
+    .cbm-loc-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 8px; cursor: pointer;
+      font-size: 13px;
+    }
+    .cbm-loc-item:hover { background: #f4f6fa; }
+    .cbm-loc-item.selected { background: #eef4ff; }
+    .cbm-loc-item .name { flex: 1; }
+    .cbm-loc-item .detail {
+      color: var(--off-primary); font-size: 12px;
+      background: transparent; border: 1px solid var(--off-border);
+      padding: 3px 12px; border-radius: 999px; cursor: pointer;
+    }
+  </style>
+</head>
+<body data-module="reservation" data-page="combinable"
+      data-crumbs='[{"label":"預約管理","href":"reservation-dashboard.html"},{"label":"房間"},{"label":"可合併房間"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#58c7f5,#1f80f0)"><i class="ti ti-layout-grid-add"></i></span>
+        <div>
+          <div class="off-page-title-row">
+            <h1>可合併房間</h1>
+            <span class="off-new-tag">NEW</span>
+            <button class="off-btn off-btn-primary" id="btn-new-cb">
+              <i class="ti ti-plus"></i> 新增
+            </button>
+          </div>
+          <p class="off-page-desc">管理合併房間及其設定</p>
+        </div>
+        <div class="off-page-actions">
+          <button class="off-btn"><i class="ti ti-qrcode"></i> QR 碼管理</button>
+          <button class="off-btn"><i class="ti ti-adjustments-alt"></i> 排序 / 欄位</button>
+        </div>
+      </div>
+
+      <div class="off-panel" style="padding:0">
+        <table class="off-table">
+          <thead>
+            <tr>
+              <th style="width:40px"><input type="checkbox"></th>
+              <th class="off-search-cell"><input placeholder="🔍 名稱" id="cb-search"></th>
+              <th>容量</th>
+              <th>類別 <i class="ti ti-filter"></i></th>
+              <th>結合</th>
+              <th>位置 <i class="ti ti-filter"></i></th>
+            </tr>
+          </thead>
+          <tbody id="cb-tbody">
+            <tr><td colspan="6" style="text-align:center; padding:24px; color:var(--off-text-muted)">
+              <i class="ti ti-loader-2"></i> 讀取中…
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- 新增/編輯 可合併房間 Modal -->
+  <div class="off-modal-back" id="modal-cb">
+    <div class="off-modal off-modal-wrap" style="width:min(1040px, 94vw); max-height:92vh">
+      <button class="off-modal-close" onclick="offCloseModal('modal-cb')"><i class="ti ti-x"></i></button>
+
+      <!-- 左：圖片 + 名稱 + 4 tab -->
+      <aside class="off-modal-side" style="display:flex; flex-direction:column">
+        <div class="cbm-side-thumb">
+          <div class="ph"><i class="ti ti-photo"></i></div>
+          <div class="btns">
+            <button class="btn-upload" title="上傳"><i class="ti ti-upload"></i></button>
+            <button class="btn-existing" title="已上傳的文件">
+              <i class="ti ti-folder"></i> 已上傳的文件
+            </button>
+          </div>
+        </div>
+        <div class="off-side-title" id="cbm-side-title" style="font-size:20px; font-weight:700">未命名</div>
+        <div class="off-side-sub" style="margin-bottom:12px">
+          設定此資源的位置，以及團隊預約它的方式。
+        </div>
+
+        <div class="off-tab active" data-tab="basic">
+          <i class="ti ti-adjustments-horizontal"></i><span>基本</span>
+          <i class="ti ti-chevron-right off-tab-arrow"></i>
+        </div>
+        <div class="off-tab disabled" data-tab="rules" title="尚未開放">
+          <i class="ti ti-shield"></i><span>規則</span>
+          <i class="ti ti-chevron-right off-tab-arrow"></i>
+        </div>
+        <div class="off-tab disabled" data-tab="services" title="尚未開放">
+          <i class="ti ti-tools"></i><span>服務</span>
+          <i class="ti ti-chevron-right off-tab-arrow"></i>
+        </div>
+        <div class="off-tab disabled" data-tab="advanced" title="尚未開放">
+          <i class="ti ti-settings"></i><span>進階</span>
+          <i class="ti ti-chevron-right off-tab-arrow"></i>
+        </div>
+      </aside>
+
+      <!-- 右：分頁內容 -->
+      <div class="off-modal-body" style="padding:0; display:flex; flex-direction:column">
+
+        <!-- 基本 tab -->
+        <div class="cbm-pane" data-pane="basic" style="padding:24px; overflow-y:auto; flex:1">
+          <input type="hidden" id="cbm-id">
+
+          <div class="cbm-field">
+            <span class="lbl">
+              <i class="ti ti-tag"></i> 名稱 <span class="req">●</span>
+            </span>
+            <input id="cbm-name" placeholder="—">
+          </div>
+
+          <div class="cbm-field cbm-combine" id="cbm-combine">
+            <span class="lbl">
+              <i class="ti ti-layout-grid-add"></i> 結合 <span class="req">●</span>
+            </span>
+            <span id="cbm-combine-display" class="val">-</span>
+            <i class="ti ti-chevron-down caret"></i>
+
+            <div class="cbm-combine-panel" id="cbm-combine-panel">
+              <div class="head">
+                <b>結合</b>
+                <button class="close" type="button" onclick="closeCombinePanel(event)"><i class="ti ti-x"></i></button>
+              </div>
+              <div class="search">
+                <input id="cbm-combine-search" placeholder="🔍 搜尋 |顯示前 30 個結果">
+              </div>
+              <div id="cbm-combine-list"></div>
+              <div class="foot">
+                <button type="button" id="cbm-combine-clear">清除</button>
+                <button type="button" class="primary" id="cbm-combine-done">完成</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="cbm-field" style="align-items:flex-start">
+            <span class="lbl" style="padding-top:2px">
+              <i class="ti ti-align-left"></i> 描述
+            </span>
+            <textarea id="cbm-description" placeholder="—"></textarea>
+          </div>
+
+          <div class="cbm-field cbm-combine" id="cbm-location-wrap">
+            <span class="lbl"><i class="ti ti-map-pin"></i> 位置</span>
+            <span id="cbm-location-display" class="val">-</span>
+            <i class="ti ti-chevron-down caret"></i>
+
+            <div class="cbm-combine-panel" id="cbm-location-panel">
+              <div class="head">
+                <b>位置</b>
+                <button class="close" type="button" onclick="closeLocationPanel(event)"><i class="ti ti-x"></i></button>
+              </div>
+              <div class="search">
+                <input id="cbm-location-search" placeholder="🔍 位置">
+              </div>
+              <div id="cbm-location-list"></div>
+              <div class="foot">
+                <button type="button" id="cbm-location-clear">清除</button>
+                <button type="button" class="primary" id="cbm-location-done">完成</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="cbm-row-2">
+            <div class="cbm-field">
+              <span class="lbl"><i class="ti ti-category"></i> 類別</span>
+              <span class="val">-</span>
+              <i class="ti ti-chevron-down caret"></i>
+            </div>
+            <div class="cbm-field">
+              <span class="lbl"><i class="ti ti-users"></i> 容量</span>
+              <input id="cbm-capacity" type="number" min="0" value="10" style="width:60px; text-align:right">
+            </div>
+          </div>
+
+          <div class="cbm-field">
+            <span class="lbl"><i class="ti ti-devices"></i> 附屬設備</span>
+            <span class="val">-</span>
+            <i class="ti ti-chevron-down caret"></i>
+          </div>
+
+          <div class="cbm-field">
+            <span class="lbl"><i class="ti ti-clock"></i> 營業時間</span>
+            <span class="val">-</span>
+            <i class="ti ti-chevron-down caret"></i>
+          </div>
+
+          <div class="cbm-field">
+            <span class="lbl"><i class="ti ti-building-community"></i> 分支機構管理</span>
+            <select id="cbm-branch">
+              <option value="">HQ</option>
+            </select>
+          </div>
+
+          <div class="cbm-field disabled">
+            <span class="lbl"><i class="ti ti-id-badge"></i> 訪問 ID</span>
+            <input placeholder="—" disabled>
+          </div>
+        </div>
+
+        <!-- 其他 tab（反白，內容留空 placeholder） -->
+        <div class="cbm-pane" data-pane="rules" style="padding:24px; display:none; color:var(--off-text-muted); text-align:center">
+          <i class="ti ti-lock" style="font-size:36px; opacity:.5"></i>
+          <div>「規則」尚未開放</div>
+        </div>
+        <div class="cbm-pane" data-pane="services" style="padding:24px; display:none; color:var(--off-text-muted); text-align:center">
+          <i class="ti ti-lock" style="font-size:36px; opacity:.5"></i>
+          <div>「服務」尚未開放</div>
+        </div>
+        <div class="cbm-pane" data-pane="advanced" style="padding:24px; display:none; color:var(--off-text-muted); text-align:center">
+          <i class="ti ti-lock" style="font-size:36px; opacity:.5"></i>
+          <div>「進階」尚未開放</div>
+        </div>
+
+        <!-- Footer -->
+        <div class="off-modal-foot">
+          <div id="cbm-err" style="color:var(--off-red); font-size:13px; margin-right:auto; align-self:center; display:none"></div>
+          <button class="off-btn off-btn-primary" id="cbm-save" disabled>儲存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script>
+    OffAuth.requireLogin();
+    const esc = s => (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    // 快取
+    let combinableRooms = []; // 目前的可合併房間
+    let allRooms = [];        // 所有房間（標準 + 可合併），供結合來源選擇
+    let allBranches = [];
+    let allLocations = [];    // 全組織的樓層／地點
+    let cbmSelectedIds = new Set(); // modal 內選中的結合來源 id
+    let cbmSelectedLocationId = null; // modal 內選中的 location_id
+
+    async function loadPage() {
+      const tbody = document.getElementById('cb-tbody');
+      try {
+        [allRooms, allBranches, allLocations] = await Promise.all([
+          OffAPI.rooms.list(),
+          OffAPI.branches.list().catch(() => []),
+          OffAPI.locations.list().catch(() => []),
+        ]);
+        combinableRooms = allRooms.filter(r => r.subtype === 'combinable');
+        renderTable();
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--off-red)">讀取失敗：${esc(e.message)}</td></tr>`;
+      }
+    }
+
+    function renderTable() {
+      const q = (document.getElementById('cb-search').value || '').trim().toLowerCase();
+      const list = q ? combinableRooms.filter(r => r.name.toLowerCase().includes(q)) : combinableRooms;
+      const tbody = document.getElementById('cb-tbody');
+      if (!list.length) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:32px; color:var(--off-text-muted)">尚無可合併房間，點右上「+ 新增」建立第一個</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = list.map(r => {
+        const cbNames = (r.combined_room_names || []).join(', ');
+        const location = [r.branch_name, r.location_name].filter(Boolean).join(' ') || '—';
+        return `
+          <tr data-id="${r.id}" style="cursor:pointer">
+            <td><input type="checkbox" onclick="event.stopPropagation()"></td>
+            <td>
+              <div class="cb-cell-name">
+                <span class="cb-thumb"><i class="ti ti-layout-grid-add"></i></span>
+                <div>
+                  <b>${esc(r.name)}</b>
+                  <small>${esc(cbNames || '—')}</small>
+                </div>
+              </div>
+            </td>
+            <td><span class="cb-capacity"><i class="ti ti-users"></i> ${r.capacity}</span></td>
+            <td style="color:var(--off-text-muted)">${esc(r.category || '—')}</td>
+            <td>${esc(cbNames || '—')}</td>
+            <td>${esc(location)}</td>
+          </tr>`;
+      }).join('');
+      tbody.querySelectorAll('tr[data-id]').forEach(tr => {
+        tr.addEventListener('click', () => openModal(parseInt(tr.dataset.id, 10)));
+      });
+    }
+    document.getElementById('cb-search').addEventListener('input', renderTable);
+
+    // ---------- Modal ----------
+    function openModal(id) {
+      // reset
+      cbmSelectedIds = new Set();
+      cbmSelectedLocationId = null;
+      document.getElementById('cbm-id').value = id || '';
+      document.getElementById('cbm-name').value = '';
+      document.getElementById('cbm-description').value = '';
+      document.getElementById('cbm-capacity').value = 10;
+      document.getElementById('cbm-err').style.display = 'none';
+      document.getElementById('cbm-location-search').value = '';
+
+      // 分支下拉（預設 HQ）
+      const bSel = document.getElementById('cbm-branch');
+      if (allBranches.length) {
+        bSel.innerHTML = allBranches.map(b =>
+          `<option value="${b.id}"${b.name === 'HQ' ? ' selected' : ''}>${esc(b.name)}</option>`).join('');
+      }
+
+      // 若編輯，填入現有值
+      if (id) {
+        const r = combinableRooms.find(x => x.id === id);
+        if (r) {
+          document.getElementById('cbm-name').value = r.name;
+          document.getElementById('cbm-description').value = r.description || '';
+          document.getElementById('cbm-capacity').value = r.capacity || 10;
+          (r.combined_room_ids || []).forEach(x => cbmSelectedIds.add(x));
+          if (r.branch_id) bSel.value = r.branch_id;
+          if (r.location_id) cbmSelectedLocationId = r.location_id;
+        }
+      }
+
+      // 切回基本 tab
+      switchTab('basic');
+      updateSideTitle();
+      renderCombineList();
+      updateCombineDisplay();
+      renderLocationList();
+      updateLocationDisplay();
+      updateSaveEnabled();
+      offOpenModal('modal-cb');
+    }
+
+    document.getElementById('btn-new-cb').addEventListener('click', () => openModal(null));
+
+    function switchTab(name) {
+      document.querySelectorAll('#modal-cb .off-tab').forEach(x =>
+        x.classList.toggle('active', x.dataset.tab === name));
+      document.querySelectorAll('#modal-cb .cbm-pane').forEach(p =>
+        p.style.display = p.dataset.pane === name ? '' : 'none');
+    }
+    document.querySelectorAll('#modal-cb .off-tab:not(.disabled)').forEach(tab => {
+      tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+    });
+
+    // ---- 左側標題跟 name 連動 ----
+    document.getElementById('cbm-name').addEventListener('input', () => {
+      updateSideTitle();
+      updateSaveEnabled();
+    });
+    function updateSideTitle() {
+      const v = document.getElementById('cbm-name').value.trim();
+      document.getElementById('cbm-side-title').textContent = v || '未命名';
+    }
+
+    // ---- 結合 下拉 ----
+    const combineEl = document.getElementById('cbm-combine');
+    combineEl.addEventListener('click', (e) => {
+      if (e.target.closest('.cbm-combine-panel')) return; // 點面板內部不切換
+      combineEl.classList.toggle('open');
+    });
+    document.getElementById('cbm-combine-search').addEventListener('input', renderCombineList);
+
+    function renderCombineList() {
+      const q = (document.getElementById('cbm-combine-search').value || '').toLowerCase();
+      // 結合的來源候選：所有房間，且非目前正在編輯的自己（避免自我循環）
+      const editingId = parseInt(document.getElementById('cbm-id').value, 10) || null;
+      const list = allRooms.filter(r =>
+        r.id !== editingId &&
+        (!q || r.name.toLowerCase().includes(q))
+      ).slice(0, 30);
+      const box = document.getElementById('cbm-combine-list');
+      if (!list.length) {
+        box.innerHTML = `<div style="padding:16px; text-align:center; color:var(--off-text-muted); font-size:13px">沒有符合的房間</div>`;
+        return;
+      }
+      box.innerHTML = list.map(r => `
+        <div class="cbm-combine-item${cbmSelectedIds.has(r.id) ? ' selected' : ''}" data-id="${r.id}">
+          <span class="radio"></span>
+          <span class="name">${esc(r.name)}</span>
+          <span class="detail">詳細</span>
+        </div>`).join('');
+      box.querySelectorAll('.cbm-combine-item').forEach(el => {
+        el.addEventListener('click', (ev) => {
+          if (ev.target.classList.contains('detail')) return;
+          const id = parseInt(el.dataset.id, 10);
+          if (cbmSelectedIds.has(id)) cbmSelectedIds.delete(id);
+          else cbmSelectedIds.add(id);
+          renderCombineList();
+          updateCombineDisplay();
+          updateSaveEnabled();
+        });
+      });
+    }
+    function updateCombineDisplay() {
+      const names = [...cbmSelectedIds]
+        .map(id => allRooms.find(x => x.id === id)?.name)
+        .filter(Boolean);
+      const el = document.getElementById('cbm-combine-display');
+      if (names.length) { el.textContent = names.join('、'); el.style.color = '#111'; }
+      else { el.textContent = '-'; el.style.color = 'var(--off-text-muted)'; }
+    }
+    document.getElementById('cbm-combine-clear').addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      cbmSelectedIds = new Set();
+      renderCombineList(); updateCombineDisplay(); updateSaveEnabled();
+    });
+    document.getElementById('cbm-combine-done').addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      combineEl.classList.remove('open');
+    });
+    window.closeCombinePanel = (ev) => {
+      ev.stopPropagation();
+      combineEl.classList.remove('open');
+    };
+
+    // ---- 位置 分組面板 ----
+    const locWrap = document.getElementById('cbm-location-wrap');
+    locWrap.addEventListener('click', (e) => {
+      if (e.target.closest('.cbm-combine-panel')) return; // 點面板內部不切換
+      locWrap.classList.toggle('open');
+    });
+
+    function renderLocationList() {
+      const q = (document.getElementById('cbm-location-search').value || '').toLowerCase();
+      const box = document.getElementById('cbm-location-list');
+      if (!allLocations.length) {
+        box.innerHTML = `<div style="padding:16px; text-align:center; color:var(--off-text-muted); font-size:13px">此組織尚未建立地點</div>`;
+        return;
+      }
+      // 依 branch_id 分組
+      const branchMap = {};
+      allBranches.forEach(b => { branchMap[b.id] = b; });
+      const groups = new Map(); // key=branch_id, value={branch, locations:[]}
+      allLocations
+        .filter(l => !q || l.name.toLowerCase().includes(q))
+        .forEach(l => {
+          const b = branchMap[l.branch_id];
+          if (!b) return;
+          if (!groups.has(b.id)) groups.set(b.id, { branch: b, locations: [] });
+          groups.get(b.id).locations.push(l);
+        });
+      if (!groups.size) {
+        box.innerHTML = `<div style="padding:16px; text-align:center; color:var(--off-text-muted); font-size:13px">沒有符合的位置</div>`;
+        return;
+      }
+      let html = '';
+      for (const { branch, locations } of groups.values()) {
+        // 分支/建築物 = 顯示為分組標題（例：bizlution 辦公室 / 台北分公司內湖辦公大樓）
+        const groupLabel = branch.address && branch.address !== '—'
+          ? `${branch.name}${branch.address ? '　' + branch.address : ''}`
+          : branch.name;
+        html += `<div class="cbm-loc-group">
+          <div class="cbm-loc-group-head">${esc(groupLabel)}</div>
+          ${locations.map(l => `
+            <div class="cbm-loc-item${l.id === cbmSelectedLocationId ? ' selected' : ''}" data-id="${l.id}">
+              <span class="name">${esc(l.name)}</span>
+              <button type="button" class="detail" onclick="event.stopPropagation()">詳細</button>
+            </div>`).join('')}
+        </div>`;
+      }
+      box.innerHTML = html;
+      box.querySelectorAll('.cbm-loc-item').forEach(el => {
+        el.addEventListener('click', (ev) => {
+          if (ev.target.classList.contains('detail')) return;
+          const id = parseInt(el.dataset.id, 10);
+          cbmSelectedLocationId = (cbmSelectedLocationId === id) ? null : id;
+          renderLocationList();
+          updateLocationDisplay();
+        });
+      });
+    }
+    document.getElementById('cbm-location-search').addEventListener('input', renderLocationList);
+
+    function updateLocationDisplay() {
+      const loc = allLocations.find(l => l.id === cbmSelectedLocationId);
+      const el = document.getElementById('cbm-location-display');
+      if (loc) {
+        const branch = allBranches.find(b => b.id === loc.branch_id);
+        el.textContent = branch ? `${branch.name} · ${loc.name}` : loc.name;
+        el.style.color = '#111';
+      } else {
+        el.textContent = '-';
+        el.style.color = 'var(--off-text-muted)';
+      }
+    }
+    document.getElementById('cbm-location-clear').addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      cbmSelectedLocationId = null;
+      renderLocationList(); updateLocationDisplay();
+    });
+    document.getElementById('cbm-location-done').addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      locWrap.classList.remove('open');
+    });
+    window.closeLocationPanel = (ev) => {
+      ev.stopPropagation();
+      locWrap.classList.remove('open');
+    };
+
+    // ---- 儲存啟用條件：名稱 + 結合 至少一筆 ----
+    function updateSaveEnabled() {
+      const nameOk = document.getElementById('cbm-name').value.trim().length > 0;
+      const combineOk = cbmSelectedIds.size > 0;
+      const btn = document.getElementById('cbm-save');
+      btn.disabled = !(nameOk && combineOk);
+      btn.textContent = (nameOk && combineOk) ? '儲存' : '請填寫表格';
+    }
+
+    // ---- 儲存 ----
+    document.getElementById('cbm-save').addEventListener('click', async () => {
+      const err = document.getElementById('cbm-err');
+      err.style.display = 'none';
+      const id = parseInt(document.getElementById('cbm-id').value, 10) || null;
+      const branchVal = document.getElementById('cbm-branch').value;
+      const payload = {
+        name: document.getElementById('cbm-name').value.trim(),
+        subtype: 'combinable',
+        description: document.getElementById('cbm-description').value.trim() || null,
+        capacity: parseInt(document.getElementById('cbm-capacity').value, 10) || 0,
+        combined_room_ids: [...cbmSelectedIds],
+        branch_id: branchVal ? parseInt(branchVal, 10) : null,
+        location_id: cbmSelectedLocationId,
+      };
+      try {
+        if (id) await OffAPI.rooms.patch(id, payload);
+        else    await OffAPI.rooms.create(payload);
+        offCloseModal('modal-cb');
+        await loadPage();
+      } catch (e) {
+        err.textContent = e.message || '儲存失敗';
+        err.style.display = 'block';
+      }
+    });
+
+    loadPage();
+  </script>
+</body>
+</html>

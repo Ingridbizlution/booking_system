@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>工單管理 · 資訊主頁 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-module="ticket" data-page="dashboard"
+      data-crumbs='[{"label":"工單管理","href":"ticket-dashboard.html"},{"label":"資訊主頁"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#ffb17a,#f26a5c)"><i class="ti ti-layout-dashboard"></i></span>
+        <div>
+          <div class="off-page-title-row"><h1>票務儀表板</h1></div>
+          <p class="off-page-desc">監察及分析支援票務指標</p>
+        </div>
+        <div class="off-page-actions">
+          <button class="off-filter-pill"><i class="ti ti-calendar"></i> <span style="color:var(--off-text-muted); font-size:11px">時期</span>&nbsp;8月1日 - 8月31日 <i class="ti ti-chevron-down"></i></button>
+        </div>
+      </div>
+
+      <div class="off-grid cols-4">
+        <div class="off-kpi">
+          <div class="off-kpi-head"><span class="off-kpi-icon"><i class="ti ti-alert-circle"></i></span> 活躍票務</div>
+          <div class="off-kpi-value">0</div>
+          <div class="off-kpi-sub">等待處理 <span class="off-kpi-trend down">↘ 100%</span></div>
+        </div>
+        <div class="off-kpi kpi-orange">
+          <div class="off-kpi-head"><span class="off-kpi-icon"><i class="ti ti-refresh"></i></span> 進行中</div>
+          <div class="off-kpi-value">0</div>
+          <div class="off-kpi-sub">處理中</div>
+        </div>
+        <div class="off-kpi kpi-green">
+          <div class="off-kpi-head"><span class="off-kpi-icon"><i class="ti ti-circle-check"></i></span> 已解決</div>
+          <div class="off-kpi-value">0</div>
+          <div class="off-kpi-sub">已完成 <span class="off-kpi-trend">0% 解決率</span></div>
+        </div>
+        <div class="off-kpi kpi-red">
+          <div class="off-kpi-head"><span class="off-kpi-icon"><i class="ti ti-archive"></i></span> 已關閉</div>
+          <div class="off-kpi-value">0</div>
+          <div class="off-kpi-sub">已封存 <span class="off-kpi-trend down">↘ 100%</span></div>
+        </div>
+      </div>
+
+      <div style="height:20px"></div>
+
+      <div class="off-panel">
+        <div class="off-panel-head"><span class="off-panel-icon"><i class="ti ti-chart-line"></i></span><h3 class="off-panel-title">隨時間變化的票務</h3></div>
+        <div class="off-chart-placeholder">折線圖：日期 × 票數</div>
+      </div>
+
+      <div class="off-grid cols-2">
+        <div class="off-panel">
+          <div class="off-panel-head"><span class="off-panel-icon"><i class="ti ti-alert-triangle"></i></span><h3 class="off-panel-title">最常見問題</h3></div>
+          <div class="off-empty"><i class="ti ti-alert-circle"></i>無問題資料</div>
+        </div>
+        <div class="off-panel">
+          <div class="off-panel-head"><span class="off-panel-icon"><i class="ti ti-building"></i></span><h3 class="off-panel-title">問題資源</h3></div>
+          <div class="off-empty"><i class="ti ti-building"></i>無資源資料</div>
+        </div>
+      </div>
+
+      <div class="off-panel">
+        <div class="off-panel-head"><span class="off-panel-icon"><i class="ti ti-users"></i></span><h3 class="off-panel-title">員工工作量</h3></div>
+        <div class="off-empty"><i class="ti ti-users"></i>無可用的員工資料</div>
+      </div>
+    </main>
+  </div>
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>預約管理 · 團隊空間 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-module="reservation" data-page="team"
+      data-crumbs='[{"label":"預約管理","href":"reservation-dashboard.html"},{"label":"團隊空間"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#7c67f4,#1f80f0)"><i class="ti ti-users"></i></span>
+        <div>
+          <div class="off-page-title-row">
+            <h1>團隊空間</h1>
+            <button class="off-btn off-btn-primary" onclick="offOpenModal('modal-team')"><i class="ti ti-plus"></i> 建立</button>
+          </div>
+          <p class="off-page-desc">設定哪些資源由誰預約，以及預約方式</p>
+        </div>
+      </div>
+
+      <div class="off-grid cols-3">
+        <div class="off-panel">
+          <div class="off-panel-head"><span class="off-panel-icon"><i class="ti ti-users"></i></span><h3 class="off-panel-title">團隊空間 1</h3></div>
+          <p style="color:var(--off-text-muted); font-size:13px">HQ · 3 房間 / 5 桌 / 2 車位</p>
+          <div style="display:flex; gap:6px; flex-wrap:wrap"><span class="off-chip chip-primary">房間</span><span class="off-chip chip-purple">辦公桌</span><span class="off-chip">車位</span></div>
+        </div>
+        <div class="off-panel">
+          <div class="off-panel-head"><span class="off-panel-icon"><i class="ti ti-users"></i></span><h3 class="off-panel-title">研發團隊空間</h3></div>
+          <p style="color:var(--off-text-muted); font-size:13px">HQ · 2 房間 / 12 桌</p>
+          <div style="display:flex; gap:6px; flex-wrap:wrap"><span class="off-chip chip-primary">房間</span><span class="off-chip chip-purple">辦公桌</span></div>
+        </div>
+        <div class="off-panel">
+          <div class="off-panel-head"><span class="off-panel-icon"><i class="ti ti-users"></i></span><h3 class="off-panel-title">董事會空間</h3></div>
+          <p style="color:var(--off-text-muted); font-size:13px">HQ · 1 房間 / 3 設備</p>
+          <div style="display:flex; gap:6px; flex-wrap:wrap"><span class="off-chip chip-primary">房間</span><span class="off-chip">設備</span></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: 創建團隊空間 -->
+  <div class="off-modal-back" id="modal-team">
+    <div class="off-modal off-modal-wrap">
+      <button class="off-modal-close" onclick="offCloseModal('modal-team')"><i class="ti ti-x"></i></button>
+      <aside class="off-modal-side">
+        <h3>團隊空間</h3>
+        <p>設定哪些資源由誰預約，以及預約方式。</p>
+        <div class="off-step active"><span class="off-step-no"><i class="ti ti-adjustments"></i></span><div><b>設定</b></div></div>
+        <p style="font-size:12px; color:var(--off-text-muted); margin-top:14px">選擇此規則涵蓋的會議室、辦公桌等資源。</p>
+        <div class="off-step"><span class="off-step-no"><i class="ti ti-door"></i></span><div>房間 <span class="off-badge" style="float:right">0</span></div></div>
+        <div class="off-step"><span class="off-step-no"><i class="ti ti-grid-dots"></i></span><div>辦公桌 <span class="off-badge" style="float:right">0</span></div></div>
+        <div class="off-step"><span class="off-step-no"><i class="ti ti-device-tv"></i></span><div>設備 <span class="off-badge" style="float:right">0</span></div></div>
+        <div class="off-step"><span class="off-step-no"><i class="ti ti-parking"></i></span><div>車位 <span class="off-badge" style="float:right">0</span></div></div>
+        <div class="off-step"><span class="off-step-no"><i class="ti ti-box"></i></span><div>其他資源 <span class="off-badge" style="float:right">0</span></div></div>
+        <p style="font-size:12px; color:var(--off-text-muted); margin-top:14px">決定誰可預約、誰僅可檢視，以及誰被封鎖。</p>
+        <div class="off-step"><span class="off-step-no"><i class="ti ti-user-check"></i></span><div>成員與權限</div></div>
+      </aside>
+      <div class="off-modal-body">
+        <div class="off-field"><span class="off-field-label">名稱</span><input value="團隊空間 1"></div>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-building"></i> 分支機構管理</span><select><option>HQ</option><option>台北分公司</option><option>新竹分公司</option></select></div>
+        <div class="off-modal-foot"><button class="off-btn off-btn-primary">儲存</button></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>

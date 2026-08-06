@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>組織目錄 · 用戶群組 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+  <style>
+    tr[data-group] { cursor: pointer; }
+    tr[data-group].active { background: var(--off-sidebar-active-bg); }
+    tr[data-group].active td:first-child { position: relative; }
+    tr[data-group].active td:first-child::before {
+      content:""; position: absolute; left: 0; top: 8px; bottom: 8px;
+      width: 3px; background: var(--off-primary); border-radius: 2px;
+    }
+    .cat-chip { font-weight: 500; }
+
+    .members-list { max-height: 320px; overflow-y: auto; margin-top: 8px; }
+    .member-row {
+      display:flex; align-items:center; gap:10px;
+      padding:8px 10px; border-radius:8px;
+      cursor:pointer; user-select:none;
+    }
+    .member-row:hover { background:#f4f6fa; }
+    .member-row input { margin: 0; }
+  </style>
+</head>
+<body data-module="org" data-page="groups"
+      data-crumbs='[{"label":"組織目錄","href":"org-users.html"},{"label":"用戶群組"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#ffa6c1,#e75d84)"><i class="ti ti-users"></i></span>
+        <div>
+          <div class="off-page-title-row">
+            <h1>用戶群組</h1>
+            <button class="off-btn off-btn-primary" onclick="offOpenModal('modal-new-group')">
+              <i class="ti ti-plus"></i> 新增
+            </button>
+          </div>
+          <p class="off-page-desc">對用戶進行權限管理的分組</p>
+        </div>
+      </div>
+
+      <div class="off-panel" style="padding:0">
+        <table class="off-table">
+          <thead>
+            <tr>
+              <th style="width:40px"><input type="checkbox"></th>
+              <th class="off-search-cell"><input placeholder="🔍 名稱" id="group-search"></th>
+              <th>類別 <i class="ti ti-filter"></i></th>
+              <th>權限</th>
+            </tr>
+          </thead>
+          <tbody id="groups-tbody">
+            <tr><td colspan="4" style="text-align:center; padding:24px; color:var(--off-text-muted)">
+              <i class="ti ti-loader-2"></i> 讀取中…
+            </td></tr>
+          </tbody>
+        </table>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px">
+          <button class="off-btn"><i class="ti ti-trash"></i> 資源回收筒 <span class="off-chip">0</span></button>
+          <div style="color:var(--off-text-muted); font-size:13px">
+            30 <i class="ti ti-chevron-down"></i> &nbsp; <span id="group-count">1 - 0 / 0</span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: 新增 / 編輯群組（雙 tab：基本 / 權限） -->
+  <div class="off-modal-back" id="modal-new-group">
+    <div class="off-modal off-modal-wrap" style="width:min(1040px, 94vw); max-height:90vh">
+      <button class="off-modal-close" onclick="offCloseModal('modal-new-group')"><i class="ti ti-x"></i></button>
+      <input type="hidden" id="ng-id">
+      <!-- 左：avatar + name + tabs -->
+      <aside class="off-modal-side">
+        <div class="off-modal-side-head">
+          <span class="off-avatar" id="ng-side-avatar">用</span>
+          <div class="off-side-title" id="ng-side-title">新增用戶群組</div>
+          <div class="off-side-sub">管理此使用者群組的成員、權限與範圍。</div>
+        </div>
+        <div class="off-tab active" data-tab="basic">
+          <i class="ti ti-id-badge"></i><span>基本</span>
+          <i class="ti ti-chevron-right off-tab-arrow"></i>
+        </div>
+        <div class="off-tab" data-tab="perm">
+          <i class="ti ti-shield-check"></i><span>權限</span>
+          <span class="off-tab-count" id="ng-perm-count">0</span>
+        </div>
+      </aside>
+      <!-- 右：分頁內容 -->
+      <div class="off-modal-body" style="padding:0; display:flex; flex-direction:column">
+        <!-- 基本 -->
+        <div class="ng-pane" data-pane="basic" style="padding:24px; overflow-y:auto; flex:1">
+          <div class="off-field">
+            <span class="off-field-label"><i class="ti ti-tag"></i> 名稱</span>
+            <input id="ng-name" placeholder="例：台北研發部">
+          </div>
+          <div class="off-field">
+            <span class="off-field-label"><i class="ti ti-category"></i> 用戶群組類別</span>
+            <select id="ng-cat"><option value="">讀取中…</option></select>
+          </div>
+          <div class="off-field">
+            <span class="off-field-label"><i class="ti ti-building-community"></i> 分支機構管理</span>
+            <select id="ng-branch"><option value="">讀取中…</option></select>
+          </div>
+          <div class="off-field" style="align-items:flex-start; display:none">
+            <span class="off-field-label">說明</span>
+          </div>
+          <textarea id="ng-desc" placeholder="這個群組的用途…（選填）" style="display:none"></textarea>
+        </div>
+        <!-- 權限 -->
+        <div class="ng-pane" data-pane="perm" style="padding:0; overflow-y:auto; flex:1; display:none">
+          <div class="off-perm-section-title">管理控制台存取權限</div>
+          <div class="off-perm-head">
+            <span style="padding-left:32px">管理者</span>
+            <span>讀取</span>
+            <span>寫入</span>
+          </div>
+          <div id="ng-perm-list">
+            <!-- 由 JS 從 PERMISSIONS 常數渲染 -->
+          </div>
+        </div>
+        <!-- Footer -->
+        <div class="off-modal-foot">
+          <div id="ng-err" style="color:var(--off-red); font-size:13px; margin-right:auto; align-self:center; display:none"></div>
+          <button class="off-btn off-btn-primary" id="ng-save">儲存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: 加入成員 -->
+  <div class="off-modal-back" id="modal-add-member">
+    <div class="off-modal off-modal-wrap" style="grid-template-columns:1fr; width:min(520px, 92vw)">
+      <button class="off-modal-close" onclick="offCloseModal('modal-add-member')"><i class="ti ti-x"></i></button>
+      <div class="off-modal-body">
+        <h3 style="margin:0 0 12px">加入成員 <span id="am-group-name" style="color:var(--off-primary)"></span></h3>
+        <input id="am-search" placeholder="🔍 搜尋姓名 / 電郵" style="width:100%; padding:10px 14px; border:1px solid var(--off-border); border-radius:10px; outline:none; margin-bottom:6px" />
+        <div class="members-list" id="am-users"></div>
+        <div style="text-align:right; margin-top:12px">
+          <button class="off-btn off-btn-primary" id="am-save">加入所選</button>
+        </div>
+        <div id="am-err" style="color:var(--off-red); font-size:13px; margin-top:8px; display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右側 Drawer：群組詳細 -->
+  <div class="off-drawer-back" id="drawer-back">
+    <aside class="off-drawer">
+      <div class="off-drawer-head">
+        <button class="off-drawer-close" id="drawer-close"><i class="ti ti-x"></i></button>
+        <div class="off-drawer-title-row">
+          <span class="off-avatar" id="dr-avatar" style="background:var(--off-primary-soft); color:var(--off-primary)"></span>
+          <h3 class="off-drawer-title" id="dr-title">—</h3>
+        </div>
+        <div class="off-drawer-actions">
+          <button class="off-btn off-btn-primary" id="dr-edit"><i class="ti ti-pencil"></i> 編輯</button>
+          <button class="off-btn" id="dr-copy"><i class="ti ti-copy"></i> 複製</button>
+        </div>
+      </div>
+      <div class="off-drawer-body">
+        <div class="off-drawer-section">
+          <p class="label">類別</p>
+          <div class="value" id="dr-cat">—</div>
+        </div>
+
+        <div class="off-drawer-section">
+          <p class="label">權限</p>
+          <div class="value" id="dr-perm" style="flex-wrap:wrap; gap:6px">—</div>
+          <p class="sub" id="dr-perm-sub"></p>
+        </div>
+
+        <div class="off-drawer-section">
+          <p class="label">
+            用戶 · <span id="dr-user-count">0</span>
+          </p>
+          <div class="value">
+            <span id="dr-user-summary" style="color:var(--off-text-muted)">沒有用戶</span>
+            <button class="edit-btn" id="dr-add-member" title="加入成員"><i class="ti ti-plus"></i></button>
+          </div>
+          <div id="dr-user-list" style="margin-top:6px"></div>
+        </div>
+
+        <div class="off-drawer-section">
+          <p class="label">分支機構管理</p>
+          <div class="value" id="dr-branch">—</div>
+        </div>
+
+        <div class="off-drawer-section">
+          <p class="label">創建者</p>
+          <div class="value" id="dr-created-by">—</div>
+          <p class="sub" id="dr-created-at"></p>
+        </div>
+
+        <div class="off-drawer-section">
+          <p class="label">修改者</p>
+          <div class="value" id="dr-updated-by">—</div>
+          <p class="sub" id="dr-updated-at"></p>
+        </div>
+
+        <div class="off-drawer-section">
+          <p class="label">識別碼</p>
+          <div style="font-family:monospace; font-size:12px; color:#4b525f; background:#f8f9fc; padding:8px 10px; border-radius:8px">
+            <div style="display:flex; justify-content:space-between"><span>ID</span><b id="dr-id">—</b></div>
+            <div style="display:flex; justify-content:space-between"><span>UID</span><b id="dr-uid">—</b></div>
+            <div style="display:flex; justify-content:space-between"><span>訪問 ID</span><b id="dr-access-id">—</b></div>
+          </div>
+        </div>
+      </div>
+      <div class="off-drawer-foot">
+        <button class="off-drawer-delete" id="dr-delete"><i class="ti ti-trash"></i> 刪除</button>
+      </div>
+    </aside>
+  </div>
+
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script>
+    OffAuth.requireLogin();
+    const esc = s => (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    // 已知 key 的 chip 顏色映射；新增的類別預設為 chip-primary
+    const CAT_CHIP = {
+      admin:       'chip-red',
+      support:     'chip-yellow',
+      general:     '',
+      guest:       'chip-purple',
+      department:  'chip-primary',
+      maintenance: 'chip-primary',
+    };
+    // 動態載入的類別；key -> { label, chip, is_enabled }
+    let CAT = {};
+
+    async function loadCategories() {
+      try {
+        const cats = await OffAPI.categories.list();
+        CAT = cats.reduce((acc, c) => {
+          acc[c.key] = { label: c.label, chip: CAT_CHIP[c.key] ?? 'chip-primary', is_enabled: c.is_enabled };
+          return acc;
+        }, {});
+        // 同步下拉選單（僅列 is_enabled 的類別）
+        const sel = document.getElementById('ng-cat');
+        const enabled = cats.filter(c => c.is_enabled);
+        sel.innerHTML = enabled.map(c =>
+          `<option value="${c.key}"${c.key === 'general' ? ' selected' : ''}>${esc(c.label)}</option>`
+        ).join('') || '<option value="">（無可用類別）</option>';
+      } catch (e) {
+        console.error('讀取類別失敗', e);
+      }
+    }
+    // 管理控制台存取權限清單（沿用 Offision 標準的 14 個管理者類別）
+    const PERMISSIONS = [
+      { key: 'reservation',   icon: 'ti-calendar-event',   name: '預約管理者',       desc: '能處理所有用戶的預約' },
+      { key: 'resource',      icon: 'ti-box',              name: '資源管理者',       desc: '管理所有資源' },
+      { key: 'service',       icon: 'ti-tools',            name: '服務管理者',       desc: '能管理服務要求和服務職員' },
+      { key: 'support',       icon: 'ti-ticket',           name: '支援管理者',       desc: '能透過 用戶界面 處理支援要求和管理支援職員' },
+      { key: 'visitor',       icon: 'ti-user-check',       name: '訪客管理者',       desc: '能管理訪客和相關設定' },
+      { key: 'panel',         icon: 'ti-device-tv',        name: '面板管理者',       desc: '能管理面板' },
+      { key: 'access',        icon: 'ti-key',              name: '存取控制管理器',   desc: '權限控制不同區域/門鎖的出入權限' },
+      { key: 'event',         icon: 'ti-confetti',         name: '活動管理者',       desc: '管理所有活動的權限' },
+      { key: 'av',            icon: 'ti-video',            name: '音訊/視訊設備管理器', desc: '控制音訊/視訊設備設定的權限' },
+      { key: 'mail',          icon: 'ti-mailbox',          name: '收發管理者',       desc: '能管理包裹及收發站' },
+      { key: 'workflow',      icon: 'ti-git-fork',         name: '工作流程管理者',   desc: '能管理工作流程' },
+      { key: 'expense',       icon: 'ti-receipt',          name: '報銷管理者',       desc: '能管理報銷' },
+      { key: 'counter',       icon: 'ti-cash-register',    name: '櫃檯管理者',       desc: '能管理櫃檯和服務隊列' },
+      { key: 'user',          icon: 'ti-users',            name: '用戶管理者',       desc: '能管理用戶和用戶群組' },
+    ];
+
+    // 分支下拉
+    async function loadBranches() {
+      try {
+        const bs = await OffAPI.branches.list();
+        const sel = document.getElementById('ng-branch');
+        sel.innerHTML = '<option value="">— 不指定（全組織）—</option>' +
+          bs.map(b => `<option value="${b.id}">${esc(b.name)}</option>`).join('');
+        return bs;
+      } catch (e) { console.error('讀取分支失敗', e); return []; }
+    }
+
+    // 渲染權限清單（把當前群組的 permissions dict 反映到 UI）
+    function renderPermissions(perms = {}) {
+      const list = document.getElementById('ng-perm-list');
+      list.innerHTML = PERMISSIONS.map(p => {
+        const v = perms[p.key] || {};
+        return `
+          <div class="off-perm-row" data-key="${p.key}">
+            <div class="off-perm-name">
+              <i class="ti ${p.icon}"></i>
+              <div>
+                <b>${esc(p.name)}</b>
+                <small>${esc(p.desc)}</small>
+              </div>
+            </div>
+            <div class="off-perm-toggle">
+              <label class="off-toggle">
+                <input type="checkbox" data-role="read" ${v.read ? 'checked' : ''}>
+                <span class="off-toggle-slider"></span>
+              </label>
+            </div>
+            <div class="off-perm-toggle">
+              <label class="off-toggle">
+                <input type="checkbox" data-role="write" ${v.write ? 'checked' : ''}>
+                <span class="off-toggle-slider"></span>
+              </label>
+            </div>
+          </div>`;
+      }).join('');
+      // 勾選時同步更新徽章數字
+      list.addEventListener('change', updatePermCount, { once: true });
+      updatePermCount();
+    }
+
+    function collectPermissions() {
+      const out = {};
+      document.querySelectorAll('#ng-perm-list .off-perm-row').forEach(row => {
+        const k = row.dataset.key;
+        const r = row.querySelector('input[data-role="read"]').checked;
+        const w = row.querySelector('input[data-role="write"]').checked;
+        if (r || w) out[k] = { read: r, write: w };
+      });
+      return out;
+    }
+
+    function updatePermCount() {
+      const n = Object.keys(collectPermissions()).length;
+      document.getElementById('ng-perm-count').textContent = n;
+    }
+
+    // Tab 切換
+    document.querySelectorAll('#modal-new-group .off-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const t = tab.dataset.tab;
+        document.querySelectorAll('#modal-new-group .off-tab').forEach(x =>
+          x.classList.toggle('active', x === tab));
+        document.querySelectorAll('#modal-new-group .ng-pane').forEach(p =>
+          p.style.display = p.dataset.pane === t ? '' : 'none');
+      });
+    });
+
+    const PALETTE = ['#eaf2ff #1f80f0','#e6f7ee #12a97e','#ffe1ea #e75d84','#fff2cd #b7891b','#efe9ff #7c67f4','#ffe7d0 #f39c3d'];
+
+    let groupsCache = [];
+    let selectedGroupId = null;
+
+    function avatarFor(g) {
+      const [bg, fg] = PALETTE[g.id % PALETTE.length].split(' ');
+      const ch = (g.name || '?').slice(0, 1);
+      return { bg, fg, ch };
+    }
+
+    async function loadGroups() {
+      const tbody = document.getElementById('groups-tbody');
+      try {
+        groupsCache = await OffAPI.groups.list();
+        if (!groupsCache.length) {
+          tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:32px; color:var(--off-text-muted)">尚無群組，點右上「新增」建立第一個</td></tr>`;
+          document.getElementById('group-count').textContent = '1 - 0 / 0';
+          return;
+        }
+        renderTable();
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--off-red); padding:24px">讀取失敗：${esc(e.message)}</td></tr>`;
+      }
+    }
+
+    function renderTable() {
+      const q = document.getElementById('group-search').value.trim().toLowerCase();
+      const list = q ? groupsCache.filter(g => g.name.toLowerCase().includes(q)) : groupsCache;
+      const tbody = document.getElementById('groups-tbody');
+      tbody.innerHTML = list.map(g => {
+        const cat = CAT[g.category] || { label: g.category || '—', chip: '' };
+        const av = avatarFor(g);
+        return `
+          <tr data-group="${g.id}" ${g.id === selectedGroupId ? 'class="active"' : ''}>
+            <td onclick="event.stopPropagation()"><input type="checkbox"></td>
+            <td>
+              <div style="display:flex; align-items:center; gap:8px">
+                <span class="off-avatar" style="background:${av.bg}; color:${av.fg}">${esc(av.ch)}</span>
+                <span style="font-weight:500">${esc(g.name)}</span>
+              </div>
+            </td>
+            <td><span class="off-chip ${cat.chip} cat-chip">${cat.label}</span></td>
+            <td>
+              <span class="off-chip">用戶</span>
+              ${g.category === 'admin' ? '<span class="off-chip chip-red">管理者</span>' : ''}
+            </td>
+          </tr>
+        `;
+      }).join('');
+      document.getElementById('group-count').textContent = `1 - ${list.length} / ${groupsCache.length}`;
+
+      tbody.querySelectorAll('tr[data-group]').forEach(tr => {
+        tr.addEventListener('click', () => openDrawer(parseInt(tr.dataset.group, 10)));
+      });
+    }
+
+    document.getElementById('group-search').addEventListener('input', renderTable);
+
+    // ---------- Drawer ----------
+    async function openDrawer(groupId) {
+      selectedGroupId = groupId;
+      renderTable();
+      document.getElementById('drawer-back').classList.add('open');
+
+      // Loading state
+      document.getElementById('dr-title').textContent = '讀取中…';
+      document.getElementById('dr-user-list').innerHTML = '';
+
+      try {
+        const [g, members] = await Promise.all([
+          OffAPI.groups.get(groupId),
+          OffAPI.groups.listMembers(groupId),
+        ]);
+        const cat = CAT[g.category] || { label: g.category || '—', chip: '' };
+        const av = avatarFor(g);
+
+        document.getElementById('dr-avatar').style.background = av.bg;
+        document.getElementById('dr-avatar').style.color = av.fg;
+        document.getElementById('dr-avatar').textContent = av.ch;
+        document.getElementById('dr-title').textContent = g.name;
+
+        document.getElementById('dr-cat').innerHTML = `<span class="off-chip ${cat.chip} cat-chip">${cat.label}</span>`;
+
+        document.getElementById('dr-perm').innerHTML =
+          `<span class="off-chip">用戶</span>` +
+          (g.category === 'admin' ? ' <span class="off-chip chip-red">管理者</span>' : '') +
+          ` <span class="off-chip chip-green"><i class="ti ti-edit"></i> 寫入</span>`;
+        document.getElementById('dr-perm-sub').textContent = `預約管理者權限`;
+
+        document.getElementById('dr-user-count').textContent = members.length;
+        if (members.length) {
+          document.getElementById('dr-user-summary').textContent = `${members.length} 位成員`;
+          document.getElementById('dr-user-list').innerHTML = members.map(u => `
+            <div style="display:flex; align-items:center; gap:8px; padding:6px 0; font-size:13px">
+              <span class="off-avatar" style="width:24px; height:24px; font-size:11px">${esc(u.display_name.slice(0,1))}</span>
+              <span>${esc(u.display_name)}</span>
+              <span style="color:var(--off-text-muted); font-size:11px">${esc(u.email)}</span>
+              <button class="edit-btn" title="移除成員" data-remove="${u.id}" style="margin-left:auto; background:transparent; border:0; cursor:pointer; color:#9aa3b0"><i class="ti ti-x"></i></button>
+            </div>
+          `).join('');
+          document.getElementById('dr-user-list').querySelectorAll('[data-remove]').forEach(btn => {
+            btn.addEventListener('click', async ev => {
+              ev.stopPropagation();
+              const uid = parseInt(btn.dataset.remove, 10);
+              if (!confirm('確定要從此群組移除該成員？')) return;
+              await OffAPI.groups.removeMember(groupId, uid);
+              openDrawer(groupId);
+              loadGroups();
+            });
+          });
+        } else {
+          document.getElementById('dr-user-summary').textContent = '沒有用戶';
+          document.getElementById('dr-user-list').innerHTML = '';
+        }
+
+        // 分支：直接讀該群組的 branch_id / branch_name
+        document.getElementById('dr-branch').textContent = g.branch_name || '—';
+
+        const me = OffAuth.user();
+        document.getElementById('dr-created-by').textContent = me?.display_name || '—';
+        document.getElementById('dr-updated-by').textContent = me?.display_name || '—';
+        document.getElementById('dr-created-at').textContent = g.created_at ? new Date(g.created_at).toLocaleString('zh-TW') : '—';
+        document.getElementById('dr-updated-at').textContent = g.updated_at ? new Date(g.updated_at).toLocaleString('zh-TW') : '—';
+
+        document.getElementById('dr-id').textContent = g.id;
+        // 用 ID 生成一個穩定的 UID 樣式（純展示；正式版建議在後端存 uuid 欄位）
+        const uid = 'X'.repeat(8);
+        document.getElementById('dr-uid').textContent = `${g.id.toString(16).toUpperCase().padStart(8,'0')}-${uid.slice(0,4)}-${uid}`;
+        document.getElementById('dr-access-id').textContent = '—';
+      } catch (e) {
+        alert('讀取失敗：' + e.message);
+      }
+    }
+
+    document.getElementById('drawer-close').addEventListener('click', closeDrawer);
+    document.getElementById('drawer-back').addEventListener('click', e => {
+      if (e.target.id === 'drawer-back') closeDrawer();
+    });
+    function closeDrawer() {
+      document.getElementById('drawer-back').classList.remove('open');
+      selectedGroupId = null;
+      renderTable();
+    }
+
+    // ---------- 群組 modal helper ----------
+    async function openGroupModal(mode, g) {
+      // 每次開都重讀類別 & 分支，避免其他頁修改後不同步
+      await Promise.all([loadCategories(), loadBranches()]);
+
+      // 若當前類別已被刪除或停用，暫時補回一個選項讓 select 顯示得出來
+      if (g) {
+        const sel = document.getElementById('ng-cat');
+        if (![...sel.options].some(o => o.value === g.category)) {
+          sel.insertAdjacentHTML('afterbegin',
+            `<option value="${g.category}">${g.category}（已停用）</option>`);
+        }
+      }
+
+      // 側欄頭像 + 標題
+      const av = g ? avatarFor(g) : { bg: 'linear-gradient(135deg,#ffa26a,#f26a5c)', fg: '#fff', ch: '用' };
+      const sideAv = document.getElementById('ng-side-avatar');
+      sideAv.style.background = av.bg; sideAv.style.color = av.fg;
+      sideAv.textContent = av.ch;
+      document.getElementById('ng-side-title').textContent = g ? g.name : '新增用戶群組';
+
+      // 表單值
+      document.getElementById('ng-id').value = g ? g.id : '';
+      document.getElementById('ng-name').value = g ? g.name : '';
+      document.getElementById('ng-cat').value = g ? g.category : 'general';
+      document.getElementById('ng-branch').value = g && g.branch_id ? g.branch_id : '';
+      document.getElementById('ng-desc').value = g ? (g.description || '') : '';
+      document.getElementById('ng-err').style.display = 'none';
+
+      // 名稱側欄跟輸入框連動（不重繪頭像顏色，避免抖動）
+      const nameInp = document.getElementById('ng-name');
+      nameInp.oninput = () => {
+        const v = nameInp.value.trim();
+        document.getElementById('ng-side-title').textContent = v || (g ? g.name : '新增用戶群組');
+        sideAv.textContent = (v.slice(0, 1) || (g ? g.name.slice(0, 1) : '用'));
+      };
+
+      // 權限
+      renderPermissions((g && g.permissions) || {});
+
+      // 切回 「基本」 tab
+      document.querySelectorAll('#modal-new-group .off-tab').forEach(x =>
+        x.classList.toggle('active', x.dataset.tab === 'basic'));
+      document.querySelectorAll('#modal-new-group .ng-pane').forEach(p =>
+        p.style.display = p.dataset.pane === 'basic' ? '' : 'none');
+
+      offOpenModal('modal-new-group');
+    }
+
+    // Drawer 內按鈕：編輯
+    document.getElementById('dr-edit').addEventListener('click', () => {
+      const g = groupsCache.find(x => x.id === selectedGroupId);
+      if (g) openGroupModal('edit', g);
+    });
+
+    document.getElementById('dr-copy').addEventListener('click', async () => {
+      const g = groupsCache.find(x => x.id === selectedGroupId);
+      if (!g) return;
+      try {
+        const newG = await OffAPI.groups.create({
+          name: `${g.name} (副本)`,
+          category: g.category,
+          description: g.description || null,
+        });
+        await loadGroups();
+        openDrawer(newG.id);
+      } catch (e) {
+        alert('複製失敗：' + e.message);
+      }
+    });
+
+    document.getElementById('dr-delete').addEventListener('click', async () => {
+      const g = groupsCache.find(x => x.id === selectedGroupId);
+      if (!g) return;
+      if (!confirm(`確定要刪除群組「${g.name}」？此動作會解除所有成員的隸屬關係。`)) return;
+      try {
+        await OffAPI.groups.remove(g.id);
+        closeDrawer();
+        await loadGroups();
+      } catch (e) {
+        alert('刪除失敗：' + e.message);
+      }
+    });
+
+    document.getElementById('dr-add-member').addEventListener('click', () => {
+      const g = groupsCache.find(x => x.id === selectedGroupId);
+      if (!g) return;
+      openAddMember(g.id, g.name);
+    });
+
+    // ---------- 新增 / 編輯 群組 ----------
+    // 右上「+ 新增」— 攔截原本 inline onclick 的行為，先跑我們的 openGroupModal
+    (() => {
+      const btn = document.querySelector('button[onclick="offOpenModal(\'modal-new-group\')"]');
+      if (btn) {
+        btn.removeAttribute('onclick');
+        btn.addEventListener('click', () => openGroupModal('create'));
+      }
+    })();
+
+    document.getElementById('ng-save').addEventListener('click', async () => {
+      const err = document.getElementById('ng-err');
+      err.style.display = 'none';
+      const id = parseInt(document.getElementById('ng-id').value, 10) || null;
+      const branchVal = document.getElementById('ng-branch').value;
+      const payload = {
+        name: document.getElementById('ng-name').value.trim(),
+        category: document.getElementById('ng-cat').value,
+        description: document.getElementById('ng-desc').value.trim() || null,
+        branch_id: branchVal ? parseInt(branchVal, 10) : null,
+        permissions: collectPermissions(),
+      };
+      if (!payload.name) { err.textContent = '請輸入名稱'; err.style.display = 'block'; return; }
+      try {
+        if (id) await OffAPI.groups.patch(id, payload);
+        else    await OffAPI.groups.create(payload);
+        offCloseModal('modal-new-group');
+        await loadGroups();
+        if (id && selectedGroupId === id) openDrawer(id);
+      } catch (e) {
+        err.textContent = e.message; err.style.display = 'block';
+      }
+    });
+
+    // ---------- 加入成員 Modal（沿用之前的邏輯）----------
+    let cachedUsers = [];
+    let currentAddGroupId = null;
+    async function openAddMember(groupId, groupName) {
+      currentAddGroupId = groupId;
+      document.getElementById('am-group-name').textContent = groupName;
+      document.getElementById('am-search').value = '';
+      document.getElementById('am-err').style.display = 'none';
+      cachedUsers = await OffAPI.users.list();
+      renderMemberList('');
+      offOpenModal('modal-add-member');
+    }
+    function renderMemberList(q) {
+      const box = document.getElementById('am-users');
+      const list = cachedUsers.filter(u => !q ||
+        u.display_name.toLowerCase().includes(q.toLowerCase()) ||
+        u.email.toLowerCase().includes(q.toLowerCase()));
+      if (!list.length) {
+        box.innerHTML = `<div style="color:var(--off-text-muted); padding:12px; text-align:center">沒有符合的使用者</div>`;
+        return;
+      }
+      box.innerHTML = list.map(u => `
+        <label class="member-row">
+          <input type="checkbox" value="${u.id}">
+          <span class="off-avatar">${esc(u.display_name.slice(0,1))}</span>
+          <div>
+            <div style="font-weight:500">${esc(u.display_name)}</div>
+            <div style="color:var(--off-text-muted); font-size:12px">${esc(u.email)}</div>
+          </div>
+        </label>
+      `).join('');
+    }
+    document.getElementById('am-search').addEventListener('input', e => renderMemberList(e.target.value));
+    document.getElementById('am-save').addEventListener('click', async () => {
+      const ids = [...document.querySelectorAll('#am-users input[type=checkbox]:checked')].map(x => parseInt(x.value, 10));
+      const err = document.getElementById('am-err');
+      err.style.display = 'none';
+      if (!ids.length) { err.textContent = '請至少選一位使用者'; err.style.display = 'block'; return; }
+      try {
+        await OffAPI.groups.addMembers(currentAddGroupId, ids);
+        offCloseModal('modal-add-member');
+        await loadGroups();
+        if (selectedGroupId === currentAddGroupId) openDrawer(currentAddGroupId);
+      } catch (e) {
+        err.textContent = e.message; err.style.display = 'block';
+      }
+    });
+
+    // 先載類別（表格 chip 才有正確 label），再載群組
+    (async () => {
+      await loadCategories();
+      await loadGroups();
+    })();
+  </script>
+</body>
+</html>

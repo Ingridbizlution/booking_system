@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>預約管理 · 資訊主頁 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-module="reservation" data-page="dashboard"
+      data-crumbs='[{"label":"預約管理","href":"reservation-dashboard.html"},{"label":"資訊主頁"}]'>
+
+  <div id="off-top"></div>
+
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon"><i class="ti ti-layout-dashboard"></i></span>
+        <div>
+          <div class="off-page-title-row"><h1>預約儀表板</h1></div>
+          <p class="off-page-desc">顯示資源使用情況和預約統計的概覽。</p>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap">
+        <button class="off-filter-pill"><i class="ti ti-calendar"></i> 8月1日 - 8月31日 <i class="ti ti-chevron-down"></i></button>
+        <button class="off-filter-pill"><i class="ti ti-buildings"></i> 所有樓層 <i class="ti ti-chevron-down"></i></button>
+      </div>
+
+      <div class="off-tabs">
+        <a href="#" class="active">總合</a>
+        <a href="#">房間</a>
+        <a href="#">辦公桌</a>
+        <a href="#">設備</a>
+        <a href="#">車位</a>
+        <a href="#">其他</a>
+      </div>
+
+      <!-- KPI -->
+      <div class="off-grid cols-4">
+        <div class="off-kpi">
+          <div class="off-kpi-head"><span class="off-kpi-icon"><i class="ti ti-folder"></i></span> 資源數量</div>
+          <div class="off-kpi-value" id="kpi-resource">—</div>
+          <div class="off-kpi-sub">資源</div>
+        </div>
+        <div class="off-kpi kpi-purple">
+          <div class="off-kpi-head"><span class="off-kpi-icon"><i class="ti ti-calendar-event"></i></span> 預約總數</div>
+          <div class="off-kpi-value" id="kpi-resv">—</div>
+          <div class="off-kpi-sub">預約</div>
+        </div>
+        <div class="off-kpi kpi-orange">
+          <div class="off-kpi-head"><span class="off-kpi-icon"><i class="ti ti-clock"></i></span> 總預約時間</div>
+          <div class="off-kpi-value" id="kpi-hours">—</div>
+          <div class="off-kpi-sub">小時</div>
+        </div>
+        <div class="off-kpi kpi-green">
+          <div class="off-kpi-head"><span class="off-kpi-icon"><i class="ti ti-chart-line"></i></span> 資源使用率</div>
+          <div class="off-kpi-value" id="kpi-rate">—</div>
+          <div class="off-kpi-sub" id="kpi-rate-sub">—</div>
+        </div>
+      </div>
+
+      <div style="height:20px"></div>
+
+      <!-- Charts -->
+      <div class="off-panel">
+        <div class="off-panel-head">
+          <span class="off-panel-icon"><i class="ti ti-chart-area-line"></i></span>
+          <h3 class="off-panel-title">資源使用率（每小時）</h3>
+        </div>
+        <div class="off-chart-placeholder">折線圖：每日/每小時使用時數</div>
+      </div>
+
+      <div class="off-grid cols-2">
+        <div class="off-panel">
+          <div class="off-panel-head">
+            <span class="off-panel-icon"><i class="ti ti-chart-donut"></i></span>
+            <h3 class="off-panel-title">預約類型</h3>
+          </div>
+          <div class="off-chart-placeholder">圓餅圖：一般 / 重複 / 即場</div>
+        </div>
+        <div class="off-panel">
+          <div class="off-panel-head">
+            <span class="off-panel-icon"><i class="ti ti-radar-2"></i></span>
+            <h3 class="off-panel-title">預約長度</h3>
+          </div>
+          <div class="off-chart-placeholder">雷達圖：&lt;=30 / 30-60 / 60-90 / …</div>
+        </div>
+      </div>
+
+      <div class="off-panel">
+        <div class="off-panel-head">
+          <span class="off-panel-icon"><i class="ti ti-layout-grid"></i></span>
+          <h3 class="off-panel-title">資源使用分佈圖</h3>
+        </div>
+        <div class="off-chart-placeholder" style="height:200px">熱力圖：時段 × 日期</div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script>
+    OffAuth.requireLogin();
+
+    (async () => {
+      // 預設本月
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const end   = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      const iso = d => d.toISOString().slice(0, 10);
+      try {
+        const s = await OffAPI.dashboard.reservation(iso(start), iso(end));
+        document.getElementById('kpi-resource').textContent = s.resource_count;
+        document.getElementById('kpi-resv').textContent     = s.reservation_count;
+        document.getElementById('kpi-hours').textContent    = s.total_hours;
+        document.getElementById('kpi-rate').textContent     = `${(s.utilization_rate * 100).toFixed(1)}%`;
+        document.getElementById('kpi-rate-sub').textContent =
+          `總共使用：${s.total_hours} / ${s.total_available_hours} 小時`;
+      } catch (e) {
+        console.warn(e);
+      }
+    })();
+  </script>
+</body>
+</html>

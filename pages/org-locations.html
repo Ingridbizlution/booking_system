@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>組織目錄 · 地點 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-module="org" data-page="locations"
+      data-crumbs='[{"label":"組織目錄","href":"org-users.html"},{"label":"地點"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#ffa6c1,#e75d84)"><i class="ti ti-map-pin"></i></span>
+        <div>
+          <div class="off-page-title-row">
+            <h1>地點</h1>
+            <button class="off-btn off-btn-primary" id="btn-new-loc">
+              <i class="ti ti-plus"></i> 新增地點
+            </button>
+          </div>
+          <p class="off-page-desc">組織下所有的建築 / 樓層 / 區域清單</p>
+        </div>
+        <div class="off-page-actions">
+          <select class="off-filter-pill" id="filter-branch" style="border:1px solid var(--off-border); background:#fff">
+            <option value="">全部分支</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="off-panel" style="padding:0">
+        <table class="off-table">
+          <thead>
+            <tr>
+              <th style="width:40px"><input type="checkbox"></th>
+              <th>名稱</th>
+              <th>類型</th>
+              <th>分支機構</th>
+              <th>上層</th>
+              <th>平面圖</th>
+              <th style="width:100px"></th>
+            </tr>
+          </thead>
+          <tbody id="loc-tbody">
+            <tr><td colspan="7" style="text-align:center; padding:24px; color:var(--off-text-muted)">
+              <i class="ti ti-loader-2"></i> 讀取中…
+            </td></tr>
+          </tbody>
+        </table>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px">
+          <span style="color:var(--off-text-muted); font-size:13px">
+            <i class="ti ti-info-circle"></i> 點右側鉛筆圖示編輯，紅色垃圾桶刪除
+          </span>
+          <span id="loc-count" style="color:var(--off-text-muted); font-size:13px">0 / 0</span>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: 新增 / 編輯 地點 -->
+  <div class="off-modal-back" id="modal-new-loc">
+    <div class="off-modal off-modal-wrap" style="grid-template-columns:1fr; width:min(520px, 92vw)">
+      <button class="off-modal-close" onclick="offCloseModal('modal-new-loc')"><i class="ti ti-x"></i></button>
+      <div class="off-modal-body">
+        <h3 id="nl-title" style="margin:0 0 16px">新增地點</h3>
+        <input type="hidden" id="nl-id">
+
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-tag"></i> 名稱</span>
+          <input id="nl-name" placeholder="例：3F、B1、東翼、A 棟">
+        </div>
+
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-building"></i> 分支機構</span>
+          <select id="nl-branch"></select>
+        </div>
+
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-category"></i> 類型</span>
+          <select id="nl-type">
+            <option value="floor">樓層 (floor)</option>
+            <option value="building">建築 (building)</option>
+            <option value="area">區域 (area)</option>
+          </select>
+        </div>
+
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-hierarchy"></i> 上層地點</span>
+          <select id="nl-parent">
+            <option value="">（不指定）</option>
+          </select>
+        </div>
+
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-photo"></i> 平面圖 URL</span>
+          <input id="nl-plan" placeholder="選填">
+        </div>
+
+        <div style="text-align:right; margin-top:16px">
+          <button class="off-btn off-btn-primary" id="nl-save">儲存</button>
+        </div>
+        <div id="nl-err" style="color:var(--off-red); font-size:13px; margin-top:8px; display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script>
+    OffAuth.requireLogin();
+    const esc = s => (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    const TYPE_LABEL = { floor: '樓層', building: '建築', area: '區域' };
+    const TYPE_CHIP  = { floor: 'chip-primary', building: 'chip-purple', area: 'chip-yellow' };
+
+    let branchesCache = [];
+    let locsCache = [];
+
+    async function loadAll() {
+      const tbody = document.getElementById('loc-tbody');
+      try {
+        [branchesCache, locsCache] = await Promise.all([
+          OffAPI.branches.list(),
+          OffAPI.locations.list(),
+        ]);
+        // 分支下拉（篩選）
+        const filterSel = document.getElementById('filter-branch');
+        filterSel.innerHTML = `<option value="">全部分支 (${branchesCache.length})</option>` +
+          branchesCache.map(b => `<option value="${b.id}">${esc(b.name)}</option>`).join('');
+        renderTable(filterSel.value);
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--off-red); padding:24px">讀取失敗：${esc(e.message)}</td></tr>`;
+      }
+    }
+
+    function renderTable(filterBranchId) {
+      const tbody = document.getElementById('loc-tbody');
+      const filter = filterBranchId ? parseInt(filterBranchId, 10) : null;
+      const list = filter ? locsCache.filter(l => l.branch_id === filter) : locsCache;
+      if (!list.length) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:28px; color:var(--off-text-muted)">尚無地點，點右上「新增地點」建立第一個</td></tr>`;
+        document.getElementById('loc-count').textContent = `0 / ${locsCache.length}`;
+        return;
+      }
+      const branchMap = Object.fromEntries(branchesCache.map(b => [b.id, b.name]));
+      const locMap = Object.fromEntries(locsCache.map(l => [l.id, l.name]));
+
+      tbody.innerHTML = list.map(l => `
+        <tr>
+          <td><input type="checkbox"></td>
+          <td>
+            <div style="display:flex; align-items:center; gap:8px">
+              <span class="off-avatar"><i class="ti ti-map-pin"></i></span>
+              <span style="font-weight:500">${esc(l.name)}</span>
+            </div>
+          </td>
+          <td><span class="off-chip ${TYPE_CHIP[l.type] || ''}">${TYPE_LABEL[l.type] || l.type}</span></td>
+          <td>${esc(branchMap[l.branch_id] || '—')}</td>
+          <td>${l.parent_id ? esc(locMap[l.parent_id] || '—') : '<span style="color:var(--off-text-muted)">—</span>'}</td>
+          <td>${l.floor_plan_url ? `<a href="${esc(l.floor_plan_url)}" target="_blank" style="color:var(--off-primary)">開啟 →</a>` : '<span style="color:var(--off-text-muted)">—</span>'}</td>
+          <td style="text-align:right">
+            <button class="off-btn off-btn-ghost" data-edit="${l.id}" title="編輯"><i class="ti ti-pencil"></i></button>
+            <button class="off-btn off-btn-ghost" data-del="${l.id}"  title="刪除" style="color:var(--off-red)"><i class="ti ti-trash"></i></button>
+          </td>
+        </tr>
+      `).join('');
+      document.getElementById('loc-count').textContent = `${list.length} / ${locsCache.length}`;
+
+      tbody.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => openEdit(parseInt(b.dataset.edit, 10))));
+      tbody.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => onDelete(parseInt(b.dataset.del, 10))));
+    }
+
+    document.getElementById('filter-branch').addEventListener('change', e => renderTable(e.target.value));
+
+    // ---------- 新增 / 編輯 ----------
+    function fillBranchSelect(sel, selectedId) {
+      sel.innerHTML = branchesCache.map(b =>
+        `<option value="${b.id}" ${b.id === selectedId ? 'selected' : ''}>${esc(b.name)}</option>`
+      ).join('');
+    }
+    function fillParentSelect(sel, branchId, excludeId, selectedId) {
+      const list = locsCache.filter(l => l.branch_id === branchId && l.id !== excludeId);
+      sel.innerHTML = `<option value="">（不指定）</option>` +
+        list.map(l => `<option value="${l.id}" ${l.id === selectedId ? 'selected' : ''}>${esc(l.name)}</option>`).join('');
+    }
+
+    function openCreate() {
+      document.getElementById('nl-title').textContent = '新增地點';
+      document.getElementById('nl-id').value = '';
+      document.getElementById('nl-name').value = '';
+      document.getElementById('nl-type').value = 'floor';
+      document.getElementById('nl-plan').value = '';
+      document.getElementById('nl-err').style.display = 'none';
+      fillBranchSelect(document.getElementById('nl-branch'), branchesCache[0]?.id);
+      fillParentSelect(document.getElementById('nl-parent'), branchesCache[0]?.id, null, null);
+      offOpenModal('modal-new-loc');
+    }
+
+    function openEdit(id) {
+      const l = locsCache.find(x => x.id === id);
+      if (!l) return;
+      document.getElementById('nl-title').textContent = '編輯地點';
+      document.getElementById('nl-id').value = l.id;
+      document.getElementById('nl-name').value = l.name;
+      document.getElementById('nl-type').value = l.type;
+      document.getElementById('nl-plan').value = l.floor_plan_url || '';
+      document.getElementById('nl-err').style.display = 'none';
+      fillBranchSelect(document.getElementById('nl-branch'), l.branch_id);
+      fillParentSelect(document.getElementById('nl-parent'), l.branch_id, l.id, l.parent_id);
+      offOpenModal('modal-new-loc');
+    }
+
+    // 分支切換時，重刷「上層」下拉
+    document.getElementById('nl-branch').addEventListener('change', e => {
+      const editingId = parseInt(document.getElementById('nl-id').value, 10) || null;
+      fillParentSelect(document.getElementById('nl-parent'), parseInt(e.target.value, 10), editingId, null);
+    });
+
+    document.getElementById('btn-new-loc').addEventListener('click', openCreate);
+
+    document.getElementById('nl-save').addEventListener('click', async () => {
+      const err = document.getElementById('nl-err');
+      err.style.display = 'none';
+      const id = parseInt(document.getElementById('nl-id').value, 10) || null;
+      const payload = {
+        branch_id: parseInt(document.getElementById('nl-branch').value, 10),
+        parent_id: parseInt(document.getElementById('nl-parent').value, 10) || null,
+        type: document.getElementById('nl-type').value,
+        name: document.getElementById('nl-name').value.trim(),
+        floor_plan_url: document.getElementById('nl-plan').value.trim() || null,
+      };
+      if (!payload.name) { err.textContent = '請輸入名稱'; err.style.display = 'block'; return; }
+      try {
+        if (id) await OffAPI.locations.patch(id, payload);
+        else    await OffAPI.locations.create(payload);
+        offCloseModal('modal-new-loc');
+        await loadAll();
+      } catch (e) {
+        err.textContent = e.message; err.style.display = 'block';
+      }
+    });
+
+    async function onDelete(id) {
+      const l = locsCache.find(x => x.id === id);
+      if (!confirm(`確定要刪除「${l?.name || '此地點'}」？\n若底下還有樓層 / 房間，可能會刪不掉或連動刪除。`)) return;
+      try {
+        await OffAPI.locations.remove(id);
+        await loadAll();
+      } catch (e) {
+        alert('刪除失敗：' + e.message);
+      }
+    }
+
+    loadAll();
+  </script>
+</body>
+</html>

@@ -1,0 +1,879 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>預約管理 · 設備 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+  <style>
+    .eq-thumb {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: #f2f4f8; display: inline-flex; align-items: center; justify-content: center;
+      color: #6b7280;
+    }
+
+    /* Drawer 內容：頂部大 preview */
+    .eqd-preview {
+      background: #f4f6fa; border-radius: 14px;
+      padding: 22px; text-align: center;
+      margin: 0 20px 12px;
+    }
+    .eqd-preview .ph {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 100%; aspect-ratio: 5/3;
+      background: #eef1f6; border-radius: 12px; color: #cfd4de; font-size: 44px;
+    }
+    .eqd-title-row {
+      padding: 0 20px 6px;
+    }
+    .eqd-title-row h3 { margin: 0; font-size: 20px; font-weight: 700; }
+    .eqd-actions {
+      display: flex; gap: 6px; padding: 8px 20px 12px;
+    }
+    .eqd-actions button {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 6px 14px; border-radius: 999px;
+      border: 0; cursor: pointer; font-size: 13px;
+    }
+    .eqd-actions .btn-edit { background: var(--off-primary); color: #fff; font-weight: 500; }
+    .eqd-actions .btn-copy,
+    .eqd-actions .btn-swap { background: #f2f4f8; color: #4b525f; }
+
+    .eqd-desc {
+      padding: 8px 20px 4px; color: var(--off-text-muted); font-size: 12px;
+    }
+    .eqd-desc-body {
+      padding: 0 20px 12px; font-size: 14px; color: #2b2f3a;
+    }
+
+    /* 每個欄位一行；右側顯示值 + edit pencil */
+    .eqd-field {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      padding: 12px 20px; border-bottom: 1px solid var(--off-border);
+      font-size: 14px; gap: 10px;
+    }
+    .eqd-field .lbl { color: var(--off-text-muted); font-size: 12px; }
+    .eqd-field .val { color: #111; margin-top: 2px; }
+    .eqd-field .val.mono { font-family: monospace; font-size: 12px; }
+    .eqd-field .val.muted { color: var(--off-text-muted); }
+    .eqd-field .pencil { color: #9aa3b0; cursor: pointer; background: transparent; border: 0; padding: 4px; }
+    .eqd-field .pencil:hover { color: var(--off-primary); }
+
+    /* QR code 貼紙 */
+    .eqd-qr {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 20px; border-bottom: 1px solid var(--off-border);
+    }
+    .eqd-qr .qr-box {
+      width: 68px; height: 68px; border-radius: 8px;
+      background: #fff; border: 1px solid var(--off-border);
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .eqd-qr .qr-box svg { width: 60px; height: 60px; }
+    .eqd-qr .qr-info { flex: 1; }
+    .eqd-qr .qr-info b { display: block; font-size: 14px; }
+    .eqd-qr .qr-info small { color: var(--off-text-muted); font-size: 12px; }
+    .eqd-qr .qr-link {
+      color: #9aa3b0; padding: 4px; background: transparent; border: 0; cursor: pointer;
+    }
+
+    /* 識別碼區塊 */
+    .eqd-uid-box {
+      margin: 8px 20px;
+      background: #f8f9fc; padding: 10px 12px;
+      border-radius: 8px; font-family: monospace; font-size: 12px; color: #4b525f;
+    }
+    .eqd-uid-box div { display: flex; justify-content: space-between; padding: 3px 0; }
+    .eqd-uid-box b { color: #111; }
+
+    /* 底部刪除 */
+    .eqd-foot {
+      padding: 14px 20px;
+      border-top: 1px solid var(--off-border);
+    }
+    .eqd-foot .btn-del {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: transparent; color: var(--off-red);
+      border: 0; padding: 6px 12px; cursor: pointer; font-size: 13px;
+    }
+    .eqd-foot .btn-del:hover { text-decoration: underline; }
+  </style>
+</head>
+<body data-module="reservation" data-page="equipment"
+      data-crumbs='[{"label":"預約管理","href":"reservation-dashboard.html"},{"label":"設備"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#ffb17a,#f26a5c)"><i class="ti ti-device-tv"></i></span>
+        <div>
+          <div class="off-page-title-row">
+            <h1>設備</h1>
+            <span class="off-new-tag">NEW</span>
+            <button class="off-btn off-btn-primary" id="btn-new-eq">
+              <i class="ti ti-plus"></i> 新增
+            </button>
+            <button class="off-btn"><i class="ti ti-upload"></i> 匯入</button>
+          </div>
+          <p class="off-page-desc">管理設備及其設定</p>
+        </div>
+        <div class="off-page-actions">
+          <button class="off-btn"><i class="ti ti-qrcode"></i> QR 碼管理</button>
+          <button class="off-btn"><i class="ti ti-adjustments-alt"></i> 排序 / 欄位</button>
+        </div>
+      </div>
+
+      <div class="off-panel" style="padding:0">
+        <table class="off-table">
+          <thead>
+            <tr>
+              <th style="width:40px"><input type="checkbox"></th>
+              <th class="off-search-cell"><input placeholder="🔍 名稱" id="eq-search"></th>
+              <th>類別 <i class="ti ti-filter"></i></th>
+              <th>位置 <i class="ti ti-filter"></i></th>
+            </tr>
+          </thead>
+          <tbody id="eq-tbody">
+            <tr><td colspan="4" style="text-align:center; padding:24px; color:var(--off-text-muted)">
+              <i class="ti ti-loader-2"></i> 讀取中…
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- 右側 Drawer -->
+  <div class="off-drawer-back" id="eqd-back">
+    <aside class="off-drawer" style="width:min(440px, 96vw)">
+      <button class="off-drawer-close" id="eqd-close" style="position:absolute; top:12px; right:12px; z-index:2"><i class="ti ti-x"></i></button>
+
+      <div class="off-drawer-body" style="padding:20px 0 0; overflow-y:auto">
+        <!-- 圖片預覽 -->
+        <div class="eqd-preview">
+          <div class="ph"><i class="ti ti-device-tv"></i></div>
+        </div>
+        <!-- 標題 + 3 buttons -->
+        <div class="eqd-title-row">
+          <h3 id="eqd-title">—</h3>
+        </div>
+        <div class="eqd-actions">
+          <button class="btn-edit" id="eqd-edit"><i class="ti ti-pencil"></i> 編輯</button>
+          <button class="btn-copy" id="eqd-copy"><i class="ti ti-copy"></i> 複製</button>
+          <button class="btn-swap" id="eqd-swap"><i class="ti ti-transfer"></i> 更換</button>
+        </div>
+
+        <!-- 描述 -->
+        <div class="eqd-desc">描述</div>
+        <div class="eqd-desc-body" id="eqd-desc-body">—</div>
+
+        <!-- QR Code 貼紙 (fake) -->
+        <div class="eqd-qr">
+          <div class="qr-box">
+            <svg viewBox="0 0 21 21" shape-rendering="crispEdges" style="width:60px; height:60px">
+              <!-- 假 QR 圖案：三個定位方塊 + 隨機黑點 -->
+              <path fill="#000" d="M0 0h7v1H0zM8 0h1v1H8zM10 0h1v1h1V-1h-1zM14 0h7v1h-7zM0 1h1v1H0zM6 1h1v1H6zM9 1h2v1H9zM14 1h1v1h-1zM20 1h1v1h-1zM0 2h1v1H0zM2 2h3v1H2zM6 2h1v1H6zM9 2h1v1H9zM11 2h1v1h-1zM14 2h1v1h-1zM16 2h3v1h-3zM20 2h1v1h-1zM0 3h1v1H0zM2 3h3v1H2zM6 3h1v1H6zM8 3h1v1H8zM10 3h1v1h-1zM14 3h1v1h-1zM16 3h3v1h-3zM20 3h1v1h-1zM0 4h1v1H0zM2 4h3v1H2zM6 4h1v1H6zM9 4h1v1H9zM11 4h1v1h-1zM14 4h1v1h-1zM16 4h3v1h-3zM20 4h1v1h-1zM0 5h1v1H0zM6 5h1v1H6zM8 5h2v1H8zM11 5h1v1h-1zM14 5h1v1h-1zM20 5h1v1h-1zM0 6h7v1H0zM8 6h1v1H8zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h7v1h-7zM8 7h1v1H8zM10 7h3v1h-3zM0 8h2v1H0zM3 8h1v1H3zM5 8h1v1H5zM8 8h1v1H8zM10 8h1v1h-1zM13 8h1v1h-1zM15 8h2v1h-2zM18 8h3v1h-3zM1 9h1v1H1zM4 9h1v1H4zM7 9h1v1H7zM9 9h3v1H9zM13 9h1v1h-1zM17 9h2v1h-2zM20 9h1v1h-1zM0 10h3v1H0zM4 10h1v1H4zM6 10h1v1H6zM8 10h1v1H8zM10 10h1v1h-1zM12 10h2v1h-2zM15 10h1v1h-1zM17 10h1v1h-1zM19 10h2v1h-2zM1 11h2v1H1zM4 11h3v1H4zM8 11h2v1H8zM11 11h1v1h-1zM13 11h1v1h-1zM15 11h1v1h-1zM17 11h1v1h-1zM19 11h1v1h-1zM0 12h1v1H0zM2 12h2v1H2zM5 12h2v1H5zM8 12h3v1H8zM12 12h2v1h-2zM15 12h6v1h-6zM8 13h1v1H8zM10 13h3v1h-3zM14 13h1v1h-1zM16 13h1v1h-1zM19 13h2v1h-2zM0 14h7v1H0zM8 14h1v1H8zM10 14h1v1h-1zM12 14h1v1h-1zM14 14h1v1h-1zM16 14h1v1h-1zM18 14h1v1h-1zM20 14h1v1h-1zM0 15h1v1H0zM6 15h1v1H6zM9 15h1v1H9zM11 15h2v1h-2zM14 15h3v1h-3zM19 15h2v1h-2zM0 16h1v1H0zM2 16h3v1H2zM6 16h1v1H6zM8 16h1v1H8zM10 16h2v1h-2zM13 16h1v1h-1zM15 16h5v1h-5zM0 17h1v1H0zM2 17h3v1H2zM6 17h1v1H6zM8 17h4v1H8zM13 17h2v1h-2zM16 17h2v1h-2zM19 17h2v1h-2zM0 18h1v1H0zM2 18h3v1H2zM6 18h1v1H6zM9 18h2v1H9zM12 18h1v1h-1zM14 18h4v1h-4zM19 18h1v1h-1zM0 19h1v1H0zM6 19h1v1H6zM8 19h4v1H8zM14 19h1v1h-1zM17 19h1v1h-1zM19 19h1v1h-1zM0 20h7v1H0zM8 20h2v1H8zM12 20h1v1h-1zM14 20h1v1h-1zM17 20h4v1h-4z"/>
+            </svg>
+          </div>
+          <div class="qr-info">
+            <b>QR Code 貼紙</b>
+            <small>可以用手機掃描預約</small>
+          </div>
+          <button class="qr-link" title="開啟"><i class="ti ti-external-link"></i></button>
+        </div>
+
+        <!-- 暫停服務時間 -->
+        <div class="eqd-field">
+          <div>
+            <div class="lbl">暫停服務時間</div>
+            <div class="val muted" id="eqd-blackouts">—</div>
+          </div>
+          <button class="pencil" title="編輯"><i class="ti ti-pencil"></i></button>
+        </div>
+
+        <!-- 類別 -->
+        <div class="eqd-field">
+          <div>
+            <div class="lbl">類別</div>
+            <div class="val" id="eqd-category">—</div>
+          </div>
+          <button class="pencil" title="編輯"><i class="ti ti-pencil"></i></button>
+        </div>
+
+        <!-- 位置 -->
+        <div class="eqd-field">
+          <div>
+            <div class="lbl">位置</div>
+            <div class="val" id="eqd-location">沒有位置</div>
+          </div>
+          <button class="pencil" title="編輯"><i class="ti ti-pencil"></i></button>
+        </div>
+
+        <!-- 營業時間 -->
+        <div class="eqd-field">
+          <div>
+            <div class="lbl">營業時間</div>
+            <div class="val muted">無營業時間</div>
+          </div>
+          <button class="pencil" title="編輯"><i class="ti ti-pencil"></i></button>
+        </div>
+
+        <!-- 團隊空間 -->
+        <div class="eqd-field">
+          <div>
+            <div class="lbl">團隊空間</div>
+            <div class="val" id="eqd-team">—</div>
+          </div>
+          <button class="pencil" title="編輯"><i class="ti ti-pencil"></i></button>
+        </div>
+
+        <!-- 建議優先級 -->
+        <div class="eqd-field">
+          <div>
+            <div class="lbl">建議優先級</div>
+            <div class="val" id="eqd-priority">0</div>
+          </div>
+          <button class="pencil" title="編輯"><i class="ti ti-pencil"></i></button>
+        </div>
+
+        <!-- 日曆 -->
+        <div class="eqd-field">
+          <div>
+            <div class="lbl">日曆</div>
+            <div class="val">
+              <span style="display:inline-flex; align-items:center; gap:6px">
+                <span style="width:16px; height:16px; border-radius:4px; background:linear-gradient(135deg,#58f5cd,#7c67f4); display:inline-block"></span>
+                Offision 日曆
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 分支機構管理 -->
+        <div class="eqd-field">
+          <div style="flex:1">
+            <div class="lbl">分支機構管理</div>
+            <div class="val">
+              <select id="eqd-branch" style="border:0; background:transparent; font-size:14px; color:#111; outline:none">
+                <option value="">HQ</option>
+              </select>
+            </div>
+          </div>
+          <button class="pencil" title="編輯"><i class="ti ti-pencil"></i></button>
+        </div>
+
+        <!-- 創建者 -->
+        <div class="eqd-field">
+          <div>
+            <div class="lbl">創建者</div>
+            <div class="val" id="eqd-creator">—</div>
+            <small style="color:var(--off-text-muted); font-size:12px" id="eqd-created-at">—</small>
+          </div>
+          <a href="#" style="color:#9aa3b0"><i class="ti ti-external-link"></i></a>
+        </div>
+
+        <!-- 修改者 -->
+        <div class="eqd-field">
+          <div>
+            <div class="lbl">修改者</div>
+            <div class="val" id="eqd-updater">—</div>
+            <small style="color:var(--off-text-muted); font-size:12px" id="eqd-updated-at">—</small>
+          </div>
+          <a href="#" style="color:#9aa3b0"><i class="ti ti-external-link"></i></a>
+        </div>
+
+        <!-- 識別碼 -->
+        <div class="lbl" style="padding:12px 20px 4px; color:var(--off-text-muted); font-size:12px">識別碼</div>
+        <div class="eqd-uid-box">
+          <div><span>ID</span><b id="eqd-id">—</b></div>
+          <div><span>訪問 ID</span><b id="eqd-access-id">—</b></div>
+          <div><span>UID</span><b id="eqd-uid">—</b></div>
+        </div>
+      </div>
+
+      <div class="eqd-foot">
+        <button class="btn-del" id="eqd-del"><i class="ti ti-trash"></i> 刪除</button>
+      </div>
+    </aside>
+  </div>
+
+  <!-- 編輯設備 Modal（6 tab） -->
+  <div class="off-modal-back" id="modal-edit-eq">
+    <div class="off-modal off-modal-wrap" style="width:min(1040px, 94vw); max-height:92vh">
+      <button class="off-modal-close" onclick="offCloseModal('modal-edit-eq')"><i class="ti ti-x"></i></button>
+      <input type="hidden" id="ee-id">
+
+      <!-- 左側：avatar + name + 6 tabs -->
+      <aside class="off-modal-side" style="display:flex; flex-direction:column">
+        <div class="cbm-side-thumb" style="background:#f4f6fa; border-radius:14px; padding:16px; text-align:center; margin-bottom:12px">
+          <div class="ph" style="width:100%; aspect-ratio:4/3; background:#eef1f6; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; color:#cfd4de; font-size:40px; margin-bottom:12px">
+            <i class="ti ti-photo"></i>
+          </div>
+          <div class="btns" style="display:flex; gap:6px; justify-content:center">
+            <button type="button" style="width:34px; height:34px; padding:0; border:0; background:#f2f4f8; color:#4b525f; border-radius:50%; cursor:pointer; display:inline-flex; align-items:center; justify-content:center"><i class="ti ti-upload"></i></button>
+            <button type="button" style="border:0; padding:8px 14px; border-radius:999px; cursor:pointer; font-size:12px; display:inline-flex; align-items:center; gap:4px; background:var(--off-primary); color:#fff; font-weight:500">
+              <i class="ti ti-folder"></i> 已上傳的文件
+            </button>
+          </div>
+        </div>
+        <div class="off-side-title" id="ee-side-title" style="font-size:20px; font-weight:700">—</div>
+        <div class="off-side-sub" style="margin-bottom:12px">
+          設定此資源的位置，以及團隊預約它的方式。
+        </div>
+
+        <div class="off-tab active" data-tab="basic">
+          <i class="ti ti-adjustments-horizontal"></i><span>基本</span>
+          <i class="ti ti-chevron-right off-tab-arrow"></i>
+        </div>
+        <div class="off-tab" data-tab="rules">
+          <i class="ti ti-shield"></i><span>規則</span>
+          <i class="ti ti-chevron-right off-tab-arrow"></i>
+        </div>
+        <div class="off-tab disabled" data-tab="services" title="尚未開放">
+          <i class="ti ti-tools"></i><span>服務</span>
+          <i class="ti ti-chevron-right off-tab-arrow"></i>
+        </div>
+        <div class="off-tab disabled" data-tab="advanced" title="尚未開放">
+          <i class="ti ti-settings"></i><span>進階</span>
+          <i class="ti ti-chevron-right off-tab-arrow"></i>
+        </div>
+        <div class="off-tab" data-tab="blackouts">
+          <i class="ti ti-calendar-off"></i><span>暫停服務時間</span>
+          <i class="ti ti-chevron-right off-tab-arrow"></i>
+        </div>
+        <div class="off-tab" data-tab="info">
+          <i class="ti ti-info-circle"></i><span>資訊</span>
+          <i class="ti ti-chevron-right off-tab-arrow"></i>
+        </div>
+
+        <div style="flex:1"></div>
+        <button class="off-btn" id="ee-delete-side" style="color:var(--off-red); margin-top:16px; justify-content:flex-start">
+          <i class="ti ti-trash"></i> 刪除
+        </button>
+      </aside>
+
+      <!-- 右側 -->
+      <div class="off-modal-body" style="padding:0; display:flex; flex-direction:column">
+
+        <!-- 基本 -->
+        <div class="ee-pane" data-pane="basic" style="padding:24px; overflow-y:auto; flex:1">
+          <div class="cbm-field">
+            <span class="lbl"><i class="ti ti-tag"></i> 名稱</span>
+            <input id="ee-name" placeholder="—">
+          </div>
+          <div class="cbm-field" style="align-items:flex-start">
+            <span class="lbl" style="padding-top:2px"><i class="ti ti-align-left"></i> 描述</span>
+            <textarea id="ee-description" placeholder="—"></textarea>
+          </div>
+          <!-- 位置：分組面板 -->
+          <div class="cbm-field cbm-combine" id="ee-location-wrap">
+            <span class="lbl"><i class="ti ti-map-pin"></i> 位置</span>
+            <span id="ee-location-display" class="val">-</span>
+            <i class="ti ti-chevron-down caret"></i>
+            <div class="cbm-combine-panel" id="ee-location-panel">
+              <div class="head">
+                <b>位置</b>
+                <button class="close" type="button" onclick="event.stopPropagation(); document.getElementById('ee-location-wrap').classList.remove('open')"><i class="ti ti-x"></i></button>
+              </div>
+              <div class="search"><input id="ee-location-search" placeholder="🔍 位置"></div>
+              <div id="ee-location-list"></div>
+              <div class="foot">
+                <button type="button" id="ee-location-clear">清除</button>
+                <button type="button" class="primary" id="ee-location-done">完成</button>
+              </div>
+            </div>
+          </div>
+          <div class="cbm-field">
+            <span class="lbl"><i class="ti ti-category"></i> 類別</span>
+            <input id="ee-category" placeholder="-" style="text-align:right">
+            <i class="ti ti-chevron-down caret"></i>
+          </div>
+          <div class="cbm-field">
+            <span class="lbl"><i class="ti ti-clock"></i> 營業時間</span>
+            <span class="val">-</span>
+            <i class="ti ti-chevron-down caret"></i>
+          </div>
+          <div class="cbm-field">
+            <span class="lbl"><i class="ti ti-building-community"></i> 分支機構管理</span>
+            <select id="ee-branch"><option value="">HQ</option></select>
+          </div>
+          <div class="cbm-field disabled">
+            <span class="lbl"><i class="ti ti-id-badge"></i> 訪問 ID</span>
+            <input placeholder="—" disabled>
+          </div>
+        </div>
+
+        <!-- 規則 -->
+        <div class="ee-pane" data-pane="rules" style="padding:24px; overflow-y:auto; flex:1; display:none">
+          <label class="off-setting-row" style="border:0; padding:14px 16px; background:#f4f6fa; border-radius:12px; margin-bottom:8px; cursor:pointer">
+            <div class="off-setting-label" style="display:flex; align-items:center; gap:10px">
+              <i class="ti ti-lock" style="font-size:20px; color:#6b7280"></i>
+              <div>
+                <b>團隊空間</b>
+                <small>決定誰可以預約此資源。</small>
+              </div>
+            </div>
+            <div class="off-setting-control">
+              <label class="off-toggle"><input type="checkbox" id="ee-team-space"><span class="off-toggle-slider"></span></label>
+            </div>
+          </label>
+
+          <label class="off-setting-row" style="border:0; padding:14px 16px; background:#f4f6fa; border-radius:12px; margin-bottom:8px; cursor:pointer">
+            <div class="off-setting-label" style="display:flex; align-items:center; gap:10px">
+              <i class="ti ti-stars" style="font-size:20px; color:#6b7280"></i>
+              <div>
+                <b>建議優先級</b>
+                <small>資源推薦等級 0（最低）到 5（最高）</small>
+              </div>
+            </div>
+            <div class="off-setting-control">
+              <select id="ee-priority" style="padding:6px 12px; border:1px solid var(--off-border); border-radius:8px; font-size:14px; outline:none; background:#fff">
+                <option value="0">0</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+              </select>
+            </div>
+          </label>
+
+          <label class="off-setting-row" style="border:0; padding:14px 16px; background:#f4f6fa; border-radius:12px; margin-bottom:8px; cursor:pointer">
+            <div class="off-setting-label" style="display:flex; align-items:center; gap:10px">
+              <i class="ti ti-shield-check" style="font-size:20px; color:#6b7280"></i>
+              <div>
+                <b>需要批准政策</b>
+                <small>預約此資源需經管理員審批後生效。</small>
+              </div>
+            </div>
+            <div class="off-setting-control">
+              <label class="off-toggle"><input type="checkbox" id="ee-requires-approval"><span class="off-toggle-slider"></span></label>
+            </div>
+          </label>
+        </div>
+
+        <!-- 服務（反白） -->
+        <div class="ee-pane" data-pane="services" style="padding:60px 20px; display:none; text-align:center; color:var(--off-text-muted)">
+          <i class="ti ti-lock" style="font-size:40px; opacity:.4"></i>
+          <div style="margin-top:8px">「服務」尚未開放</div>
+        </div>
+
+        <!-- 進階（反白） -->
+        <div class="ee-pane" data-pane="advanced" style="padding:60px 20px; display:none; text-align:center; color:var(--off-text-muted)">
+          <i class="ti ti-lock" style="font-size:40px; opacity:.4"></i>
+          <div style="margin-top:8px">「進階」尚未開放</div>
+        </div>
+
+        <!-- 暫停服務時間 -->
+        <div class="ee-pane" data-pane="blackouts" style="padding:24px; overflow-y:auto; flex:1; display:none">
+          <div class="off-tab-empty">
+            <i class="ti ti-calendar-off"></i>
+            <div style="font-size:15px; color:#2b2f3a; margin-top:6px">沒有暫停服務時間</div>
+            <div style="font-size:13px; color:var(--off-text-muted); margin:6px 0 16px">設定此資源無法預約的時段（例如維修或保養期間）。</div>
+            <div style="color:var(--off-text-muted); font-size:12px">功能將於後續開放</div>
+          </div>
+        </div>
+
+        <!-- 資訊 -->
+        <div class="ee-pane" data-pane="info" style="padding:20px; overflow-y:auto; flex:1; display:none">
+          <div class="off-info-heading">詳細</div>
+          <div class="off-info-row mono"><span class="lbl"><i class="ti ti-hash"></i> ID</span><span class="val" id="ee-info-id">—</span></div>
+          <div class="off-info-row mono"><span class="lbl"><i class="ti ti-hash"></i> 訪問 ID</span><span class="val" id="ee-info-access-id">—</span></div>
+          <div class="off-info-row mono"><span class="lbl"><i class="ti ti-fingerprint"></i> UID</span><span class="val" id="ee-info-uid">—</span></div>
+
+          <div class="off-info-heading" style="margin-top:12px">資訊</div>
+          <div class="off-info-row"><span class="lbl"><i class="ti ti-user-plus"></i> 創建者</span><span class="val" id="ee-info-created-by">—</span></div>
+          <div class="off-info-row"><span class="lbl"><i class="ti ti-clock"></i> 創建日期</span><span class="val" id="ee-info-created-at">—</span></div>
+          <div class="off-info-row"><span class="lbl"><i class="ti ti-edit"></i> 修改者</span><span class="val" id="ee-info-updated-by">—</span></div>
+          <div class="off-info-row"><span class="lbl"><i class="ti ti-history"></i> 修改日期</span><span class="val" id="ee-info-updated-at">—</span></div>
+        </div>
+
+        <!-- Footer -->
+        <div class="off-modal-foot">
+          <div id="ee-err" style="color:var(--off-red); font-size:13px; margin-right:auto; align-self:center; display:none"></div>
+          <button class="off-btn off-btn-primary" id="ee-save">儲存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新增設備 Modal -->
+  <div class="off-modal-back" id="modal-new-eq">
+    <div class="off-modal off-modal-wrap" style="grid-template-columns:1fr; width:min(480px, 92vw)">
+      <button class="off-modal-close" onclick="offCloseModal('modal-new-eq')"><i class="ti ti-x"></i></button>
+      <div class="off-modal-body">
+        <h3 style="margin:0 0 16px">新增設備</h3>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-tag"></i> 名稱 <span style="color:red">*</span></span><input id="new-eq-name" placeholder="例：投影機"></div>
+        <div class="off-field" style="align-items:flex-start"><span class="off-field-label"><i class="ti ti-align-left"></i> 描述</span></div>
+        <textarea id="new-eq-desc" placeholder="—"></textarea>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-category"></i> 類別</span><input id="new-eq-cat" placeholder="—"></div>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-building-community"></i> 分支機構</span>
+          <select id="new-eq-branch"><option value="">— 不指定 —</option></select>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px">
+          <button class="off-btn" onclick="offCloseModal('modal-new-eq')">取消</button>
+          <button class="off-btn off-btn-primary" id="new-eq-save">建立</button>
+        </div>
+        <div id="new-eq-err" style="color:var(--off-red); font-size:13px; margin-top:8px; display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script>
+    OffAuth.requireLogin();
+    const esc = s => (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    // ==================== 列表 ====================
+    let __equipment = [];
+    let __branches  = [];
+    let __locations = [];
+
+    async function loadPage() {
+      const tbody = document.getElementById('eq-tbody');
+      try {
+        [__equipment, __branches, __locations] = await Promise.all([
+          OffAPI.equipment.list(),
+          OffAPI.branches.list().catch(() => []),
+          OffAPI.locations.list().catch(() => []),
+        ]);
+        // 分支下拉
+        const nbSel = document.getElementById('new-eq-branch');
+        nbSel.innerHTML = '<option value="">— 不指定 —</option>' +
+          __branches.map(b => `<option value="${b.id}"${b.name === 'HQ' ? ' selected' : ''}>${esc(b.name)}</option>`).join('');
+        renderTable();
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:24px; color:var(--off-red)">讀取失敗：${esc(e.message)}</td></tr>`;
+      }
+    }
+
+    function renderTable() {
+      const q = (document.getElementById('eq-search').value || '').trim().toLowerCase();
+      const list = q ? __equipment.filter(x => x.name.toLowerCase().includes(q)) : __equipment;
+      const tbody = document.getElementById('eq-tbody');
+      if (!list.length) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:32px; color:var(--off-text-muted)">尚無設備，點右上「新增」建立第一個</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = list.map(e => {
+        const location = [e.branch_name, e.location_name].filter(Boolean).join(', ') || '沒有位置';
+        return `
+          <tr data-id="${e.id}" style="cursor:pointer">
+            <td><input type="checkbox" onclick="event.stopPropagation()"></td>
+            <td>
+              <div style="display:flex; align-items:center; gap:10px">
+                <span class="eq-thumb"><i class="ti ti-device-tv"></i></span>
+                <b>${esc(e.name)}</b>
+              </div>
+            </td>
+            <td style="color:${e.category ? '#111' : 'var(--off-text-muted)'}">${e.category ? esc(e.category) : '—'}</td>
+            <td style="color:${(e.branch_name || e.location_name) ? '#111' : 'var(--off-text-muted)'}">${esc(location)}</td>
+          </tr>`;
+      }).join('');
+      tbody.querySelectorAll('tr[data-id]').forEach(tr => {
+        tr.addEventListener('click', () => openDrawer(parseInt(tr.dataset.id, 10)));
+      });
+    }
+    document.getElementById('eq-search').addEventListener('input', renderTable);
+
+    // ==================== Drawer ====================
+    let __currentEq = null;
+
+    function openDrawer(id) {
+      const e = __equipment.find(x => x.id === id);
+      if (!e) return;
+      __currentEq = e;
+
+      document.getElementById('eqd-title').textContent = e.name;
+      document.getElementById('eqd-desc-body').textContent = e.description || '—';
+      document.getElementById('eqd-category').textContent = e.category || '—';
+      document.getElementById('eqd-location').textContent = e.location_name || '沒有位置';
+      document.getElementById('eqd-team').textContent = e.team_space ? '啟用' : '—';
+      document.getElementById('eqd-priority').textContent = String(e.priority ?? 0);
+
+      // 分支下拉
+      const bSel = document.getElementById('eqd-branch');
+      const currentBranchId = e.branch_id ||
+        (__branches.find(b => b.name === (e.branch_name || 'HQ')) || {}).id ||
+        (__branches.find(b => b.name === 'HQ') || {}).id;
+      bSel.innerHTML = __branches.map(b =>
+        `<option value="${b.id}"${b.id === currentBranchId ? ' selected' : ''}>${esc(b.name)}</option>`
+      ).join('');
+      bSel.onchange = async () => {
+        try {
+          await OffAPI.equipment.patch(e.id, { branch_id: parseInt(bSel.value, 10) });
+          e.branch_id = parseInt(bSel.value, 10);
+        } catch (err) { alert(err.message); }
+      };
+
+      // 創建者/修改者：使用當前登入者為 fallback（無 audit user 資訊時）
+      const me = OffAuth.user();
+      const created = e.created_at ? new Date(e.created_at) : null;
+      document.getElementById('eqd-creator').textContent = me ? me.display_name : '—';
+      document.getElementById('eqd-created-at').textContent = created
+        ? `${created.getMonth()+1}月${created.getDate()}日 ${created.getHours() < 12 ? '上午' : '下午'}${(created.getHours() % 12 || 12).toString().padStart(2,'0')}:${created.getMinutes().toString().padStart(2,'0')}`
+        : '—';
+      // 修改者：目前 API 未追蹤，用同一份
+      document.getElementById('eqd-updater').textContent = me ? me.display_name : '—';
+      document.getElementById('eqd-updated-at').textContent = document.getElementById('eqd-created-at').textContent;
+
+      // 識別碼
+      document.getElementById('eqd-id').textContent = e.id;
+      document.getElementById('eqd-access-id').textContent = '—';
+      const hex = e.id.toString(16).toUpperCase().padStart(8, '0');
+      document.getElementById('eqd-uid').textContent = `${hex}-00AD-4671-8C09-CB6D0CE20637`;
+
+      document.getElementById('eqd-back').classList.add('open');
+    }
+
+    document.getElementById('eqd-close').addEventListener('click', () => {
+      document.getElementById('eqd-back').classList.remove('open');
+    });
+    document.getElementById('eqd-back').addEventListener('click', ev => {
+      if (ev.target.id === 'eqd-back') document.getElementById('eqd-back').classList.remove('open');
+    });
+
+    // 刪除
+    document.getElementById('eqd-del').addEventListener('click', async () => {
+      if (!__currentEq) return;
+      if (!confirm(`確定要刪除「${__currentEq.name}」？`)) return;
+      try {
+        await OffAPI.equipment.remove(__currentEq.id);
+        document.getElementById('eqd-back').classList.remove('open');
+        await loadPage();
+      } catch (e) { alert(e.message); }
+    });
+
+    // Drawer 內「編輯」→ 開 6-tab modal
+    document.getElementById('eqd-edit').addEventListener('click', () => {
+      if (!__currentEq) return;
+      openEditEquipment(__currentEq);
+    });
+    document.getElementById('eqd-copy').addEventListener('click', async () => {
+      if (!__currentEq) return;
+      try {
+        await OffAPI.equipment.create({
+          name: `${__currentEq.name} (副本)`,
+          description: __currentEq.description,
+          category: __currentEq.category,
+          branch_id: __currentEq.branch_id,
+          subtype: 'standard',
+          status: 'available',
+        });
+        await loadPage();
+      } catch (err) { alert(err.message); }
+    });
+    document.getElementById('eqd-swap').addEventListener('click', () => {
+      alert('「更換」功能尚未實作');
+    });
+
+    // ==================== 新增 ====================
+    document.getElementById('btn-new-eq').addEventListener('click', () => {
+      document.getElementById('new-eq-name').value = '';
+      document.getElementById('new-eq-desc').value = '';
+      document.getElementById('new-eq-cat').value = '';
+      document.getElementById('new-eq-err').style.display = 'none';
+      offOpenModal('modal-new-eq');
+    });
+    document.getElementById('new-eq-save').addEventListener('click', async () => {
+      const err = document.getElementById('new-eq-err');
+      err.style.display = 'none';
+      const name = document.getElementById('new-eq-name').value.trim();
+      if (!name) { err.textContent = '請輸入名稱'; err.style.display = 'block'; return; }
+      const branchVal = document.getElementById('new-eq-branch').value;
+      try {
+        await OffAPI.equipment.create({
+          name,
+          description: document.getElementById('new-eq-desc').value.trim() || null,
+          category: document.getElementById('new-eq-cat').value.trim() || null,
+          branch_id: branchVal ? parseInt(branchVal, 10) : null,
+          subtype: 'standard',
+          status: 'available',
+        });
+        offCloseModal('modal-new-eq');
+        await loadPage();
+      } catch (e) {
+        err.textContent = e.message || '建立失敗'; err.style.display = 'block';
+      }
+    });
+
+    // ==================== 編輯 Modal ====================
+    let __eeSelectedLocId = null;
+
+    function openEditEquipment(eq) {
+      document.getElementById('ee-id').value = eq.id;
+      document.getElementById('ee-side-title').textContent = eq.name;
+      document.getElementById('ee-name').value = eq.name || '';
+      document.getElementById('ee-description').value = eq.description || '';
+      document.getElementById('ee-category').value = eq.category || '';
+      __eeSelectedLocId = eq.location_id || null;
+
+      // 分支
+      const bSel = document.getElementById('ee-branch');
+      const currentBranchId = eq.branch_id ||
+        (__branches.find(b => b.name === 'HQ') || {}).id;
+      bSel.innerHTML = __branches.map(b =>
+        `<option value="${b.id}"${b.id === currentBranchId ? ' selected' : ''}>${esc(b.name)}</option>`
+      ).join('');
+
+      // 規則 tab
+      document.getElementById('ee-team-space').checked = !!eq.team_space;
+      document.getElementById('ee-priority').value = String(eq.priority ?? 0);
+      document.getElementById('ee-requires-approval').checked = !!eq.requires_approval;
+
+      // 資訊 tab
+      const me = OffAuth.user();
+      document.getElementById('ee-info-id').textContent = `#${eq.id}`;
+      document.getElementById('ee-info-access-id').textContent = '—';
+      const hex = eq.id.toString(16).toUpperCase().padStart(8, '0');
+      document.getElementById('ee-info-uid').textContent = `${hex}-XXXX-XXXX-XXXX-XXXXXXXXXXXX`;
+      document.getElementById('ee-info-created-by').textContent = me ? me.display_name : '—';
+      const created = eq.created_at ? new Date(eq.created_at) : null;
+      document.getElementById('ee-info-created-at').textContent = created
+        ? created.toLocaleString('zh-TW') : '—';
+      document.getElementById('ee-info-updated-by').textContent = '—';
+      document.getElementById('ee-info-updated-at').textContent = '—';
+
+      // 位置面板
+      renderEeLocationList();
+      updateEeLocationDisplay();
+
+      // 切回基本 tab + 關 drawer 讓 modal 顯示乾淨
+      switchEeTab('basic');
+      document.getElementById('ee-err').style.display = 'none';
+      document.getElementById('eqd-back').classList.remove('open');
+      offOpenModal('modal-edit-eq');
+    }
+
+    function switchEeTab(name) {
+      document.querySelectorAll('#modal-edit-eq .off-tab').forEach(x =>
+        x.classList.toggle('active', x.dataset.tab === name));
+      document.querySelectorAll('#modal-edit-eq .ee-pane').forEach(p =>
+        p.style.display = p.dataset.pane === name ? '' : 'none');
+    }
+    document.querySelectorAll('#modal-edit-eq .off-tab:not(.disabled)').forEach(tab => {
+      tab.addEventListener('click', () => switchEeTab(tab.dataset.tab));
+    });
+
+    // 位置面板
+    const eeLocWrap = document.getElementById('ee-location-wrap');
+    eeLocWrap.addEventListener('click', (e) => {
+      if (e.target.closest('.cbm-combine-panel')) return;
+      eeLocWrap.classList.toggle('open');
+    });
+    document.getElementById('ee-location-search').addEventListener('input', renderEeLocationList);
+    document.getElementById('ee-location-clear').addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      __eeSelectedLocId = null;
+      renderEeLocationList(); updateEeLocationDisplay();
+    });
+    document.getElementById('ee-location-done').addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      eeLocWrap.classList.remove('open');
+    });
+
+    function renderEeLocationList() {
+      const q = (document.getElementById('ee-location-search').value || '').toLowerCase();
+      const box = document.getElementById('ee-location-list');
+      if (!__locations.length) {
+        box.innerHTML = '<div style="padding:16px; text-align:center; color:var(--off-text-muted); font-size:13px">此組織尚未建立地點</div>';
+        return;
+      }
+      const branchMap = {};
+      __branches.forEach(b => { branchMap[b.id] = b; });
+      const groups = new Map();
+      __locations
+        .filter(l => !q || l.name.toLowerCase().includes(q))
+        .forEach(l => {
+          const b = branchMap[l.branch_id];
+          if (!b) return;
+          if (!groups.has(b.id)) groups.set(b.id, { branch: b, locations: [] });
+          groups.get(b.id).locations.push(l);
+        });
+      if (!groups.size) {
+        box.innerHTML = '<div style="padding:16px; text-align:center; color:var(--off-text-muted); font-size:13px">沒有符合的位置</div>';
+        return;
+      }
+      let html = '';
+      for (const { branch, locations } of groups.values()) {
+        const label = branch.address && branch.address !== '—'
+          ? `${branch.name}　${branch.address}` : branch.name;
+        html += `<div class="cbm-loc-group">
+          <div class="cbm-loc-group-head">${esc(label)}</div>
+          ${locations.map(l => `
+            <div class="cbm-loc-item${l.id === __eeSelectedLocId ? ' selected' : ''}" data-id="${l.id}">
+              <span class="name">${esc(l.name)}</span>
+              <button type="button" class="detail" onclick="event.stopPropagation()">詳細</button>
+            </div>`).join('')}
+        </div>`;
+      }
+      box.innerHTML = html;
+      box.querySelectorAll('.cbm-loc-item').forEach(el => {
+        el.addEventListener('click', (ev) => {
+          if (ev.target.classList.contains('detail')) return;
+          const id = parseInt(el.dataset.id, 10);
+          __eeSelectedLocId = (__eeSelectedLocId === id) ? null : id;
+          renderEeLocationList(); updateEeLocationDisplay();
+        });
+      });
+    }
+    function updateEeLocationDisplay() {
+      const loc = __locations.find(l => l.id === __eeSelectedLocId);
+      const el = document.getElementById('ee-location-display');
+      if (loc) {
+        const b = __branches.find(x => x.id === loc.branch_id);
+        el.textContent = b ? `${b.name} · ${loc.name}` : loc.name;
+        el.style.color = '#111';
+      } else {
+        el.textContent = '-'; el.style.color = 'var(--off-text-muted)';
+      }
+    }
+
+    // 儲存
+    document.getElementById('ee-save').addEventListener('click', async () => {
+      const err = document.getElementById('ee-err');
+      err.style.display = 'none';
+      const id = parseInt(document.getElementById('ee-id').value, 10);
+      const branchVal = document.getElementById('ee-branch').value;
+      const payload = {
+        name: document.getElementById('ee-name').value.trim(),
+        description: document.getElementById('ee-description').value.trim() || null,
+        category: document.getElementById('ee-category').value.trim() || null,
+        location_id: __eeSelectedLocId,
+        branch_id: branchVal ? parseInt(branchVal, 10) : null,
+        team_space: document.getElementById('ee-team-space').checked,
+        priority: parseInt(document.getElementById('ee-priority').value, 10) || 0,
+        requires_approval: document.getElementById('ee-requires-approval').checked,
+      };
+      if (!payload.name) { err.textContent = '請輸入名稱'; err.style.display = 'block'; return; }
+      try {
+        await OffAPI.equipment.patch(id, payload);
+        offCloseModal('modal-edit-eq');
+        await loadPage();
+      } catch (e) {
+        err.textContent = e.message || '儲存失敗'; err.style.display = 'block';
+      }
+    });
+
+    // 側欄刪除
+    document.getElementById('ee-delete-side').addEventListener('click', async () => {
+      const id = parseInt(document.getElementById('ee-id').value, 10);
+      const eq = __equipment.find(x => x.id === id);
+      if (!eq) return;
+      if (!confirm(`確定要刪除「${eq.name}」？`)) return;
+      try {
+        await OffAPI.equipment.remove(id);
+        offCloseModal('modal-edit-eq');
+        await loadPage();
+      } catch (e) { alert(e.message); }
+    });
+
+    loadPage();
+  </script>
+</body>
+</html>

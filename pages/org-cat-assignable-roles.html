@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>組織目錄 · 分類 · 可指派角色 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-module="org" data-page="cat-roles"
+      data-crumbs='[{"label":"組織目錄","href":"org-users.html"},{"label":"分類"},{"label":"可指派角色"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#ffa6c1,#e75d84)"><i class="ti ti-user-star"></i></span>
+        <div>
+          <div class="off-page-title-row">
+            <h1>可指派角色</h1>
+            <span class="off-new-tag">NEW</span>
+            <button class="off-btn off-btn-primary" id="btn-new-role">
+              <i class="ti ti-plus"></i> 新增角色
+            </button>
+          </div>
+          <p class="off-page-desc off-new-note">
+            <b>新增（從獨立項移入「分類」）：</b>
+            此為<b>可分配的職責型角色</b>，例：<b>預約審批人</b>、<b>房間管理員</b>、<b>樓層管理員</b>。
+            由「工單／預約流程」在執行時指派——與掛人／掛權限的「用戶群組」不同。
+          </p>
+        </div>
+      </div>
+
+      <!-- 角色列表 / 空狀態容器 -->
+      <div class="off-panel" id="roles-container">
+        <div class="off-empty">
+          <i class="ti ti-loader-2"></i>
+          <div style="font-size:15px; color:var(--off-text-muted); margin-top:4px">讀取中…</div>
+        </div>
+      </div>
+
+      <!-- 差異說明 -->
+      <div class="off-panel">
+        <div class="off-panel-head">
+          <span class="off-panel-icon" style="background:#ffe1e4; color:var(--off-red)"><i class="ti ti-alert-circle"></i></span>
+          <h3 class="off-panel-title">可指派角色 vs. 用戶群組（重要）</h3>
+        </div>
+        <table class="off-table" style="margin-top:4px">
+          <thead>
+            <tr>
+              <th style="width:22%">面向</th>
+              <th>可指派角色（Assignable Role）<span class="off-new-tag">NEW</span></th>
+              <th>用戶群組（User Group）</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>用途</b></td>
+              <td class="off-new-note">流程／工單／預約中的<b>職責</b></td>
+              <td>權限與可見資源的<b>集合</b></td>
+            </tr>
+            <tr>
+              <td><b>對象</b></td>
+              <td class="off-new-note">通常指派給<b>個別使用者</b>，可跨群組</td>
+              <td>使用者<b>加入</b>群組，一次授權多人</td>
+            </tr>
+            <tr>
+              <td><b>觸發時機</b></td>
+              <td class="off-new-note">流程執行時（例：送出審批 → 尋找該分支的「預約審批人」）</td>
+              <td>登入即生效（權限一直在）</td>
+            </tr>
+            <tr>
+              <td><b>範例</b></td>
+              <td class="off-new-note">預約審批人、房間管理員、樓層管理員、緊急聯絡人</td>
+              <td>維修 A、業務、行政、訪客</td>
+            </tr>
+            <tr>
+              <td><b>可否掛權限</b></td>
+              <td class="off-new-note">否（僅代表職責；權限來自「群組」或角色綁定的<b>群組</b>）</td>
+              <td>是（模組讀寫、資源可見性）</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal：新增角色 -->
+  <div class="off-modal-back" id="modal-new-role">
+    <div class="off-modal off-modal-wrap" style="grid-template-columns:1fr; width:min(520px, 92vw)">
+      <button class="off-modal-close" onclick="offCloseModal('modal-new-role')"><i class="ti ti-x"></i></button>
+      <div class="off-modal-body">
+        <h3 id="nr-title" style="margin:0 0 16px">新增可指派角色 <span class="off-new-tag">NEW</span></h3>
+        <input type="hidden" id="nr-id">
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-tag"></i> 名稱 <span style="color:red">*</span></span>
+          <input id="nr-name" placeholder="例：預約審批人">
+        </div>
+        <div class="off-field" style="align-items:flex-start"><span class="off-field-label"><i class="ti ti-file-description"></i> 描述</span></div>
+        <textarea id="nr-desc" placeholder="此角色負責的職責 …"></textarea>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-icons"></i> 圖標</span>
+          <input id="nr-icon" placeholder="ti-user-star / ti-shield / …" value="ti-user-star">
+        </div>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-users-group"></i> 綁定群組（選填）</span>
+          <select id="nr-group">
+            <option value="">— 不綁定（僅職責）—</option>
+          </select>
+        </div>
+        <p class="off-new-note" style="margin:8px 0 0">
+          <b>提示：</b>若綁定群組，被指派此角色的用戶將<b>暫時</b>取得該群組的權限。
+        </p>
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px">
+          <button class="off-btn" onclick="offCloseModal('modal-new-role')">取消</button>
+          <button class="off-btn off-btn-primary" id="nr-save">建立角色</button>
+        </div>
+        <div id="nr-err" style="color:var(--off-red); font-size:13px; margin-top:8px; display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script>
+    OffAuth.requireLogin();
+    const esc = s => (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    async function loadGroupsIntoSelect() {
+      const sel = document.getElementById('nr-group');
+      try {
+        const gs = await OffAPI.groups.list();
+        sel.innerHTML = '<option value="">— 不綁定（僅職責）—</option>' +
+          gs.map(g => `<option value="${g.id}">${esc(g.name)}</option>`).join('');
+      } catch { /* keep default option only */ }
+    }
+
+    function renderEmpty() {
+      document.getElementById('roles-container').innerHTML = `
+        <div class="off-empty">
+          <i class="ti ti-user-star"></i>
+          <div style="font-size:15px; color:#2b2f3a; margin-bottom:4px">尚未建立任何可指派角色</div>
+          <div class="off-new-note" style="max-width:560px; margin:8px auto 16px">
+            例如建立「預約審批人」角色後，就可以在「預約規則」中把資源指定給該角色，
+            並在成員頁把某位用戶標記為「該分支的預約審批人」。
+          </div>
+          <button class="off-btn off-btn-primary" onclick="document.getElementById('btn-new-role').click()">
+            <i class="ti ti-plus"></i> 新增第一個角色
+          </button>
+        </div>`;
+    }
+
+    async function loadRoles() {
+      const box = document.getElementById('roles-container');
+      try {
+        const roles = await OffAPI.roles.list();
+        if (!roles.length) { renderEmpty(); return; }
+        box.style.padding = '0';
+        box.innerHTML = `
+          <table class="off-table">
+            <thead>
+              <tr>
+                <th style="width:40px"><input type="checkbox"></th>
+                <th>名稱</th>
+                <th>描述</th>
+                <th>綁定群組</th>
+                <th>已啟用</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="roles-tbody">
+              ${roles.map(r => `
+                <tr data-id="${r.id}">
+                  <td><input type="checkbox"></td>
+                  <td>
+                    <div style="display:flex; align-items:center; gap:8px">
+                      <span class="off-avatar" style="background:#ffe1e4; color:#e03848"><i class="ti ${esc(r.icon)}"></i></span>
+                      <span style="font-weight:500">${esc(r.name)}</span>
+                    </div>
+                  </td>
+                  <td style="color:var(--off-text-muted); font-size:13px">${esc(r.description || '—')}</td>
+                  <td>${r.bound_group_name
+                      ? `<span class="off-chip chip-primary">${esc(r.bound_group_name)}</span>`
+                      : '<span style="color:var(--off-text-muted); font-size:12px">未綁定（僅職責）</span>'}</td>
+                  <td>
+                    <label class="off-toggle">
+                      <input type="checkbox" data-field="is_enabled" ${r.is_enabled ? 'checked' : ''}>
+                      <span class="off-toggle-slider"></span>
+                    </label>
+                  </td>
+                  <td>
+                    <button class="off-btn off-btn-ghost" data-edit="${r.id}"><i class="ti ti-edit"></i></button>
+                    <button class="off-btn off-btn-ghost" data-remove="${r.id}"><i class="ti ti-trash"></i></button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>`;
+        window.__roles_cache = roles;
+
+        box.querySelectorAll('input[data-field]').forEach(inp => {
+          inp.addEventListener('change', async () => {
+            const id = parseInt(inp.closest('tr').dataset.id, 10);
+            try { await OffAPI.roles.patch(id, { [inp.dataset.field]: inp.checked }); }
+            catch (e) { alert('更新失敗：' + e.message); inp.checked = !inp.checked; }
+          });
+        });
+        box.querySelectorAll('button[data-edit]').forEach(b => {
+          b.addEventListener('click', () => openEdit(parseInt(b.dataset.edit, 10)));
+        });
+        box.querySelectorAll('button[data-remove]').forEach(b => {
+          b.addEventListener('click', () => removeRole(parseInt(b.dataset.remove, 10)));
+        });
+      } catch (e) {
+        box.innerHTML = `<div class="off-empty" style="color:var(--off-red)"><i class="ti ti-alert-triangle"></i> 讀取失敗：${esc(e.message)}</div>`;
+      }
+    }
+
+    function resetModal() {
+      document.getElementById('nr-title').innerHTML = '新增可指派角色 <span class="off-new-tag">NEW</span>';
+      document.getElementById('nr-id').value = '';
+      document.getElementById('nr-name').value = '';
+      document.getElementById('nr-desc').value = '';
+      document.getElementById('nr-icon').value = 'ti-user-star';
+      document.getElementById('nr-group').value = '';
+      document.getElementById('nr-err').style.display = 'none';
+    }
+
+    function openEdit(id) {
+      const r = (window.__roles_cache || []).find(x => x.id === id);
+      if (!r) return;
+      resetModal();
+      document.getElementById('nr-title').innerHTML = '編輯角色';
+      document.getElementById('nr-id').value = r.id;
+      document.getElementById('nr-name').value = r.name;
+      document.getElementById('nr-desc').value = r.description || '';
+      document.getElementById('nr-icon').value = r.icon;
+      document.getElementById('nr-group').value = r.bound_group_id || '';
+      offOpenModal('modal-new-role');
+    }
+
+    async function removeRole(id) {
+      const r = (window.__roles_cache || []).find(x => x.id === id);
+      if (!r) return;
+      if (!confirm(`確定要刪除角色「${r.name}」？`)) return;
+      try {
+        await OffAPI.roles.remove(id);
+        loadRoles();
+      } catch (e) {
+        alert('刪除失敗：' + e.message);
+      }
+    }
+
+    document.getElementById('btn-new-role').addEventListener('click', () => {
+      resetModal();
+      offOpenModal('modal-new-role');
+    });
+
+    document.getElementById('nr-save').addEventListener('click', async () => {
+      const err = document.getElementById('nr-err');
+      err.style.display = 'none';
+      const id = parseInt(document.getElementById('nr-id').value, 10) || null;
+      const gv = document.getElementById('nr-group').value;
+      const payload = {
+        name: document.getElementById('nr-name').value.trim(),
+        description: document.getElementById('nr-desc').value.trim() || null,
+        icon: document.getElementById('nr-icon').value.trim() || 'ti-user-star',
+        bound_group_id: gv ? parseInt(gv, 10) : null,
+      };
+      if (!payload.name) { err.textContent = '請輸入名稱'; err.style.display = 'block'; return; }
+      try {
+        if (id) await OffAPI.roles.patch(id, payload);
+        else    await OffAPI.roles.create(payload);
+        offCloseModal('modal-new-role');
+        loadRoles();
+      } catch (e) {
+        err.textContent = e.message; err.style.display = 'block';
+      }
+    });
+
+    loadGroupsIntoSelect();
+    loadRoles();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1029 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>組織目錄 · 用戶 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-module="org" data-page="users"
+      data-crumbs='[{"label":"組織目錄","href":"org-users.html"},{"label":"用戶"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#ffa6c1,#e75d84)"><i class="ti ti-user"></i></span>
+        <div>
+          <div class="off-page-title-row">
+            <h1>用戶</h1>
+            <button class="off-btn off-btn-primary" id="btn-invite"><i class="ti ti-mail-fast"></i> 邀請</button>
+            <button class="off-btn off-btn-primary" id="btn-manual" style="background:#12a97e"><i class="ti ti-user-plus"></i> 手動新增</button>
+            <button class="off-btn"><i class="ti ti-upload"></i> 匯入</button>
+          </div>
+          <p class="off-page-desc">可以使用 Offision 資源的用戶</p>
+        </div>
+        <div class="off-page-actions">
+          <button class="off-btn"><i class="ti ti-download"></i> 匯出</button>
+          <button class="off-btn"><i class="ti ti-adjustments-alt"></i> 排序 / 欄位</button>
+        </div>
+      </div>
+
+      <div class="off-panel" style="padding:0">
+        <table class="off-table">
+          <thead>
+            <tr><th style="width:40px"><input type="checkbox"></th>
+              <th class="off-search-cell"><input placeholder="🔍 搜尋"></th>
+              <th>電子郵件</th><th>已啟動</th><th>授權 <i class="ti ti-filter"></i></th></tr>
+          </thead>
+          <tbody id="users-tbody">
+            <tr><td colspan="5" style="text-align:center; padding:24px; color:var(--off-text-muted)">
+              <i class="ti ti-loader-2"></i> 讀取中…
+            </td></tr>
+          </tbody>
+        </table>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px">
+          <button class="off-btn"><i class="ti ti-trash"></i> 資源回收筒</button>
+          <div style="color:var(--off-text-muted); font-size:13px">30 <i class="ti ti-chevron-down"></i> &nbsp; <span id="user-count">1 - 0 / 0</span></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 建立用戶 3 步驟 -->
+  <div class="off-modal-back" id="modal-new-user">
+    <div class="off-modal off-modal-wrap">
+      <button class="off-modal-close" onclick="offCloseModal('modal-new-user')"><i class="ti ti-x"></i></button>
+      <aside class="off-modal-side">
+        <h3>建立用戶</h3>
+        <p>新增一個 Offision 帳戶——發送邀請郵件，或設定密碼親自交給對方。</p>
+        <div class="off-step active"><span class="off-step-no">1</span><div><b>帳戶</b><br><small>姓名與電郵</small></div></div>
+        <div class="off-step"><span class="off-step-no">2</span><div><b>權限</b><br><small>選擇存取層級</small></div></div>
+        <div class="off-step"><span class="off-step-no">3</span><div><b>完成</b><br><small>帳戶已建立</small></div></div>
+      </aside>
+      <div class="off-modal-body">
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-mail"></i> 電郵 <span style="color:red">*</span></span><input id="nu-email" placeholder="user@company.com"></div>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-id"></i> 顯示名稱</span><input id="nu-name" placeholder="姓名"></div>
+
+        <p style="font-weight:600; margin:16px 0 8px">如何設定登入</p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px" id="nu-mode-row">
+          <label class="off-field mode-card" data-mode="invite" style="cursor:pointer">
+            <span>
+              <b><i class="ti ti-mail"></i> 發送邀請郵件</b><br>
+              <small style="color:var(--off-text-muted)">用戶透過郵件連結自行設定密碼。</small>
+            </span>
+            <input type="radio" name="nu-mode" value="invite" checked>
+          </label>
+          <label class="off-field mode-card" data-mode="manual" style="cursor:pointer">
+            <span>
+              <b><i class="ti ti-password"></i> 立即設定密碼</b><br>
+              <small style="color:var(--off-text-muted)">設定一個密碼親自交給對方。</small>
+            </span>
+            <input type="radio" name="nu-mode" value="manual">
+          </label>
+        </div>
+        <div class="off-field" id="nu-pw-row" style="display:none"><span class="off-field-label"><i class="ti ti-password"></i> 密碼 <span style="color:red">*</span></span><input id="nu-pw" type="password" placeholder="至少 8 碼"></div>
+
+        <p style="font-weight:600; margin:16px 0 8px">加入群組（選填）</p>
+        <div id="nu-groups" style="display:flex; flex-direction:column; gap:6px; max-height:180px; overflow-y:auto"></div>
+
+        <div class="off-modal-foot">
+          <button class="off-btn off-btn-primary" id="nu-save">建立</button>
+        </div>
+        <div id="nu-err" style="color:var(--off-red); font-size:13px; margin-top:8px; display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 編輯用戶 Modal（7 tab 分頁式） -->
+  <div class="off-modal-back" id="modal-edit-user">
+    <div class="off-modal off-modal-wrap" style="width:min(1040px, 94vw); max-height:92vh">
+      <button class="off-modal-close" onclick="offCloseModal('modal-edit-user')"><i class="ti ti-x"></i></button>
+      <input type="hidden" id="eu-id">
+
+      <!-- 左：avatar + name + 7 tabs -->
+      <aside class="off-modal-side" style="display:flex; flex-direction:column">
+        <div class="off-modal-side-head">
+          <span class="off-avatar" id="eu-side-avatar">用</span>
+          <div class="off-side-title" id="eu-side-title">—</div>
+          <div class="off-side-sub">管理此使用者的個人資料、權限與憑證。</div>
+        </div>
+        <div class="off-tab active" data-tab="basic">
+          <i class="ti ti-id-badge"></i><span>基本</span>
+          <i class="ti ti-chevron-right off-tab-arrow"></i>
+        </div>
+        <div class="off-tab" data-tab="perm">
+          <i class="ti ti-shield-check"></i><span>權限</span>
+          <span class="off-tab-count" id="eu-perm-count">0</span>
+        </div>
+        <div class="off-tab" data-tab="groups">
+          <i class="ti ti-users-group"></i><span>用戶群組</span>
+          <span class="off-tab-count" id="eu-groups-count">0</span>
+        </div>
+        <div class="off-tab" data-tab="delegate">
+          <i class="ti ti-user-cog"></i><span>委託代表</span>
+          <span class="off-tab-count" id="eu-delegate-count">0</span>
+        </div>
+        <div class="off-tab disabled" data-tab="cards" title="尚未開放">
+          <i class="ti ti-credit-card"></i><span>門禁卡</span>
+          <i class="ti ti-chevron-right off-tab-arrow"></i>
+        </div>
+        <div class="off-tab" data-tab="devices">
+          <i class="ti ti-devices"></i><span>登入裝置</span>
+          <span class="off-tab-count" id="eu-devices-count">0</span>
+        </div>
+        <div class="off-tab" data-tab="info">
+          <i class="ti ti-info-circle"></i><span>資訊</span>
+          <i class="ti ti-chevron-right off-tab-arrow"></i>
+        </div>
+        <div style="flex:1"></div>
+        <button class="off-btn" id="eu-delete-side" style="color:var(--off-red); margin-top:16px; justify-content:flex-start">
+          <i class="ti ti-trash"></i> 刪除
+        </button>
+      </aside>
+
+      <!-- 右：分頁內容 -->
+      <div class="off-modal-body" style="padding:0; display:flex; flex-direction:column">
+
+        <!-- 基本 -->
+        <div class="eu-pane" data-pane="basic" style="padding:24px; overflow-y:auto; flex:1">
+          <div class="off-field"><span class="off-field-label"><i class="ti ti-id"></i> 顯示名稱</span><input id="eu-name" placeholder="—"></div>
+          <div class="off-field"><span class="off-field-label"><i class="ti ti-mail"></i> 電子郵件</span><input id="eu-email" readonly style="color:var(--off-text-muted)"></div>
+          <div class="off-field"><span class="off-field-label"><i class="ti ti-phone"></i> 電話號碼</span><input id="eu-phone" placeholder="+886 …"></div>
+          <div class="off-field"><span class="off-field-label"><i class="ti ti-building"></i> 部門</span><input id="eu-department" placeholder="例:研發"></div>
+          <div class="off-field"><span class="off-field-label"><i class="ti ti-briefcase"></i> 職稱</span><input id="eu-title" placeholder="例:維修"></div>
+          <div class="off-field"><span class="off-field-label"><i class="ti ti-id-badge"></i> 員工 ID</span><input id="eu-employee-id" placeholder="—"></div>
+          <div class="off-field"><span class="off-field-label"><i class="ti ti-shield"></i> 用戶安全性設定檔</span>
+            <select id="eu-sec-profile">
+              <option value="default" selected>Profile（預設）</option>
+              <option value="admin_strong">管理者（強化）</option>
+              <option value="office_intranet">辦公室內網</option>
+            </select>
+          </div>
+          <div class="off-field"><span class="off-field-label"><i class="ti ti-building-community"></i> 分支機構管理</span>
+            <select id="eu-branch"><option value="">— 不指定 —</option></select>
+          </div>
+          <input type="hidden" id="eu-status" value="active">
+          <input type="hidden" id="eu-avatar" value="">
+          <!-- 用戶屬性：後端動態屬性尚未實作，示例欄位（禁用） -->
+          <div class="off-field" style="opacity:.6">
+            <span class="off-field-label"><i class="ti ti-user"></i> 用戶屬性-屬老鼠</span>
+            <input placeholder="—" disabled>
+          </div>
+          <div style="font-size:12px; color:var(--off-text-muted); padding:0 4px 4px">
+            <i class="ti ti-info-circle"></i> 生效屬老鼠（尚未實作：用戶屬性頁的欄位會自動列於此處）
+          </div>
+        </div>
+
+        <!-- 權限 -->
+        <div class="eu-pane" data-pane="perm" style="padding:0; overflow-y:auto; flex:1; display:none">
+          <div class="off-perm-section-title" style="padding:20px 20px 6px">用戶界面存取權限</div>
+          <div style="padding:0 20px 12px">
+            <label class="off-setting-row" style="border:0; padding:12px 14px; background:#eef1f6; border-radius:12px; cursor:pointer">
+              <div class="off-setting-label" style="display:flex; align-items:center; gap:10px">
+                <i class="ti ti-device-mobile" style="font-size:20px; color:#6b7280"></i>
+                <div>
+                  <b>用戶</b>
+                  <small>能透過 用戶界面 / 裝置 進行預約</small>
+                </div>
+              </div>
+              <div class="off-setting-control">
+                <label class="off-toggle"><input type="checkbox" id="eu-ui-access" checked><span class="off-toggle-slider"></span></label>
+              </div>
+            </label>
+          </div>
+
+          <div class="off-perm-section-title" style="padding:8px 20px 6px">管理控制台存取權限</div>
+          <div style="padding:0 20px 12px">
+            <label class="off-setting-row" style="border:0; padding:12px 14px; background:#eef1f6; border-radius:12px; cursor:pointer">
+              <div class="off-setting-label" style="display:flex; align-items:center; gap:10px">
+                <i class="ti ti-shield-lock" style="font-size:20px; color:#6b7280"></i>
+                <div>
+                  <b>最高管理者</b>
+                  <small>擁有所有管理權限</small>
+                </div>
+              </div>
+              <div class="off-setting-control">
+                <label class="off-toggle"><input type="checkbox" id="eu-super-admin"><span class="off-toggle-slider"></span></label>
+              </div>
+            </label>
+          </div>
+
+          <div class="off-perm-head" style="padding:6px 34px 8px">
+            <span>管理者</span>
+            <span>讀取</span>
+            <span>寫入</span>
+          </div>
+          <div id="eu-perm-list" style="padding:0 20px 20px">
+            <!-- 由 script 從 PERMISSIONS 渲染 -->
+          </div>
+        </div>
+
+        <!-- 用戶群組 -->
+        <div class="eu-pane" data-pane="groups" style="padding:0; overflow-y:auto; flex:1; display:none">
+          <div style="padding:20px 20px 8px">
+            <input id="eu-group-search" placeholder="🔍 搜尋" style="width:100%; padding:10px 14px; border:1px solid var(--off-border); border-radius:10px; outline:none">
+          </div>
+          <div class="off-group-list" id="eu-group-list">
+            <div class="off-tab-empty"><i class="ti ti-loader-2"></i>讀取中…</div>
+          </div>
+        </div>
+
+        <!-- 委託代表 -->
+        <div class="eu-pane" data-pane="delegate" style="padding:0; overflow-y:auto; flex:1; display:none">
+          <div style="padding:20px 20px 8px">
+            <input id="eu-delegate-search" placeholder="🔍 搜尋要委派的使用者" style="width:100%; padding:10px 14px; border:1px solid var(--off-border); border-radius:10px; outline:none">
+          </div>
+          <div style="padding:0 20px; font-size:12px; color:var(--off-text-muted)">
+            已選 · <span id="eu-delegate-selected">0</span>
+          </div>
+          <div class="off-group-list" id="eu-delegate-list" style="padding-top:8px">
+            <div class="off-tab-empty"><i class="ti ti-user-off"></i><div>無代理人</div></div>
+          </div>
+        </div>
+
+        <!-- 門禁卡（反白，尚未開放） -->
+        <div class="eu-pane" data-pane="cards" style="padding:0; overflow-y:auto; flex:1; display:none">
+          <div style="padding:20px; opacity:.5; pointer-events:none">
+            <div class="off-field"><span class="off-field-label"><i class="ti ti-credit-card"></i> 門禁卡 1</span></div>
+            <div class="off-field"><span class="off-field-label"><i class="ti ti-credit-card"></i> 門禁卡 2</span></div>
+            <div class="off-field"><span class="off-field-label"><i class="ti ti-credit-card"></i> 門禁卡 3</span></div>
+          </div>
+          <div class="off-tab-empty" style="padding-top:0">
+            <i class="ti ti-lock"></i>
+            <div>此功能尚未開放</div>
+          </div>
+        </div>
+
+        <!-- 登入裝置 -->
+        <div class="eu-pane" data-pane="devices" style="padding:0; overflow-y:auto; flex:1; display:none">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:20px 20px 8px">
+            <div style="color:var(--off-text-muted); font-size:13px">登入裝置 · <span id="eu-devices-total">0</span></div>
+            <button class="off-btn"><i class="ti ti-logout"></i> 強制登出全部</button>
+          </div>
+          <div id="eu-devices-list" style="padding:0 20px 20px">
+            <div class="off-tab-empty"><i class="ti ti-device-desktop"></i><div>尚無登入紀錄</div></div>
+          </div>
+        </div>
+
+        <!-- 資訊 -->
+        <div class="eu-pane" data-pane="info" style="padding:20px; overflow-y:auto; flex:1; display:none">
+          <div class="off-info-heading">詳細</div>
+          <div class="off-info-row mono"><span class="lbl"><i class="ti ti-hash"></i> ID</span><span class="val" id="eu-info-id">—</span></div>
+          <div class="off-info-row mono"><span class="lbl"><i class="ti ti-hash"></i> 訪問 ID</span><span class="val" id="eu-info-access-id">—</span></div>
+          <div class="off-info-row mono"><span class="lbl"><i class="ti ti-fingerprint"></i> UID</span><span class="val" id="eu-info-uid">—</span></div>
+
+          <div class="off-info-heading" style="margin-top:12px">資訊</div>
+          <div class="off-info-row"><span class="lbl"><i class="ti ti-user-plus"></i> 創建者</span><span class="val" id="eu-info-created-by">—</span></div>
+          <div class="off-info-row"><span class="lbl"><i class="ti ti-clock"></i> 創建日期</span><span class="val" id="eu-info-created-at">—</span></div>
+          <div class="off-info-row"><span class="lbl"><i class="ti ti-edit"></i> 修改者</span><span class="val" id="eu-info-updated-by">—</span></div>
+          <div class="off-info-row"><span class="lbl"><i class="ti ti-history"></i> 修改日期</span><span class="val" id="eu-info-updated-at">—</span></div>
+        </div>
+
+        <!-- Footer -->
+        <div class="off-modal-foot">
+          <div id="eu-err" style="color:var(--off-red); font-size:13px; margin-right:auto; align-self:center; display:none"></div>
+          <button class="off-btn off-btn-primary" id="eu-save">儲存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 用戶 Drawer（右側抽屜） -->
+  <div class="off-drawer-back" id="user-drawer-back">
+    <aside class="off-drawer" style="width:min(460px, 96vw)">
+      <div class="off-drawer-head">
+        <button class="off-drawer-close" id="ud-close"><i class="ti ti-x"></i></button>
+        <div class="off-drawer-title-row">
+          <span class="off-avatar" id="ud-avatar" style="width:56px; height:56px; border-radius:16px; font-size:22px"></span>
+          <div>
+            <h3 class="off-drawer-title" id="ud-title">—</h3>
+            <div id="ud-email" style="color:var(--off-text-muted); font-size:13px; margin-top:2px">—</div>
+          </div>
+        </div>
+        <div class="off-drawer-actions">
+          <button class="off-btn off-btn-primary" id="ud-edit"><i class="ti ti-pencil"></i> 編輯</button>
+          <button class="off-btn" id="ud-password"><i class="ti ti-lock"></i> 密碼</button>
+          <button class="off-btn" id="ud-more"><i class="ti ti-dots"></i> 更多</button>
+        </div>
+      </div>
+
+      <div class="off-drawer-body">
+        <div class="off-drawer-section">
+          <p class="label">狀態</p>
+          <div class="value" id="ud-status">—</div>
+        </div>
+
+        <div class="off-drawer-section">
+          <p class="label">基本資訊</p>
+          <div class="value" id="ud-title-row">
+            <i class="ti ti-briefcase" style="color:#9aa3b0"></i> 標題
+            <span style="margin-left:auto; color:var(--off-text-muted)" id="ud-job-title">—</span>
+          </div>
+          <div class="value">
+            <i class="ti ti-building" style="color:#9aa3b0"></i> 部門
+            <span style="margin-left:auto; color:var(--off-text-muted)" id="ud-department">—</span>
+          </div>
+          <div class="value">
+            <i class="ti ti-id-badge" style="color:#9aa3b0"></i> 員工 ID
+            <span style="margin-left:auto; color:var(--off-text-muted)" id="ud-employee-id">—</span>
+          </div>
+          <div class="value">
+            <i class="ti ti-phone" style="color:#9aa3b0"></i> 電話號碼
+            <span style="margin-left:auto; color:var(--off-text-muted)" id="ud-phone">—</span>
+          </div>
+        </div>
+
+        <div class="off-drawer-section">
+          <p class="label">用戶群組</p>
+          <div class="value" id="ud-groups" style="flex-wrap:wrap; gap:6px">—</div>
+        </div>
+
+        <div class="off-drawer-section">
+          <p class="label">委託代表</p>
+          <div class="value" id="ud-delegate">—</div>
+        </div>
+
+        <div class="off-drawer-section">
+          <p class="label">權限</p>
+          <div class="value" id="ud-permissions" style="flex-wrap:wrap; gap:6px">—</div>
+        </div>
+
+        <div class="off-drawer-section">
+          <p class="label">授權</p>
+          <div class="value">
+            <span class="off-chip chip-green">✓ 高級包 E5</span>
+            <button class="edit-btn" title="編輯"><i class="ti ti-pencil"></i></button>
+          </div>
+        </div>
+
+        <div class="off-drawer-section">
+          <p class="label">安全</p>
+          <div class="value">
+            <i class="ti ti-credit-card" style="color:#9aa3b0"></i> 卡號碼
+            <span style="margin-left:auto; color:var(--off-text-muted)">—</span>
+            <button class="edit-btn" title="編輯"><i class="ti ti-pencil"></i></button>
+          </div>
+          <div class="value">
+            <i class="ti ti-key" style="color:#9aa3b0"></i> 身份驗證碼
+            <span style="margin-left:auto; color:var(--off-text-muted)">—</span>
+            <button class="edit-btn" title="編輯"><i class="ti ti-pencil"></i></button>
+          </div>
+          <div class="value">
+            <i class="ti ti-shield-check" style="color:#9aa3b0"></i> 雙重驗證
+            <span style="margin-left:auto" id="ud-mfa">
+              <span class="off-chip">停用</span>
+            </span>
+          </div>
+          <div class="value">
+            <i class="ti ti-devices" style="color:#9aa3b0"></i> 登入裝置
+            <span style="margin-left:auto; color:var(--off-text-muted)" id="ud-devices">—</span>
+          </div>
+        </div>
+
+        <div class="off-drawer-section">
+          <p class="label">信息</p>
+          <div class="value">
+            <i class="ti ti-building-community" style="color:#9aa3b0"></i> 分支機構管理
+            <span style="margin-left:auto; color:var(--off-text-muted)" id="ud-branch">—</span>
+          </div>
+          <div style="font-family:monospace; font-size:12px; color:#4b525f; background:#f8f9fc; padding:8px 10px; border-radius:8px; margin-top:8px">
+            <div style="display:flex; justify-content:space-between"><span># ID</span><b id="ud-id">—</b></div>
+            <div style="display:flex; justify-content:space-between; margin-top:4px"><span>UID</span><b id="ud-uid" style="font-size:11px">—</b></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="off-drawer-foot">
+        <button class="off-drawer-delete" id="ud-delete"><i class="ti ti-trash"></i> 刪除</button>
+      </div>
+    </aside>
+  </div>
+
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script>
+    OffAuth.requireLogin();
+
+    const esc = s => (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const statusChip = st => {
+      if (st === 'active') return '<span class="off-chip chip-green">● 已啟動</span>';
+      if (st === 'pending') return '<span class="off-chip chip-yellow">等待邀請</span>';
+      return '<span class="off-chip chip-red">已停用</span>';
+    };
+    const palette = ['solid-orange','solid-green','solid-purple'];
+
+    async function loadUsers() {
+      const tbody = document.getElementById('users-tbody');
+      try {
+        const users = await OffAPI.users.list();
+        if (!users.length) {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:32px; color:var(--off-text-muted)">尚無使用者</td></tr>`;
+          document.getElementById('user-count').textContent = '1 - 0 / 0';
+          return;
+        }
+        tbody.innerHTML = users.map((u, i) => `
+          <tr data-edit="${u.id}" style="cursor:pointer">
+            <td><input type="checkbox" onclick="event.stopPropagation()"></td>
+            <td>
+              <div style="display:flex; align-items:center; gap:8px">
+                <span class="off-avatar ${palette[i % palette.length]}">${esc(u.display_name.slice(0,1))}</span>
+                <span>${esc(u.display_name)}</span>
+              </div>
+            </td>
+            <td><i class="ti ti-mail"></i> ${esc(u.email)}</td>
+            <td>${statusChip(u.status)}</td>
+            <td>${u.last_login_at ? '<span class="off-chip">已登入</span>' : '<span class="off-chip">未登入</span>'}</td>
+          </tr>
+        `).join('');
+        tbody.querySelectorAll('tr[data-edit]').forEach(tr => {
+          tr.addEventListener('click', () => openDrawer(parseInt(tr.dataset.edit, 10)));
+        });
+        document.getElementById('user-count').textContent = `1 - ${users.length} / ${users.length}`;
+        window.__users_cache = users;
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--off-red); padding:24px">讀取失敗：${esc(e.message)}</td></tr>`;
+      }
+    }
+
+    // 邀請 vs 手動新增 兩個按鈕，開同一個 Modal，只是預設不同
+    function openCreate(mode) {
+      // 重置欄位
+      document.getElementById('nu-email').value = '';
+      document.getElementById('nu-name').value = '';
+      document.getElementById('nu-pw').value = '';
+      document.getElementById('nu-err').style.display = 'none';
+      // 選 mode
+      document.querySelector(`input[name="nu-mode"][value="${mode}"]`).checked = true;
+      applyMode(mode);
+      // 讀取群組讓使用者勾
+      loadGroupsForCreate();
+      offOpenModal('modal-new-user');
+    }
+
+    function applyMode(mode) {
+      document.getElementById('nu-pw-row').style.display = mode === 'manual' ? 'flex' : 'none';
+      // 選中卡片視覺
+      document.querySelectorAll('#nu-mode-row .mode-card').forEach(el => {
+        const active = el.dataset.mode === mode;
+        el.style.border = active ? '2px solid var(--off-primary)' : '1px solid var(--off-border)';
+        el.style.background = active ? '#eef7ff' : '#f4f6fa';
+      });
+    }
+    document.querySelectorAll('input[name="nu-mode"]').forEach(r => {
+      r.addEventListener('change', e => applyMode(e.target.value));
+    });
+
+    async function loadGroupsForCreate() {
+      const box = document.getElementById('nu-groups');
+      box.innerHTML = '讀取中…';
+      try {
+        const groups = await OffAPI.groups.list();
+        if (!groups.length) { box.innerHTML = '<span style="color:var(--off-text-muted); font-size:13px">尚無群組</span>'; return; }
+        box.innerHTML = groups.map(g => `
+          <label style="display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:8px; cursor:pointer">
+            <input type="checkbox" class="nu-group" value="${g.id}">
+            <span class="off-chip">${esc(g.name)}</span>
+            <span style="color:var(--off-text-muted); font-size:12px">${g.member_count} 位</span>
+          </label>
+        `).join('');
+      } catch (e) {
+        box.innerHTML = `<span style="color:var(--off-red)">${esc(e.message)}</span>`;
+      }
+    }
+
+    document.getElementById('btn-invite').addEventListener('click', () => openCreate('invite'));
+    document.getElementById('btn-manual').addEventListener('click', () => openCreate('manual'));
+
+    document.getElementById('nu-save').addEventListener('click', async () => {
+      const err = document.getElementById('nu-err');
+      err.style.display = 'none';
+      const email = document.getElementById('nu-email').value.trim();
+      const name  = document.getElementById('nu-name').value.trim();
+      const mode  = document.querySelector('input[name="nu-mode"]:checked').value;
+      const pw    = document.getElementById('nu-pw').value;
+      const groupIds = [...document.querySelectorAll('.nu-group:checked')].map(x => parseInt(x.value, 10));
+
+      if (!email) { err.textContent = '請輸入電郵'; err.style.display = 'block'; return; }
+      if (mode === 'manual' && (!pw || pw.length < 8)) {
+        err.textContent = '手動新增需要至少 8 碼密碼'; err.style.display = 'block'; return;
+      }
+
+      try {
+        await OffAPI.users.create({
+          email,
+          display_name: name || email.split('@')[0],
+          password: mode === 'manual' ? pw : null,
+          group_ids: groupIds,
+        });
+        offCloseModal('modal-new-user');
+        await loadUsers();
+      } catch (e) {
+        err.textContent = e.message; err.style.display = 'block';
+      }
+    });
+
+    // ---------- 用戶 Drawer ----------
+    let currentUserDetail = null;
+
+    async function openDrawer(userId) {
+      document.getElementById('user-drawer-back').classList.add('open');
+      // 載入狀態
+      document.getElementById('ud-title').textContent = '讀取中…';
+      document.getElementById('ud-email').textContent = '';
+      try {
+        const u = await OffAPI.users.get(userId);
+        currentUserDetail = u;
+        renderDrawer(u);
+      } catch (e) {
+        document.getElementById('ud-title').textContent = '讀取失敗';
+        document.getElementById('ud-email').textContent = e.message;
+      }
+    }
+
+    function renderDrawer(u) {
+      // 頭像
+      const av = document.getElementById('ud-avatar');
+      const paletteBg = ['#eaf2ff','#e6f7ee','#ffe1ea','#fff2cd','#efe9ff','#ffe7d0'];
+      const paletteFg = ['#1f80f0','#12a97e','#e75d84','#b7891b','#7c67f4','#f39c3d'];
+      av.style.background = paletteBg[u.id % paletteBg.length];
+      av.style.color = paletteFg[u.id % paletteFg.length];
+      av.textContent = (u.display_name || '?').slice(0, 1);
+
+      // 頭部
+      document.getElementById('ud-title').textContent = u.display_name || '—';
+      document.getElementById('ud-email').textContent = u.email;
+
+      // 狀態
+      document.getElementById('ud-status').innerHTML = statusChip(u.status);
+
+      // 基本資訊
+      document.getElementById('ud-job-title').textContent = u.title || '—';
+      document.getElementById('ud-department').textContent = u.department || '—';
+      document.getElementById('ud-employee-id').textContent = u.employee_id || '—';
+      document.getElementById('ud-phone').textContent = u.phone || '—';
+
+      // 用戶群組（chips）
+      const groupBox = document.getElementById('ud-groups');
+      groupBox.innerHTML = (u.groups && u.groups.length)
+        ? u.groups.map(g => `<span class="off-chip chip-primary">${esc(g.name)}</span>`).join(' ')
+        : '<span style="color:var(--off-text-muted); font-size:12px">未加入任何群組</span>';
+
+      // 委託代表
+      document.getElementById('ud-delegate').innerHTML = u.delegate_name
+        ? `<span class="off-chip">${esc(u.delegate_name)}</span>`
+        : '<span style="color:var(--off-text-muted); font-size:12px">—</span>';
+
+      // 權限（由 group category 與 permissions 推導；此處展示 category 名稱）
+      const permBox = document.getElementById('ud-permissions');
+      const permChips = [];
+      (u.groups || []).forEach(g => {
+        if (g.category === 'admin') permChips.push('<span class="off-chip chip-red">最高管理者</span>');
+        else if (g.category === 'support') permChips.push('<span class="off-chip chip-yellow">支援職員</span>');
+        else if (g.category === 'general') permChips.push('<span class="off-chip">用戶</span>');
+        else if (g.category === 'guest') permChips.push('<span class="off-chip chip-purple">訪客</span>');
+        else if (g.category === 'maintenance') permChips.push('<span class="off-chip chip-primary">維修</span>');
+        else if (g.category === 'department') permChips.push('<span class="off-chip chip-primary">部門</span>');
+        // 額外從 permissions JSON 找 read/write 為 true 的模組
+        const perms = g.permissions || {};
+        if (perms.reservation) permChips.push('<span class="off-chip">預約管理者</span>');
+        if (perms.service) permChips.push('<span class="off-chip">服務職員</span>');
+        if (perms.event) permChips.push('<span class="off-chip">活動主辦人</span>');
+      });
+      permBox.innerHTML = permChips.length
+        ? [...new Set(permChips)].join(' ')
+        : '<span style="color:var(--off-text-muted); font-size:12px">—</span>';
+
+      // 雙重驗證
+      document.getElementById('ud-mfa').innerHTML = u.mfa_enabled
+        ? '<span class="off-chip chip-green">啟用</span>'
+        : '<span class="off-chip">停用</span>';
+
+      // 登入裝置
+      document.getElementById('ud-devices').textContent = u.last_login_at
+        ? `最近登入：${new Date(u.last_login_at).toLocaleString('zh-TW')}`
+        : '—';
+
+      // 信息
+      document.getElementById('ud-branch').textContent = u.branch_name || '—';
+      document.getElementById('ud-id').textContent = u.id;
+      document.getElementById('ud-uid').textContent =
+        `${u.id.toString(16).toUpperCase().padStart(8, '0')}-XXXX-XXXXXXXX`;
+    }
+
+    function closeDrawer() {
+      document.getElementById('user-drawer-back').classList.remove('open');
+      currentUserDetail = null;
+    }
+
+    document.getElementById('ud-close').addEventListener('click', closeDrawer);
+    document.getElementById('user-drawer-back').addEventListener('click', e => {
+      if (e.target.id === 'user-drawer-back') closeDrawer();
+    });
+
+    document.getElementById('ud-edit').addEventListener('click', () => {
+      if (!currentUserDetail) return;
+      openEdit(currentUserDetail.id);
+    });
+
+    document.getElementById('ud-password').addEventListener('click', () => {
+      alert('密碼變更功能尚未實作（將在下一輪加入）');
+    });
+
+    document.getElementById('ud-more').addEventListener('click', () => {
+      if (!currentUserDetail) return;
+      const nextStatus = currentUserDetail.status === 'disabled' ? 'active' : 'disabled';
+      const action = nextStatus === 'disabled' ? '停用' : '啟用';
+      if (!confirm(`確定要${action}此用戶？`)) return;
+      OffAPI.users.patch(currentUserDetail.id, { status: nextStatus })
+        .then(() => { closeDrawer(); loadUsers(); })
+        .catch(e => alert(e.message));
+    });
+
+    document.getElementById('ud-delete').addEventListener('click', async () => {
+      if (!currentUserDetail) return;
+      if (!confirm(`確定要刪除「${currentUserDetail.display_name}」？此操作會停用該帳戶。`)) return;
+      try {
+        // 目前後端未提供 DELETE /users/{id}；改為停用（軟刪除）
+        await OffAPI.users.patch(currentUserDetail.id, { status: 'disabled' });
+        closeDrawer();
+        await loadUsers();
+      } catch (e) { alert('刪除失敗：' + e.message); }
+    });
+
+    // ---------- 編輯用戶（7 tab 分頁式） ----------
+    let editingUserId = null;
+    let editingUserData = null;
+    // 14 個管理者類別（跟群組 modal 一致）
+    const PERMISSIONS = [
+      { key: 'reservation',   icon: 'ti-calendar-event',   name: '預約管理者',       desc: '能處理所有用戶的預約' },
+      { key: 'resource',      icon: 'ti-box',              name: '資源管理者',       desc: '管理所有資源' },
+      { key: 'service',       icon: 'ti-tools',            name: '服務管理者',       desc: '能管理服務要求和服務職員' },
+      { key: 'support',       icon: 'ti-ticket',           name: '支援管理者',       desc: '能透過 用戶界面 處理支援要求和管理支援職員' },
+      { key: 'visitor',       icon: 'ti-user-check',       name: '訪客管理者',       desc: '能管理訪客和相關設定' },
+      { key: 'panel',         icon: 'ti-device-tv',        name: '面板管理者',       desc: '能管理面板' },
+      { key: 'access',        icon: 'ti-key',              name: '存取控制管理器',   desc: '權限控制不同區域/門鎖的出入權限' },
+      { key: 'event',         icon: 'ti-confetti',         name: '活動管理者',       desc: '管理所有活動的權限' },
+      { key: 'av',            icon: 'ti-video',            name: '音訊/視訊設備管理器', desc: '控制音訊/視訊設備設定的權限' },
+      { key: 'mail',          icon: 'ti-mailbox',          name: '收發管理者',       desc: '能管理包裹及收發站' },
+      { key: 'workflow',      icon: 'ti-git-fork',         name: '工作流程管理者',   desc: '能管理工作流程' },
+      { key: 'expense',       icon: 'ti-receipt',          name: '報銷管理者',       desc: '能管理報銷' },
+      { key: 'counter',       icon: 'ti-cash-register',    name: '櫃檯管理者',       desc: '能管理櫃檯和服務隊列' },
+      { key: 'user',          icon: 'ti-users',            name: '用戶管理者',       desc: '能管理用戶和用戶群組' },
+    ];
+
+    // 快取 openEdit 需要的所有資料
+    let __editBranchList = [];
+    let __editGroupList = [];
+    let __editUserList = [];
+
+    async function openEdit(userId) {
+      // 取用戶 detail（一定要有 branch/groups/permissions 等）
+      let u;
+      if (currentUserDetail && currentUserDetail.id === userId) {
+        u = currentUserDetail;
+      } else {
+        try { u = await OffAPI.users.get(userId); }
+        catch (e) { alert('讀取失敗：' + e.message); return; }
+      }
+      editingUserId = userId;
+      editingUserData = u;
+
+      // 左側 avatar + 標題
+      const paletteBg = ['#eaf2ff','#e6f7ee','#ffe1ea','#fff2cd','#efe9ff','#ffe7d0'];
+      const paletteFg = ['#1f80f0','#12a97e','#e75d84','#b7891b','#7c67f4','#f39c3d'];
+      const av = document.getElementById('eu-side-avatar');
+      av.style.background = paletteBg[u.id % paletteBg.length];
+      av.style.color = paletteFg[u.id % paletteFg.length];
+      av.textContent = (u.display_name || '?').slice(0, 1);
+      document.getElementById('eu-side-title').textContent = u.display_name || '—';
+
+      // 表單欄位（基本 tab）
+      document.getElementById('eu-id').value = u.id;
+      document.getElementById('eu-name').value = u.display_name || '';
+      document.getElementById('eu-email').value = u.email || '';
+      document.getElementById('eu-phone').value = u.phone || '';
+      document.getElementById('eu-department').value = u.department || '';
+      document.getElementById('eu-title').value = u.title || '';
+      document.getElementById('eu-employee-id').value = u.employee_id || '';
+      document.getElementById('eu-status').value = u.status;
+      document.getElementById('eu-avatar').value = u.avatar_url || '';
+      document.getElementById('eu-err').style.display = 'none';
+
+      // 平行載入分支/群組/用戶
+      [__editBranchList, __editGroupList, __editUserList] = await Promise.all([
+        OffAPI.branches.list().catch(() => []),
+        OffAPI.groups.list().catch(() => []),
+        OffAPI.users.list().catch(() => []),
+      ]);
+
+      // 分支下拉
+      const bSel = document.getElementById('eu-branch');
+      bSel.innerHTML = '<option value="">— 不指定 —</option>' +
+        __editBranchList.map(b =>
+          `<option value="${b.id}"${b.id === u.branch_id ? ' selected' : ''}>${esc(b.name)}</option>`).join('');
+
+      // 權限 tab：從 u.permissions 還原
+      const perms = u.permissions || {};
+      document.getElementById('eu-ui-access').checked = perms.ui_access !== false; // 預設 true
+      document.getElementById('eu-super-admin').checked = !!perms.is_super_admin;
+      renderEditPermissions(perms.admin || {});
+      updateEditPermCount();
+
+      // 用戶群組 tab
+      renderEditGroups();
+
+      // 委託代表 tab
+      renderEditDelegates();
+
+      // 登入裝置 tab
+      renderEditDevices();
+
+      // 資訊 tab
+      renderEditInfo();
+
+      // 切回基本 tab
+      switchEditTab('basic');
+
+      offOpenModal('modal-edit-user');
+    }
+
+    // ---- Tab 切換 ----
+    function switchEditTab(name) {
+      document.querySelectorAll('#modal-edit-user .off-tab').forEach(x =>
+        x.classList.toggle('active', x.dataset.tab === name));
+      document.querySelectorAll('#modal-edit-user .eu-pane').forEach(p =>
+        p.style.display = p.dataset.pane === name ? '' : 'none');
+    }
+    document.querySelectorAll('#modal-edit-user .off-tab:not(.disabled)').forEach(tab => {
+      tab.addEventListener('click', () => switchEditTab(tab.dataset.tab));
+    });
+
+    // ---- 權限 ----
+    function renderEditPermissions(admin) {
+      const list = document.getElementById('eu-perm-list');
+      list.innerHTML = PERMISSIONS.map(p => {
+        const v = admin[p.key] || {};
+        return `
+          <div class="off-perm-row" data-key="${p.key}">
+            <div class="off-perm-name">
+              <i class="ti ${p.icon}"></i>
+              <div>
+                <b>${esc(p.name)}</b>
+                <small>${esc(p.desc)}</small>
+              </div>
+            </div>
+            <div class="off-perm-toggle">
+              <label class="off-toggle">
+                <input type="checkbox" data-role="read" ${v.read ? 'checked' : ''}>
+                <span class="off-toggle-slider"></span>
+              </label>
+            </div>
+            <div class="off-perm-toggle">
+              <label class="off-toggle">
+                <input type="checkbox" data-role="write" ${v.write ? 'checked' : ''}>
+                <span class="off-toggle-slider"></span>
+              </label>
+            </div>
+          </div>`;
+      }).join('');
+      list.addEventListener('change', updateEditPermCount);
+    }
+    function collectEditPermissions() {
+      const admin = {};
+      document.querySelectorAll('#eu-perm-list .off-perm-row').forEach(row => {
+        const k = row.dataset.key;
+        const r = row.querySelector('input[data-role="read"]').checked;
+        const w = row.querySelector('input[data-role="write"]').checked;
+        if (r || w) admin[k] = { read: r, write: w };
+      });
+      return {
+        ui_access: document.getElementById('eu-ui-access').checked,
+        is_super_admin: document.getElementById('eu-super-admin').checked,
+        admin,
+      };
+    }
+    function updateEditPermCount() {
+      const p = collectEditPermissions();
+      let n = Object.keys(p.admin).length;
+      if (p.is_super_admin) n++;
+      if (p.ui_access) n++;
+      document.getElementById('eu-perm-count').textContent = n;
+    }
+
+    // ---- 用戶群組 tab ----
+    let __editGroupSelected = new Set();
+    function renderEditGroups() {
+      __editGroupSelected = new Set((editingUserData.groups || []).map(g => g.id));
+      const box = document.getElementById('eu-group-list');
+      const q = (document.getElementById('eu-group-search').value || '').toLowerCase();
+
+      // 依 branch_name 分組
+      const byBranch = {};
+      __editGroupList.forEach(g => {
+        if (q && !g.name.toLowerCase().includes(q)) return;
+        const label = g.branch_name ? `HQ/${g.branch_name}` : 'HQ';
+        (byBranch[label] = byBranch[label] || []).push(g);
+      });
+      if (!Object.keys(byBranch).length) {
+        box.innerHTML = '<div class="off-tab-empty"><i class="ti ti-users-group"></i><div>沒有符合的群組</div></div>';
+        updateEditGroupsCount();
+        return;
+      }
+      box.innerHTML = Object.keys(byBranch).map(label => {
+        const ids = byBranch[label].map(g => g.id);
+        return `
+          <div class="grp-header">
+            <span>${esc(label)}</span>
+            <span class="grp-selectall" data-ids="${ids.join(',')}">全選</span>
+          </div>
+          ${byBranch[label].map(g => {
+            const checked = __editGroupSelected.has(g.id);
+            const catLabel = ({admin:'管理者',support:'支援',general:'一般',guest:'訪客',maintenance:'維修組',department:'部門'})[g.category] || g.category || '';
+            const initial = (g.name || '?').slice(0, 1);
+            return `
+              <label class="grp-item${checked ? ' active' : ''}" data-id="${g.id}">
+                <input type="checkbox" ${checked ? 'checked' : ''}>
+                <span class="grp-avatar" style="background:#eef1f6; color:#5b6472">${esc(initial)}</span>
+                <div style="flex:1">
+                  <b>${esc(g.name)}</b>
+                  ${catLabel ? `<small>${esc(catLabel)}</small>` : ''}
+                </div>
+              </label>`;
+          }).join('')}`;
+      }).join('');
+
+      // 綁 click
+      box.querySelectorAll('.grp-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const id = parseInt(el.dataset.id, 10);
+          const cb = el.querySelector('input');
+          if (__editGroupSelected.has(id)) { __editGroupSelected.delete(id); cb.checked = false; el.classList.remove('active'); }
+          else { __editGroupSelected.add(id); cb.checked = true; el.classList.add('active'); }
+          updateEditGroupsCount();
+        });
+      });
+      box.querySelectorAll('.grp-selectall').forEach(el => {
+        el.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          const ids = el.dataset.ids.split(',').map(Number);
+          const allSelected = ids.every(id => __editGroupSelected.has(id));
+          if (allSelected) ids.forEach(id => __editGroupSelected.delete(id));
+          else ids.forEach(id => __editGroupSelected.add(id));
+          renderEditGroups();
+        });
+      });
+      updateEditGroupsCount();
+    }
+    function updateEditGroupsCount() {
+      document.getElementById('eu-groups-count').textContent = __editGroupSelected.size;
+    }
+    document.getElementById('eu-group-search').addEventListener('input', renderEditGroups);
+
+    // ---- 委託代表 tab ----
+    let __editDelegateSelected = null;
+    function renderEditDelegates() {
+      __editDelegateSelected = editingUserData.delegate_user_id || null;
+      const box = document.getElementById('eu-delegate-list');
+      const q = (document.getElementById('eu-delegate-search').value || '').toLowerCase();
+      const list = __editUserList.filter(x =>
+        x.id !== editingUserData.id &&
+        (!q || x.display_name.toLowerCase().includes(q) || x.email.toLowerCase().includes(q))
+      );
+      if (!list.length) {
+        box.innerHTML = '<div class="off-tab-empty"><i class="ti ti-user-off"></i><div>無代理人</div></div>';
+        updateEditDelegateCount();
+        return;
+      }
+      box.innerHTML = list.map(u => {
+        const active = u.id === __editDelegateSelected;
+        return `
+          <label class="grp-item${active ? ' active' : ''}" data-id="${u.id}">
+            <input type="radio" name="eu-delegate-radio" ${active ? 'checked' : ''}>
+            <span class="grp-avatar" style="background:#eef1f6; color:#5b6472">${esc((u.display_name || '?').slice(0,1))}</span>
+            <div style="flex:1">
+              <b>${esc(u.display_name)}</b>
+              <small>${esc(u.email)}</small>
+            </div>
+          </label>`;
+      }).join('');
+      box.querySelectorAll('.grp-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const id = parseInt(el.dataset.id, 10);
+          __editDelegateSelected = (__editDelegateSelected === id) ? null : id;
+          renderEditDelegates();
+        });
+      });
+      updateEditDelegateCount();
+    }
+    function updateEditDelegateCount() {
+      const n = __editDelegateSelected ? 1 : 0;
+      document.getElementById('eu-delegate-count').textContent = n;
+      document.getElementById('eu-delegate-selected').textContent = n;
+    }
+    document.getElementById('eu-delegate-search').addEventListener('input', renderEditDelegates);
+
+    // ---- 登入裝置 tab（目前用 last_login_at 模擬單一裝置）----
+    function renderEditDevices() {
+      const box = document.getElementById('eu-devices-list');
+      const u = editingUserData;
+      if (!u.last_login_at) {
+        box.innerHTML = '<div class="off-tab-empty"><i class="ti ti-device-desktop"></i><div>尚無登入紀錄</div></div>';
+        document.getElementById('eu-devices-count').textContent = 0;
+        document.getElementById('eu-devices-total').textContent = 0;
+        return;
+      }
+      const dt = new Date(u.last_login_at);
+      const now = new Date();
+      const days = Math.floor((now - dt) / 86400000);
+      const relative = days === 0 ? '今日' : `${days} 日前`;
+      box.innerHTML = `
+        <div class="off-device-card">
+          <div class="dev-head">
+            <div>
+              <div class="dev-name">目前 Session</div>
+              <div class="dev-sub">網頁瀏覽器</div>
+            </div>
+            <div class="dev-last">
+              <span>最後活躍</span>
+              <b>${relative}</b>
+              <span>${dt.toLocaleString('zh-TW')}</span>
+            </div>
+          </div>
+          <div class="dev-foot">
+            <span class="dev-login"><i class="ti ti-login"></i> 登入時間 ${dt.toLocaleString('zh-TW')}</span>
+            <button class="off-btn"><i class="ti ti-logout"></i> 強制登出</button>
+          </div>
+        </div>`;
+      document.getElementById('eu-devices-count').textContent = 1;
+      document.getElementById('eu-devices-total').textContent = 1;
+    }
+
+    // ---- 資訊 tab ----
+    function renderEditInfo() {
+      const u = editingUserData;
+      document.getElementById('eu-info-id').textContent = `#${u.id}`;
+      document.getElementById('eu-info-access-id').textContent = '—';
+      document.getElementById('eu-info-uid').textContent =
+        `${u.id.toString(16).toUpperCase().padStart(8,'0')}-XXXX-XXXX-XXXX-XXXXXXXXXXXX`;
+      const me = OffAuth.user();
+      document.getElementById('eu-info-created-by').textContent = me?.display_name || '—';
+      document.getElementById('eu-info-created-at').textContent = u.created_at
+        ? new Date(u.created_at).toLocaleString('zh-TW') : '—';
+      document.getElementById('eu-info-updated-by').textContent = '—';
+      document.getElementById('eu-info-updated-at').textContent = '—';
+    }
+
+    // ---- 儲存 ----
+    document.getElementById('eu-save').addEventListener('click', async () => {
+      const err = document.getElementById('eu-err');
+      err.style.display = 'none';
+      const branchVal = document.getElementById('eu-branch').value;
+      const payload = {
+        display_name: document.getElementById('eu-name').value.trim(),
+        phone:        document.getElementById('eu-phone').value.trim() || null,
+        department:   document.getElementById('eu-department').value.trim() || null,
+        title:        document.getElementById('eu-title').value.trim() || null,
+        employee_id:  document.getElementById('eu-employee-id').value.trim() || null,
+        branch_id:    branchVal ? parseInt(branchVal, 10) : null,
+        delegate_user_id: __editDelegateSelected || null,
+        permissions:  collectEditPermissions(),
+        group_ids:    [...__editGroupSelected],
+      };
+      try {
+        await OffAPI.users.patch(editingUserId, payload);
+        offCloseModal('modal-edit-user');
+        await loadUsers();
+        // 若 drawer 開著，重新載入
+        if (currentUserDetail && currentUserDetail.id === editingUserId) {
+          const fresh = await OffAPI.users.get(editingUserId);
+          currentUserDetail = fresh;
+          renderDrawer(fresh);
+        }
+      } catch (e) {
+        err.textContent = e.message; err.style.display = 'block';
+      }
+    });
+
+    // 左側刪除按鈕（軟刪除 → status=disabled）
+    document.getElementById('eu-delete-side').addEventListener('click', async () => {
+      if (!editingUserId) return;
+      if (!confirm('確定要停用此用戶？停用後無法登入。')) return;
+      try {
+        await OffAPI.users.patch(editingUserId, { status: 'disabled' });
+        offCloseModal('modal-edit-user');
+        await loadUsers();
+        if (currentUserDetail && currentUserDetail.id === editingUserId) closeDrawer();
+      } catch (e) {
+        const err = document.getElementById('eu-err');
+        err.textContent = e.message; err.style.display = 'block';
+      }
+    });
+
+    loadUsers();
+  </script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>工單管理 · 已匯報問題 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-module="ticket" data-page="reports"
+      data-crumbs='[{"label":"工單管理","href":"ticket-dashboard.html"},{"label":"已匯報問題"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#ffb17a,#f26a5c)"><i class="ti ti-flag"></i></span>
+        <div>
+          <div class="off-page-title-row"><h1>已匯報問題</h1></div>
+          <p class="off-page-desc">用戶已匯報有關資源的問題</p>
+        </div>
+        <div class="off-page-actions">
+          <button class="off-btn off-btn-primary" onclick="offOpenModal('modal-new-report')"><i class="ti ti-plus"></i> 匯報問題</button>
+          <button class="off-btn"><i class="ti ti-adjustments-alt"></i> 排序 / 欄位</button>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px">
+        <span class="off-chip chip-primary">狀態</span>
+        <span class="off-chip">最後更新</span>
+        <span class="off-chip">分類</span>
+        <span class="off-chip">報告人 <i class="ti ti-chevron-down"></i></span>
+        <span class="off-chip">處理員 <i class="ti ti-chevron-down"></i></span>
+      </div>
+
+      <div class="off-panel" style="padding:0">
+        <div style="padding:14px; display:grid; grid-template-columns:1fr 200px 100px; gap:14px; align-items:center">
+          <div>
+            <div style="display:flex; align-items:center; gap:10px">
+              <span class="off-avatar" style="background:var(--off-primary-soft); color:var(--off-primary)"><i class="ti ti-alert-circle"></i></span>
+              <div>
+                <div style="font-weight:600">投影機開不起來</div>
+                <span class="off-chip chip-purple" style="margin-top:6px"><i class="ti ti-user"></i> Ingrid</span>
+              </div>
+            </div>
+          </div>
+          <div style="color:var(--off-text-muted); font-size:13px">
+            <div>匯報原因：故障</div>
+            <div>資源：會議室 A</div>
+            <div>時間：8月8日 10:20</div>
+          </div>
+          <div><span class="off-chip chip-yellow">等待處理</span></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: 新增報告 -->
+  <div class="off-modal-back" id="modal-new-report">
+    <div class="off-modal off-modal-wrap" style="grid-template-columns:1fr; width:min(520px, 92vw)">
+      <button class="off-modal-close" onclick="offCloseModal('modal-new-report')"><i class="ti ti-x"></i></button>
+      <div class="off-modal-body">
+        <h3 style="margin:0 0 16px">新增報告</h3>
+        <div class="off-field"><span class="off-field-label">標題</span><input placeholder="匯報問題"></div>
+        <div class="off-field"><span class="off-field-label">資源 <span style="color:red">*</span></span><select><option>— 請選擇 —</option><option>會議室 A</option><option>培訓室</option></select></div>
+        <div class="off-field"><span class="off-field-label">匯報原因</span><select><option>故障</option><option>缺件</option><option>清潔</option><option>其他</option></select></div>
+        <div class="off-field" style="align-items:flex-start"><span class="off-field-label" style="margin-top:4px"><i class="ti ti-menu-2"></i> 描述</span></div>
+        <textarea placeholder="請描述問題細節…"></textarea>
+        <div style="display:flex; justify-content:flex-end; margin-top:16px">
+          <button class="off-btn" disabled style="opacity:.6">請填寫表格</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>

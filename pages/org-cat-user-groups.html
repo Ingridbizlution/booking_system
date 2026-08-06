@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>組織目錄 · 分類 · 用戶群組類別 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body data-module="org" data-page="cat-groups"
+      data-crumbs='[{"label":"組織目錄","href":"org-users.html"},{"label":"分類"},{"label":"用戶群組類別"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#ffa6c1,#e75d84)"><i class="ti ti-category"></i></span>
+        <div>
+          <div class="off-page-title-row">
+            <h1>用戶群組類別</h1>
+            <span class="off-new-tag">NEW</span>
+            <button class="off-btn off-btn-primary" id="btn-new-cat">
+              <i class="ti ti-plus"></i> 新增類別
+            </button>
+          </div>
+          <p class="off-page-desc off-new-note">
+            <b>新增：</b>以類別將「用戶群組」分群管理（例：<b>維修組</b>、<b>部門</b>）。
+            類別會決定群組在成員選單／篩選器上的分區顯示，並可控制是否對用戶可見。
+          </p>
+        </div>
+      </div>
+
+      <div class="off-panel" style="padding:0">
+        <table class="off-table">
+          <thead>
+            <tr>
+              <th style="width:40px"><input type="checkbox"></th>
+              <th class="off-search-cell"><input placeholder="🔍 名稱"></th>
+              <th>用戶群組</th>
+              <th>已啟用</th>
+              <th>對用戶可見</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="cats-tbody">
+            <tr><td colspan="6" style="text-align:center; padding:24px; color:var(--off-text-muted)">
+              <i class="ti ti-loader-2"></i> 讀取中…
+            </td></tr>
+          </tbody>
+        </table>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px">
+          <button class="off-btn"><i class="ti ti-trash"></i> 資源回收筒 <span class="off-chip">0</span></button>
+          <div style="color:var(--off-text-muted); font-size:13px">30 <i class="ti ti-chevron-down"></i> &nbsp; 1 - 2 / 2</div>
+        </div>
+      </div>
+
+      <div class="off-panel">
+        <div class="off-panel-head">
+          <span class="off-panel-icon"><i class="ti ti-info-circle"></i></span>
+          <h3 class="off-panel-title">類別 vs. 用戶群組</h3>
+        </div>
+        <p class="off-new-note" style="margin:0">
+          <b>類別</b>是「群組的分類標籤」——只用來歸類，不會直接授權。<br>
+          <b>用戶群組</b>才是真正掛人、掛權限的單位。<br>
+          例如：類別「維修組」下有多個群組（維修 A／維修 B），成員與權限設定在群組上。
+        </p>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal：新增類別 -->
+  <div class="off-modal-back" id="modal-new-cat">
+    <div class="off-modal off-modal-wrap" style="grid-template-columns:1fr; width:min(520px, 92vw)">
+      <button class="off-modal-close" onclick="offCloseModal('modal-new-cat')"><i class="ti ti-x"></i></button>
+      <div class="off-modal-body">
+        <h3 id="nc-title" style="margin:0 0 16px">新增用戶群組類別 <span class="off-new-tag">NEW</span></h3>
+        <input type="hidden" id="nc-id">
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-key"></i> Key <span style="color:red">*</span></span>
+          <input id="nc-key" placeholder="英數 / 底線，例：contractor">
+        </div>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-tag"></i> 名稱 <span style="color:red">*</span></span>
+          <input id="nc-label" placeholder="例：外部承包商">
+        </div>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-icons"></i> 圖標</span>
+          <input id="nc-icon" placeholder="ti-tool / ti-building / …" value="ti-category">
+        </div>
+        <div class="off-setting-row">
+          <div class="off-setting-label">
+            <b>已啟用</b>
+            <small>停用後，新增群組時不會出現在類別下拉中</small>
+          </div>
+          <div class="off-setting-control">
+            <label class="off-toggle"><input type="checkbox" id="nc-enabled" checked><span class="off-toggle-slider"></span></label>
+          </div>
+        </div>
+        <div class="off-setting-row">
+          <div class="off-setting-label">
+            <b>對用戶可見</b>
+            <small>關閉則僅管理者可見（內部分類）</small>
+          </div>
+          <div class="off-setting-control">
+            <label class="off-toggle"><input type="checkbox" id="nc-public"><span class="off-toggle-slider"></span></label>
+          </div>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px">
+          <button class="off-btn" onclick="offCloseModal('modal-new-cat')">取消</button>
+          <button class="off-btn off-btn-primary" id="nc-save">儲存</button>
+        </div>
+        <div id="nc-err" style="color:var(--off-red); font-size:13px; margin-top:8px; display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script>
+    OffAuth.requireLogin();
+    const esc = s => (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    // 群組計數 → 由 groups API 取當前使用該類別的群組（前 3 筆秀 chip；超過顯示 +N）
+    let groupsByKey = {};
+    async function loadGroupsIndex() {
+      try {
+        const gs = await OffAPI.groups.list();
+        groupsByKey = gs.reduce((acc, g) => {
+          (acc[g.category] = acc[g.category] || []).push(g);
+          return acc;
+        }, {});
+      } catch { groupsByKey = {}; }
+    }
+
+    function renderGroupChips(cat) {
+      const gs = groupsByKey[cat.key] || [];
+      if (!gs.length) return '<span style="color:var(--off-text-muted); font-size:12px">—</span>';
+      const shown = gs.slice(0, 3).map(g => `<span class="off-chip chip-primary">${esc(g.name)}</span>`).join(' ');
+      const rest = gs.length - 3;
+      return shown + (rest > 0 ? ` <span class="off-chip">+${rest}</span>` : '');
+    }
+
+    async function loadCategories() {
+      const tbody = document.getElementById('cats-tbody');
+      try {
+        await loadGroupsIndex();
+        const cats = await OffAPI.categories.list();
+        if (!cats.length) {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:32px; color:var(--off-text-muted)">尚無類別，點右上「新增類別」建立第一個</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = cats.map(c => `
+          <tr data-id="${c.id}">
+            <td><input type="checkbox"></td>
+            <td>
+              <div style="display:flex; align-items:center; gap:8px">
+                <span class="off-avatar" style="background:#ffe1e4; color:#e03848"><i class="ti ${esc(c.icon)}"></i></span>
+                <span style="font-weight:500">${esc(c.label)}</span>
+                <span class="off-chip" style="font-size:11px; opacity:.7">${esc(c.key)}</span>
+              </div>
+            </td>
+            <td>${renderGroupChips(c)}</td>
+            <td>
+              <label class="off-toggle">
+                <input type="checkbox" data-field="is_enabled" ${c.is_enabled ? 'checked' : ''}>
+                <span class="off-toggle-slider"></span>
+              </label>
+            </td>
+            <td>
+              <label class="off-toggle">
+                <input type="checkbox" data-field="is_public_visible" ${c.is_public_visible ? 'checked' : ''}>
+                <span class="off-toggle-slider"></span>
+              </label>
+            </td>
+            <td>
+              <button class="off-btn off-btn-ghost" data-edit="${c.id}"><i class="ti ti-edit"></i></button>
+              <button class="off-btn off-btn-ghost" data-remove="${c.id}" title="刪除"><i class="ti ti-trash"></i></button>
+            </td>
+          </tr>
+        `).join('');
+        window.__cats_cache = cats;
+
+        tbody.querySelectorAll('input[data-field]').forEach(inp => {
+          inp.addEventListener('change', async () => {
+            const id = parseInt(inp.closest('tr').dataset.id, 10);
+            const field = inp.dataset.field;
+            try { await OffAPI.categories.patch(id, { [field]: inp.checked }); }
+            catch (e) { alert('更新失敗：' + e.message); inp.checked = !inp.checked; }
+          });
+        });
+        tbody.querySelectorAll('button[data-edit]').forEach(b => {
+          b.addEventListener('click', () => openEdit(parseInt(b.dataset.edit, 10)));
+        });
+        tbody.querySelectorAll('button[data-remove]').forEach(b => {
+          b.addEventListener('click', () => removeCat(parseInt(b.dataset.remove, 10)));
+        });
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--off-red); padding:24px">讀取失敗：${esc(e.message)}</td></tr>`;
+      }
+    }
+
+    // ---- 新增 / 編輯 modal ----
+    function resetModal() {
+      document.getElementById('nc-title').innerHTML = '新增用戶群組類別 <span class="off-new-tag">NEW</span>';
+      document.getElementById('nc-id').value = '';
+      document.getElementById('nc-key').value = '';
+      document.getElementById('nc-key').disabled = false;
+      document.getElementById('nc-label').value = '';
+      document.getElementById('nc-icon').value = 'ti-category';
+      document.getElementById('nc-enabled').checked = true;
+      document.getElementById('nc-public').checked = false;
+      document.getElementById('nc-err').style.display = 'none';
+    }
+
+    function openEdit(id) {
+      const c = (window.__cats_cache || []).find(x => x.id === id);
+      if (!c) return;
+      resetModal();
+      document.getElementById('nc-title').innerHTML = '編輯類別';
+      document.getElementById('nc-id').value = c.id;
+      document.getElementById('nc-key').value = c.key;
+      document.getElementById('nc-key').disabled = true; // key 建立後不可改
+      document.getElementById('nc-label').value = c.label;
+      document.getElementById('nc-icon').value = c.icon;
+      document.getElementById('nc-enabled').checked = c.is_enabled;
+      document.getElementById('nc-public').checked = c.is_public_visible;
+      offOpenModal('modal-new-cat');
+    }
+
+    async function removeCat(id) {
+      const c = (window.__cats_cache || []).find(x => x.id === id);
+      if (!c) return;
+      if (!confirm(`確定要刪除類別「${c.label}」？`)) return;
+      try {
+        await OffAPI.categories.remove(id);
+        loadCategories();
+      } catch (e) {
+        alert('刪除失敗：' + e.message);
+      }
+    }
+
+    document.getElementById('btn-new-cat').addEventListener('click', () => {
+      resetModal();
+      offOpenModal('modal-new-cat');
+    });
+
+    document.getElementById('nc-save').addEventListener('click', async () => {
+      const err = document.getElementById('nc-err');
+      err.style.display = 'none';
+      const id = parseInt(document.getElementById('nc-id').value, 10) || null;
+      const payload = {
+        key: document.getElementById('nc-key').value.trim(),
+        label: document.getElementById('nc-label').value.trim(),
+        icon: document.getElementById('nc-icon').value.trim() || 'ti-category',
+        is_enabled: document.getElementById('nc-enabled').checked,
+        is_public_visible: document.getElementById('nc-public').checked,
+      };
+      if (!payload.key || !payload.label) {
+        err.textContent = '請輸入 Key 與名稱'; err.style.display = 'block'; return;
+      }
+      try {
+        if (id) {
+          const { key, ...rest } = payload;
+          await OffAPI.categories.patch(id, rest);
+        } else {
+          await OffAPI.categories.create(payload);
+        }
+        offCloseModal('modal-new-cat');
+        loadCategories();
+      } catch (e) {
+        err.textContent = e.message; err.style.display = 'block';
+      }
+    });
+
+    loadCategories();
+  </script>
+</body>
+</html>
