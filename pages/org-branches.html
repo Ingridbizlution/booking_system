@@ -5,23 +5,43 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>組織目錄 · 分支機構管理 · Offision</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.6.0/dist/tabler-icons.min.css">
   <link rel="stylesheet" href="../assets/css/app.css">
   <style>
+    .branch-tree { position:relative; }
+    .branch-node { position:relative; }
+    .branch-children {
+      position:relative; margin-left:32px; padding-left:24px;
+    }
+    .branch-children::before {
+      content:''; position:absolute; left:0; top:0; bottom:20px;
+      width:2px; background:#d0d5dd;
+    }
+    .branch-children > .branch-node { position:relative; }
+    .branch-children > .branch-node::before {
+      content:''; position:absolute; left:-24px; top:28px;
+      width:24px; height:2px; background:#d0d5dd;
+    }
     .branch-card {
       background:#fff; border:1px solid var(--off-border); border-radius:14px;
       margin-bottom:14px; overflow:hidden;
     }
     .branch-head {
       display:flex; align-items:center; gap:12px;
-      padding:14px 18px; border-bottom:1px solid var(--off-border);
-      background:#fbfcff;
+      padding:14px 18px; background:#fbfcff;
     }
     .branch-head .off-avatar { background:var(--off-primary-soft); color:var(--off-primary); }
     .branch-head .name { font-weight:600; font-size:15px; color:#111; }
     .branch-head .meta { color:var(--off-text-muted); font-size:12px; margin-top:2px; }
-    .branch-head .actions { margin-left:auto; display:flex; gap:8px; }
-    .loc-list { padding:8px 18px 14px; }
+    .branch-head .actions { margin-left:auto; display:flex; gap:6px; }
+    .branch-action-btn {
+      width:32px; height:32px; border-radius:8px; border:1px solid var(--off-border);
+      background:#fff; cursor:pointer; display:inline-flex; align-items:center;
+      justify-content:center; color:#6b7280; font-size:16px; transition:all .15s;
+    }
+    .branch-action-btn:hover { background:#f0f2f7; color:#111; }
+    .branch-action-btn.danger:hover { background:#fef2f2; color:#ef4444; }
+    .loc-list { padding:8px 18px 14px; border-top:1px solid var(--off-border); }
     .loc-item {
       display:flex; align-items:center; gap:10px;
       padding:8px 12px; border-radius:10px;
@@ -32,6 +52,73 @@
       padding:10px 12px; color:var(--off-text-muted);
       font-size:13px; font-style:italic;
     }
+
+    /* People modal */
+    .people-panel {
+      display:flex; gap:16px; padding:0 24px 16px; min-height:400px;
+    }
+    .people-col {
+      flex:1; display:flex; flex-direction:column; min-width:0;
+    }
+    .people-col-head {
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:8px; padding:0 4px;
+    }
+    .people-col-head .label { font-weight:600; font-size:14px; color:#2b2f3a; }
+    .people-col-head .count { color:var(--off-primary); font-size:14px; font-weight:600; }
+    .people-col-head .select-all {
+      border:0; background:transparent; color:#4b525f; font-size:13px;
+      cursor:pointer; padding:4px 8px; border-radius:6px;
+    }
+    .people-col-head .select-all:hover { background:#eef1f6; }
+    .people-search {
+      width:100%; border:1px solid var(--off-border); border-radius:10px;
+      padding:8px 12px; font-size:13px; outline:none; background:#fff; margin-bottom:8px;
+    }
+    .people-search:focus { border-color:var(--off-primary); }
+    .people-list-wrap {
+      flex:1; overflow-y:auto; background:#eef1f6; border-radius:12px; padding:8px;
+    }
+    .people-list-wrap.selected-wrap { background:#f8f9fc; }
+    .people-item {
+      display:flex; align-items:center; gap:10px;
+      padding:10px 12px; border-radius:10px; margin-bottom:4px;
+      background:#fff; cursor:default;
+    }
+    .people-item:last-child { margin-bottom:0; }
+    .people-item .p-avatar {
+      width:36px; height:36px; border-radius:50%;
+      display:inline-flex; align-items:center; justify-content:center;
+      font-size:14px; font-weight:600; color:#fff; flex-shrink:0;
+    }
+    .people-item .p-info { flex:1; min-width:0; }
+    .people-item .p-info b { display:block; font-size:14px; color:#2b2f3a; }
+    .people-item .p-info small { color:var(--off-text-muted); font-size:12px; display:flex; align-items:center; gap:4px; }
+    .people-item .p-btn {
+      width:28px; height:28px; border-radius:50%; border:1px solid var(--off-border);
+      background:#fff; cursor:pointer; display:inline-flex; align-items:center;
+      justify-content:center; font-size:16px; color:#6b7280; flex-shrink:0;
+    }
+    .people-item .p-btn:hover { background:#eef1f6; color:#111; }
+    .people-item .p-btn.remove-btn { border-color:#fecaca; color:#ef4444; }
+    .people-item .p-btn.remove-btn:hover { background:#fef2f2; }
+    .people-empty {
+      display:flex; align-items:center; justify-content:center;
+      height:100%; color:var(--off-text-muted); font-size:14px;
+    }
+
+    /* Edit modal field styling */
+    .edit-field {
+      display:flex; align-items:center; gap:12px;
+      padding:14px 18px; background:#f8f9fc; border-radius:12px; margin-bottom:10px;
+    }
+    .edit-field .ef-label { font-weight:600; font-size:14px; color:#2b2f3a; white-space:nowrap; }
+    .edit-field .ef-input {
+      flex:1; border:1px solid var(--off-border); border-radius:8px;
+      padding:8px 12px; font-size:14px; outline:none; background:#fff; text-align:right;
+    }
+    .edit-field .ef-input:focus { border-color:var(--off-primary); }
+    .edit-field select.ef-input { cursor:pointer; }
   </style>
 </head>
 <body data-module="org" data-page="branches"
@@ -46,7 +133,7 @@
         <div>
           <div class="off-page-title-row">
             <h1>分支機構管理</h1>
-            <button class="off-btn off-btn-primary" onclick="offOpenModal('modal-new-branch')">
+            <button class="off-btn off-btn-primary" onclick="openNewBranch()">
               <i class="ti ti-plus"></i> 新增分支
             </button>
           </div>
@@ -67,9 +154,13 @@
     <div class="off-modal off-modal-wrap" style="grid-template-columns:1fr; width:min(520px, 92vw)">
       <button class="off-modal-close" onclick="offCloseModal('modal-new-branch')"><i class="ti ti-x"></i></button>
       <div class="off-modal-body">
-        <h3 style="margin:0 0 16px">新增分支機構</h3>
+        <h3 style="margin:0 0 16px" id="nb-title">新增分支機構</h3>
         <div class="off-field"><span class="off-field-label"><i class="ti ti-building"></i> 分支名稱</span>
           <input id="nb-name" placeholder="例：台中分公司">
+        </div>
+        <div class="off-field"><span class="off-field-label"><i class="ti ti-sitemap"></i> 上層分支</span>
+          <select id="nb-parent" style="width:100%; border:1px solid var(--off-border); border-radius:8px; padding:8px 12px; font-size:14px; outline:none; background:#fff; cursor:pointer">
+          </select>
         </div>
         <div class="off-field"><span class="off-field-label"><i class="ti ti-map-pin"></i> 地址</span>
           <input id="nb-addr" placeholder="選填">
@@ -81,6 +172,57 @@
           <button class="off-btn off-btn-primary" id="nb-save">建立</button>
         </div>
         <div id="nb-err" style="color:var(--off-red); font-size:13px; margin-top:8px; display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: 編輯分枝 -->
+  <div class="off-modal-back" id="modal-edit-branch">
+    <div class="off-modal off-modal-wrap" style="grid-template-columns:1fr; width:min(480px, 92vw)">
+      <button class="off-modal-close" onclick="offCloseModal('modal-edit-branch')"><i class="ti ti-x"></i></button>
+      <div class="off-modal-body">
+        <h3 style="margin:0 0 20px; font-size:20px; font-weight:700">編輯分枝</h3>
+        <div class="edit-field">
+          <span class="ef-label">名稱</span>
+          <input class="ef-input" id="eb-name" placeholder="分支名稱">
+        </div>
+        <div class="edit-field" id="eb-parent-row">
+          <span class="ef-label">屬於</span>
+          <select class="ef-input" id="eb-parent"></select>
+        </div>
+        <div style="text-align:right; margin-top:20px">
+          <button class="off-btn off-btn-primary" id="eb-save">儲存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: 分支成員 -->
+  <div class="off-modal-back" id="modal-branch-people">
+    <div class="off-modal off-modal-wrap" style="grid-template-columns:1fr; width:min(720px, 92vw); max-height:90vh">
+      <button class="off-modal-close" onclick="offCloseModal('modal-branch-people')"><i class="ti ti-x"></i></button>
+      <div class="off-modal-body" style="padding:0; display:flex; flex-direction:column">
+        <h3 id="bp-modal-title" style="padding:20px 24px 16px; margin:0; font-size:20px; font-weight:700"></h3>
+        <div class="people-panel">
+          <div class="people-col">
+            <div class="people-col-head">
+              <span class="label">可用</span>
+              <button class="select-all" onclick="selectAllPeople()">全選</button>
+            </div>
+            <input class="people-search" id="bp-search" placeholder="搜尋" oninput="renderPeopleAvailable()">
+            <div class="people-list-wrap" id="bp-available"></div>
+          </div>
+          <div class="people-col">
+            <div class="people-col-head">
+              <span class="label">已選</span>
+              <span class="count"> · <span id="bp-selected-count">0</span></span>
+            </div>
+            <div class="people-list-wrap selected-wrap" id="bp-selected" style="margin-top:36px"></div>
+          </div>
+        </div>
+        <div style="text-align:right; padding:12px 24px; border-top:1px solid var(--off-border)">
+          <button class="off-btn off-btn-primary" id="bp-update">更新</button>
+        </div>
       </div>
     </div>
   </div>
@@ -122,94 +264,395 @@
 
     const esc = s => (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+    let branches = [
+      { id: 1, name: 'HQ', parent_id: null, address: '', timezone: 'Asia/Taipei' },
+      { id: 2, name: '台北分公司', parent_id: 1, address: '', timezone: 'Asia/Taipei' },
+      { id: 3, name: '台中分公司', parent_id: 1, address: '', timezone: 'Asia/Taipei' },
+      { id: 4, name: '高雄分公司', parent_id: 1, address: '', timezone: 'Asia/Taipei' },
+      { id: 5, name: '左營分公司', parent_id: 4, address: '', timezone: 'Asia/Taipei' },
+    ];
+
+    const demoUsers = [
+      { id: 1, display_name: 'Ingrid', email: 'ingrid@bizlution.com', color: '#6b4bf4', branch_id: 1 },
+      { id: 2, display_name: 'Ingridiaim台北分公司的員工', email: 'ingridiaim@gmail.com', color: '#f09c1f', branch_id: 2 },
+      { id: 3, display_name: 'Chenyichih422', email: 'chenyichih422@example.com', color: '#f09c1f', branch_id: 1 },
+    ];
+
+    let branchMembers = {};
+    let locations = [];
     let currentBranchIdForLoc = null;
+    let editingBranchId = null;
+    let peopleBranchId = null;
+    let peopleSelected = [];
+
+    function getDescendantIds(branchId) {
+      const ids = [];
+      function collect(pid) {
+        branches.filter(b => b.parent_id === pid).forEach(b => {
+          ids.push(b.id);
+          collect(b.id);
+        });
+      }
+      collect(branchId);
+      return ids;
+    }
+
+    function getBranchName(id) {
+      const b = branches.find(x => x.id === id);
+      return b ? b.name : '—';
+    }
+
+    function buildTree(parentId) {
+      return branches
+        .filter(b => parentId === null ? !b.parent_id : b.parent_id === parentId)
+        .sort((a, b) => a.id - b.id)
+        .map(b => ({ ...b, children: buildTree(b.id) }));
+    }
+
+    function renderBranchNode(node, locsMap) {
+      const locs = (locsMap[node.id] || []).sort((a, b) => a.id - b.id);
+      const memberCount = (branchMembers[node.id] || []).length;
+      const childCount = node.children.length;
+
+      const childrenHtml = node.children.length
+        ? `<div class="branch-children">${node.children.map(c => renderBranchNode(c, locsMap)).join('')}</div>`
+        : '';
+
+      return `
+        <div class="branch-node">
+          <div class="branch-card">
+            <div class="branch-head">
+              <span class="off-avatar"><i class="ti ti-building"></i></span>
+              <div>
+                <div class="name">${esc(node.name)}</div>
+                <div class="meta">
+                  ${node.parent_id ? '<i class="ti ti-arrow-back-up-double"></i> ' + esc(getBranchName(node.parent_id)) + ' &nbsp;·&nbsp;' : ''}
+                  ${childCount} 個子分支 &nbsp;·&nbsp; ${memberCount} 位成員
+                </div>
+              </div>
+              <div class="actions">
+                <button class="branch-action-btn" title="編輯" onclick="openEditBranch(${node.id})">
+                  <i class="ti ti-pencil"></i>
+                </button>
+                <button class="branch-action-btn" title="新增分支" onclick="openNewSubBranch(${node.id})">
+                  <i class="ti ti-plus"></i>
+                </button>
+                <button class="branch-action-btn danger" title="刪除" onclick="deleteBranch(${node.id})">
+                  <i class="ti ti-trash"></i>
+                </button>
+                <button class="branch-action-btn" title="分支管理員" onclick="openBranchPeople(${node.id})">
+                  <i class="ti ti-users"></i>
+                </button>
+              </div>
+            </div>
+            ${locs.length ? `<div class="loc-list">${locs.map(l => `
+              <div class="loc-item">
+                <i class="ti ti-stairs" style="color:var(--off-primary)"></i>
+                <span>${esc(l.name)}</span>
+                <span class="loc-type">(${esc(l.type)})</span>
+                ${l.floor_plan_url ? `<a href="${esc(l.floor_plan_url)}" target="_blank" style="margin-left:auto; font-size:12px; color:var(--off-primary)">平面圖 →</a>` : ''}
+              </div>
+            `).join('')}</div>` : ''}
+          </div>
+          ${childrenHtml}
+        </div>
+      `;
+    }
+
+    function renderAll() {
+      const box = document.getElementById('branches-list');
+      if (!branches.length) {
+        box.innerHTML = '<div style="text-align:center; padding:40px; color:var(--off-text-muted)">尚無分支，點右上「新增分支」建立第一個</div>';
+        return;
+      }
+
+      const locsMap = {};
+      locations.forEach(l => {
+        (locsMap[l.branch_id] = locsMap[l.branch_id] || []).push(l);
+      });
+
+      const tree = buildTree(null);
+      box.innerHTML = '<div class="branch-tree">' + tree.map(node => renderBranchNode(node, locsMap)).join('') + '</div>';
+    }
 
     async function loadAll() {
-      const box = document.getElementById('branches-list');
       try {
-        const [branches, locations] = await Promise.all([
+        const [apiBranches, apiLocations] = await Promise.all([
           OffAPI.branches.list(),
           OffAPI.locations.list(),
         ]);
-        if (!branches.length) {
-          box.innerHTML = `<div style="text-align:center; padding:40px; color:var(--off-text-muted)">尚無分支，點右上「新增分支」建立第一個</div>`;
-          return;
+        if (apiBranches && apiBranches.length) {
+          branches = apiBranches.map(b => ({
+            ...b,
+            parent_id: b.parent_branch_id !== undefined ? b.parent_branch_id : b.parent_id,
+          }));
         }
-        const byBranch = {};
-        locations.forEach(l => {
-          (byBranch[l.branch_id] = byBranch[l.branch_id] || []).push(l);
-        });
-
-        box.innerHTML = branches.map(b => {
-          const locs = (byBranch[b.id] || []).sort((a, b) => a.id - b.id);
-          return `
-            <div class="branch-card">
-              <div class="branch-head">
-                <span class="off-avatar"><i class="ti ti-building"></i></span>
-                <div>
-                  <div class="name">${esc(b.name)}</div>
-                  <div class="meta">
-                    <i class="ti ti-map-pin"></i> ${esc(b.address || '—')}
-                    &nbsp;·&nbsp;<i class="ti ti-world"></i> ${esc(b.timezone)}
-                    &nbsp;·&nbsp;${locs.length} 個樓層 / 地點
-                  </div>
-                </div>
-                <div class="actions">
-                  <button class="off-btn" data-add-loc="${b.id}" data-branch-name="${esc(b.name)}">
-                    <i class="ti ti-plus"></i> 新增樓層
-                  </button>
-                </div>
-              </div>
-              <div class="loc-list">
-                ${locs.length ? locs.map(l => `
-                  <div class="loc-item">
-                    <i class="ti ti-stairs" style="color:var(--off-primary)"></i>
-                    <span>${esc(l.name)}</span>
-                    <span class="loc-type">(${esc(l.type)})</span>
-                    ${l.floor_plan_url ? `<a href="${esc(l.floor_plan_url)}" target="_blank" style="margin-left:auto; font-size:12px; color:var(--off-primary)">平面圖 →</a>` : ''}
-                  </div>
-                `).join('') : `<div class="loc-empty">尚無樓層，可從右上「新增樓層」建立</div>`}
-              </div>
-            </div>
-          `;
-        }).join('');
-
-        box.querySelectorAll('[data-add-loc]').forEach(btn => {
-          btn.addEventListener('click', () => {
-            currentBranchIdForLoc = parseInt(btn.dataset.addLoc, 10);
-            document.getElementById('nl-branch-name').textContent = btn.dataset.branchName;
-            document.getElementById('nl-name').value = '';
-            document.getElementById('nl-plan').value = '';
-            document.getElementById('nl-err').style.display = 'none';
-            offOpenModal('modal-new-loc');
-          });
-        });
+        if (apiLocations) locations = apiLocations;
       } catch (e) {
-        box.innerHTML = `<div style="text-align:center; padding:40px; color:var(--off-red)">讀取失敗：${esc(e.message)}</div>`;
+        console.warn('API not available, using demo data:', e.message);
       }
+      renderAll();
+    }
+
+    // ============================================================
+    // 新增分支
+    // ============================================================
+    let newBranchParentId = null;
+
+    function populateParentSelect(selectEl, excludeId, allowEmpty) {
+      const opts = [];
+      if (allowEmpty) opts.push('<option value="">(無 — 頂層分支)</option>');
+      branches.forEach(b => {
+        if (excludeId && (b.id === excludeId || getDescendantIds(excludeId).includes(b.id))) return;
+        opts.push(`<option value="${b.id}">${esc(b.name)}</option>`);
+      });
+      selectEl.innerHTML = opts.join('');
+    }
+
+    function openNewBranch() {
+      newBranchParentId = null;
+      document.getElementById('nb-title').textContent = '新增分支機構';
+      document.getElementById('nb-name').value = '';
+      document.getElementById('nb-addr').value = '';
+      document.getElementById('nb-tz').value = 'Asia/Taipei';
+      document.getElementById('nb-err').style.display = 'none';
+      populateParentSelect(document.getElementById('nb-parent'), null, true);
+      document.getElementById('nb-parent').value = '';
+      offOpenModal('modal-new-branch');
+    }
+
+    function openNewSubBranch(parentId) {
+      newBranchParentId = parentId;
+      const parentName = getBranchName(parentId);
+      document.getElementById('nb-title').textContent = '新增分支 — ' + parentName;
+      document.getElementById('nb-name').value = '';
+      document.getElementById('nb-addr').value = '';
+      document.getElementById('nb-tz').value = 'Asia/Taipei';
+      document.getElementById('nb-err').style.display = 'none';
+      populateParentSelect(document.getElementById('nb-parent'), null, true);
+      document.getElementById('nb-parent').value = String(parentId);
+      offOpenModal('modal-new-branch');
     }
 
     document.getElementById('nb-save').addEventListener('click', async () => {
       const err = document.getElementById('nb-err');
       err.style.display = 'none';
+      const name = document.getElementById('nb-name').value.trim();
+      if (!name) { err.textContent = '請輸入分支名稱'; err.style.display = 'block'; return; }
+
+      const parentVal = document.getElementById('nb-parent').value;
+      const parent_id = parentVal ? parseInt(parentVal, 10) : null;
+
+      const payload = {
+        name,
+        parent_branch_id: parent_id,
+        address: document.getElementById('nb-addr').value.trim() || null,
+        timezone: document.getElementById('nb-tz').value.trim() || 'Asia/Taipei',
+      };
+
       try {
-        await OffAPI.branches.create({
-          name: document.getElementById('nb-name').value.trim(),
-          address: document.getElementById('nb-addr').value.trim() || null,
-          timezone: document.getElementById('nb-tz').value.trim() || 'Asia/Taipei',
-        });
-        offCloseModal('modal-new-branch');
-        document.getElementById('nb-name').value = '';
-        document.getElementById('nb-addr').value = '';
-        await loadAll();
+        const created = await OffAPI.branches.create(payload);
+        if (created && created.id) {
+          created.parent_id = created.parent_branch_id !== undefined ? created.parent_branch_id : parent_id;
+          branches.push(created);
+        } else {
+          const newId = Math.max(0, ...branches.map(b => b.id)) + 1;
+          branches.push({ id: newId, name, parent_id, ...payload });
+        }
       } catch (e) {
-        err.textContent = e.message; err.style.display = 'block';
+        const newId = Math.max(0, ...branches.map(b => b.id)) + 1;
+        branches.push({ id: newId, name, parent_id, ...payload });
       }
+      offCloseModal('modal-new-branch');
+      renderAll();
     });
 
+    // ============================================================
+    // 編輯分枝
+    // ============================================================
+    function getHQId() {
+      const roots = branches.filter(b => !b.parent_id).sort((a, b) => a.id - b.id);
+      return roots.length ? roots[0].id : null;
+    }
+
+    function openEditBranch(id) {
+      const b = branches.find(x => x.id === id);
+      if (!b) return;
+      editingBranchId = id;
+      document.getElementById('eb-name').value = b.name;
+      const parentRow = document.getElementById('eb-parent-row');
+      if (id === getHQId()) {
+        parentRow.style.display = 'none';
+      } else {
+        parentRow.style.display = '';
+        populateParentSelect(document.getElementById('eb-parent'), id, false);
+        document.getElementById('eb-parent').value = b.parent_id ? String(b.parent_id) : '';
+      }
+      offOpenModal('modal-edit-branch');
+    }
+
+    document.getElementById('eb-save').addEventListener('click', async () => {
+      if (!editingBranchId) return;
+      const name = document.getElementById('eb-name').value.trim();
+      if (!name) return;
+
+      const parentVal = document.getElementById('eb-parent').value;
+      const parent_id = parentVal ? parseInt(parentVal, 10) : null;
+
+      const patch = { name, parent_branch_id: parent_id };
+
+      try {
+        await OffAPI.branches.patch(editingBranchId, patch);
+      } catch (e) {
+        console.warn('API patch failed, updating locally:', e.message);
+      }
+
+      const b = branches.find(x => x.id === editingBranchId);
+      if (b) { b.name = name; b.parent_id = parent_id; }
+
+      offCloseModal('modal-edit-branch');
+      renderAll();
+    });
+
+    // ============================================================
+    // 刪除分支
+    // ============================================================
+    async function deleteBranch(id) {
+      const b = branches.find(x => x.id === id);
+      if (!b) return;
+      const desc = getDescendantIds(id);
+      const msg = desc.length
+        ? `確定要刪除「${b.name}」及其 ${desc.length} 個子分支嗎？此操作無法復原。`
+        : `確定要刪除「${b.name}」嗎？此操作無法復原。`;
+      if (!confirm(msg)) return;
+
+      try {
+        await OffAPI.branches.remove(id);
+      } catch (e) {
+        console.warn('API delete failed, removing locally:', e.message);
+      }
+
+      const toRemove = new Set([id, ...desc]);
+      branches = branches.filter(x => !toRemove.has(x.id));
+      renderAll();
+    }
+
+    // ============================================================
+    // 分支成員 (People)
+    // ============================================================
+    function openBranchPeople(branchId) {
+      peopleBranchId = branchId;
+      const b = branches.find(x => x.id === branchId);
+      document.getElementById('bp-modal-title').textContent = b ? b.name : '';
+      document.getElementById('bp-search').value = '';
+
+      peopleSelected = [...(branchMembers[branchId] || [])];
+
+      renderPeopleAvailable();
+      renderPeopleSelected();
+      offOpenModal('modal-branch-people');
+    }
+
+    function getUserInitial(u) {
+      return (u.display_name || u.email || '?').charAt(0).toUpperCase();
+    }
+
+    function getUserBranchLabel(u) {
+      if (u.branch_id) return getBranchName(u.branch_id);
+      return 'HQ';
+    }
+
+    function renderPeopleAvailable() {
+      const q = (document.getElementById('bp-search').value || '').toLowerCase();
+      const wrap = document.getElementById('bp-available');
+      const selectedIds = new Set(peopleSelected.map(u => u.id));
+
+      const available = demoUsers.filter(u => {
+        if (selectedIds.has(u.id)) return false;
+        if (q && !u.display_name.toLowerCase().includes(q) && !u.email.toLowerCase().includes(q)) return false;
+        return true;
+      });
+
+      if (!available.length) {
+        wrap.innerHTML = '<div class="people-empty">沒有可用的使用者</div>';
+        return;
+      }
+
+      wrap.innerHTML = available.map(u => `
+        <div class="people-item">
+          <div class="p-avatar" style="background:${u.color || '#6b7280'}">${esc(getUserInitial(u))}</div>
+          <div class="p-info">
+            <b>${esc(u.display_name)}</b>
+            <small><i class="ti ti-arrow-back-up" style="font-size:12px"></i> ${esc(getUserBranchLabel(u))}</small>
+          </div>
+          <button class="p-btn" onclick="addPerson(${u.id})" title="新增"><i class="ti ti-plus"></i></button>
+        </div>
+      `).join('');
+    }
+
+    function renderPeopleSelected() {
+      const wrap = document.getElementById('bp-selected');
+      document.getElementById('bp-selected-count').textContent = String(peopleSelected.length);
+
+      if (!peopleSelected.length) {
+        wrap.innerHTML = '<div class="people-empty">沒有資料</div>';
+        return;
+      }
+
+      wrap.innerHTML = peopleSelected.map(u => `
+        <div class="people-item">
+          <div class="p-avatar" style="background:${u.color || '#6b7280'}">${esc(getUserInitial(u))}</div>
+          <div class="p-info">
+            <b>${esc(u.display_name)}</b>
+            <small><i class="ti ti-arrow-back-up" style="font-size:12px"></i> ${esc(getUserBranchLabel(u))}</small>
+          </div>
+          <button class="p-btn remove-btn" onclick="removePerson(${u.id})" title="移除"><i class="ti ti-minus"></i></button>
+        </div>
+      `).join('');
+    }
+
+    function addPerson(userId) {
+      const u = demoUsers.find(x => x.id === userId);
+      if (!u || peopleSelected.some(x => x.id === userId)) return;
+      peopleSelected.push({ ...u });
+      renderPeopleAvailable();
+      renderPeopleSelected();
+    }
+
+    function removePerson(userId) {
+      peopleSelected = peopleSelected.filter(x => x.id !== userId);
+      renderPeopleAvailable();
+      renderPeopleSelected();
+    }
+
+    function selectAllPeople() {
+      const q = (document.getElementById('bp-search').value || '').toLowerCase();
+      const selectedIds = new Set(peopleSelected.map(u => u.id));
+      demoUsers.forEach(u => {
+        if (selectedIds.has(u.id)) return;
+        if (q && !u.display_name.toLowerCase().includes(q) && !u.email.toLowerCase().includes(q)) return;
+        peopleSelected.push({ ...u });
+      });
+      renderPeopleAvailable();
+      renderPeopleSelected();
+    }
+
+    document.getElementById('bp-update').addEventListener('click', () => {
+      if (peopleBranchId != null) {
+        branchMembers[peopleBranchId] = [...peopleSelected];
+      }
+      offCloseModal('modal-branch-people');
+      renderAll();
+    });
+
+    // ============================================================
+    // 新增樓層
+    // ============================================================
     document.getElementById('nl-save').addEventListener('click', async () => {
       const err = document.getElementById('nl-err');
       err.style.display = 'none';
+      const name = document.getElementById('nl-name').value.trim();
+      if (!name) { err.textContent = '請輸入名稱'; err.style.display = 'block'; return; }
       try {
         const res = await fetch(`${OFF_API_BASE}/locations`, {
           method: 'POST',
@@ -219,7 +662,7 @@
           },
           body: JSON.stringify({
             branch_id: currentBranchIdForLoc,
-            name: document.getElementById('nl-name').value.trim(),
+            name,
             type: document.getElementById('nl-type').value,
             floor_plan_url: document.getElementById('nl-plan').value.trim() || null,
           }),

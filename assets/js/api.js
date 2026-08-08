@@ -74,6 +74,8 @@ const OffAPI = {
   branches: {
     list:   () => offRequest('GET', '/branches'),
     create: (p) => offRequest('POST', '/branches', p),
+    patch:  (id, p) => offRequest('PATCH', `/branches/${id}`, p),
+    remove: (id) => offRequest('DELETE', `/branches/${id}`),
   },
   locations: {
     list:   (branch_id) => offRequest('GET', `/locations${branch_id ? `?branch_id=${branch_id}` : ''}`),
@@ -140,6 +142,13 @@ const OffAPI = {
     patch:  (id, p) => offRequest('PATCH', `/reservations/${id}`, p),
     approve:(id, p) => offRequest('POST', `/reservations/${id}/approve`, p),
     cancel: (id)    => offRequest('DELETE', `/reservations/${id}`),
+  },
+  bookingPolicies: {
+    list:   ()      => offRequest('GET', '/booking-policies'),
+    get:    (id)    => offRequest('GET', `/booking-policies/${id}`),
+    create: (p)     => offRequest('POST', '/booking-policies', p),
+    patch:  (id, p) => offRequest('PATCH', `/booking-policies/${id}`, p),
+    remove: (id)    => offRequest('DELETE', `/booking-policies/${id}`),
   },
   dashboard: {
     reservation: (from_date, to_date) =>

@@ -8,6 +8,7 @@ from ...db.session import get_db
 from ...models import (
     Reservation, ReservationAttendee, Resource, User, AuditLog,
     Location, Branch, UserGroup, UserGroupMember,
+    BookingPolicy,
 )
 from ...schemas import (
     ReservationOut, ReservationCreate, ReservationUpdate, ReservationApproveIn,
@@ -44,12 +45,28 @@ def _to_out(r: Reservation, db: Session) -> ReservationOut:
     )
 
 
+def _get_lock_slot(db: Session, resource_id: int) -> bool:
+    """查詢資源綁定的審核規則是否啟用「批准前鎖定時段」。"""
+    resource = db.get(Resource, resource_id)
+    if not resource or not resource.booking_policy_id:
+        return False
+    policy = db.get(BookingPolicy, resource.booking_policy_id)
+    return policy.lock_slot if policy else False
+
+
 def _has_conflict(db: Session, resource_id: int, start_at, end_at, exclude_id: int | None = None) -> bool:
-    """回傳是否與該資源既有已核准／已報到的預約重疊。"""
+    """回傳是否與該資源既有預約重疊。
+    若審核規則啟用 lock_slot，pending 狀態也算衝突（鎖定時段）；
+    否則只有 approved / checked_in 的預約才算衝突。
+    """
+    lock = _get_lock_slot(db, resource_id)
+    blocking_statuses = ["approved", "checked_in"]
+    if lock:
+        blocking_statuses.append("pending")
+
     stmt = select(Reservation).where(
         Reservation.resource_id == resource_id,
-        Reservation.status.in_(["approved", "checked_in", "pending"]),
-        # 時間重疊：new.start < existing.end AND new.end > existing.start
+        Reservation.status.in_(blocking_statuses),
         and_(Reservation.start_at < end_at, Reservation.end_at > start_at),
     )
     if exclude_id:

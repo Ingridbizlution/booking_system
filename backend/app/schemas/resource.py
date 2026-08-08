@@ -16,6 +16,7 @@ class RoomBase(BaseModel):
     team_space: bool = False
     requires_approval: bool = True
     priority: int = 0
+    booking_policy_id: int | None = None
 
 
 class RoomCreate(RoomBase):
@@ -36,6 +37,7 @@ class RoomUpdate(BaseModel):
     team_space: bool | None = None
     requires_approval: bool | None = None
     priority: int | None = None
+    booking_policy_id: int | None = None
 
 
 class RoomOut(RoomBase):

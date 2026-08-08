@@ -28,6 +28,7 @@ class Resource(Base, TimestampMixin):
     team_space: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     # 政策：預設每間會議室都需要審批（可在房間規則 tab 關閉）
     requires_approval: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    booking_policy_id: Mapped[int | None] = mapped_column(ForeignKey("booking_policies.id", ondelete="SET NULL"))
     # 建議優先級 0-5
     priority: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 

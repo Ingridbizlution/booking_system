@@ -1,0 +1,1154 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>預約管理 · 預約審核規則 · Offision</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+  <style>
+    .bp-status { display:inline-flex; align-items:center; gap:4px; font-size:13px; }
+    .bp-status.yes { color:#12a97e; }
+    .bp-status.no  { color:var(--off-text-muted); }
+    .bp-link { color:var(--off-primary); font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; }
+    .bp-link:hover { text-decoration:underline; }
+
+    .bp-modal-side-tab {
+      display:flex; align-items:center; gap:10px;
+      padding:12px 14px; border-radius:10px;
+      cursor:pointer; user-select:none;
+      color:#4b525f; font-size:14px; margin-bottom:4px;
+    }
+    .bp-modal-side-tab i { font-size:18px; }
+    .bp-modal-side-tab.active {
+      background:#fff; box-shadow:0 0 0 1px var(--off-border);
+      font-weight:600; color:#111;
+    }
+    .bp-modal-side-tab .arrow { margin-left:auto; color:var(--off-text-muted); }
+    .bp-modal-side-tab.disabled {
+      opacity:.45; cursor:default; pointer-events:none;
+    }
+
+    .bp-related-title {
+      font-size:12px; color:var(--off-text-muted); text-transform:uppercase;
+      letter-spacing:.5px; padding:16px 14px 8px; font-weight:500;
+    }
+    .bp-related-item {
+      display:flex; align-items:center; gap:10px;
+      padding:8px 14px; font-size:14px; color:#4b525f; cursor:default;
+    }
+    .bp-related-item i { font-size:18px; }
+    .bp-related-item .badge {
+      margin-left:auto; background:#eef1f6; color:#6b7280;
+      padding:2px 8px; border-radius:999px; font-size:12px;
+    }
+
+    .bp-setting-card {
+      display:flex; align-items:center; gap:14px;
+      padding:16px 18px; background:#f8f9fc; border-radius:14px;
+      margin-bottom:10px; position:relative;
+    }
+    .bp-setting-card .icon {
+      width:36px; height:36px; border-radius:10px; background:#eef1f6;
+      display:inline-flex; align-items:center; justify-content:center;
+      color:#6b7280; font-size:18px; flex-shrink:0;
+    }
+    .bp-setting-card .info { flex:1; min-width:0; }
+    .bp-setting-card .info b { display:block; font-size:14px; color:#2b2f3a; margin-bottom:2px; }
+    .bp-setting-card .info small { color:var(--off-text-muted); font-size:12px; line-height:1.4; }
+    .bp-setting-card .ctrl { flex-shrink:0; }
+    .bp-setting-card.clickable { cursor:pointer; }
+    .bp-setting-card.clickable:hover { background:#f0f2f7; }
+    .bp-setting-card.disabled { opacity:.45; pointer-events:none; }
+
+    .bp-section-title {
+      font-size:13px; font-weight:600; color:#2b2f3a;
+      margin:20px 0 10px; padding-bottom:6px;
+      border-bottom:1px solid var(--off-border);
+    }
+    .bp-section-desc {
+      font-size:13px; color:var(--off-text-muted); margin:0 0 16px; line-height:1.5;
+    }
+
+    .bp-pane { display:none; padding:24px; overflow-y:auto; flex:1; }
+    .bp-pane.active { display:block; }
+
+    .bp-dropdown-panel {
+      position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+      background:#fff; border-radius:16px; width:min(480px, 90vw);
+      box-shadow:0 20px 60px rgba(0,0,0,.18); z-index:100;
+      max-height:80vh; overflow-y:auto;
+    }
+    .bp-dropdown-overlay {
+      position:fixed; inset:0; background:rgba(0,0,0,.25); z-index:99;
+      display:none;
+    }
+    .bp-dropdown-overlay.open { display:block; }
+    .bp-dropdown-head {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:20px 24px 16px; border-bottom:1px solid var(--off-border);
+    }
+    .bp-dropdown-head h4 { margin:0; font-size:16px; font-weight:600; }
+    .bp-dropdown-head small { color:var(--off-text-muted); font-size:12px; }
+    .bp-dropdown-head .close-btn {
+      width:30px; height:30px; border-radius:50%; border:1px solid var(--off-border);
+      background:#fff; cursor:pointer; display:inline-flex; align-items:center;
+      justify-content:center; font-size:16px; color:#6b7280;
+    }
+    .bp-dropdown-option {
+      display:flex; align-items:center; gap:12px;
+      padding:14px 24px; cursor:pointer; border-bottom:1px solid #f2f4f8;
+    }
+    .bp-dropdown-option:hover { background:#f8f9fc; }
+    .bp-dropdown-option.selected { color:var(--off-primary); }
+    .bp-dropdown-option .check {
+      margin-left:auto; color:var(--off-primary); font-size:18px;
+      visibility:hidden;
+    }
+    .bp-dropdown-option.selected .check { visibility:visible; }
+    .bp-dropdown-option .opt-info { flex:1; }
+    .bp-dropdown-option .opt-info b { display:block; font-size:14px; margin-bottom:2px; }
+    .bp-dropdown-option .opt-info small { color:var(--off-text-muted); font-size:12px; }
+    .bp-dropdown-option.disabled { opacity:.45; pointer-events:none; }
+
+    .bp-condition-item {
+      display:flex; align-items:center; gap:14px;
+      padding:14px 24px; border-bottom:1px solid #f2f4f8;
+    }
+    .bp-condition-item .cond-info { flex:1; }
+    .bp-condition-item .cond-info b { display:block; font-size:14px; color:#2b2f3a; margin-bottom:2px; }
+    .bp-condition-item .cond-info small { color:var(--off-text-muted); font-size:12px; }
+
+    .bp-approver-panel {
+      background:#eef1f6; border-radius:12px; padding:16px; margin-top:12px;
+    }
+    .bp-approver-panel input {
+      width:100%; border:1px solid var(--off-border); border-radius:8px;
+      padding:8px 12px; font-size:13px; outline:none; background:#fff;
+    }
+    .bp-approver-tabs {
+      display:flex; gap:0; margin-top:12px; border-bottom:2px solid var(--off-border);
+      position:relative;
+    }
+    .bp-approver-tabs .tab {
+      padding:8px 16px; font-size:13px; cursor:pointer; color:var(--off-text-muted);
+      border-bottom:2px solid transparent; margin-bottom:-2px; user-select:none;
+    }
+    .bp-approver-tabs .tab.active {
+      color:var(--off-primary); border-bottom-color:var(--off-primary); font-weight:600;
+    }
+    .bp-approver-tabs .close-tab {
+      margin-left:auto; width:24px; height:24px; border:0; background:transparent;
+      cursor:pointer; color:#6b7280; display:inline-flex; align-items:center;
+      justify-content:center; font-size:14px;
+    }
+    .bp-approver-hint {
+      text-align:center; padding:12px; color:var(--off-text-muted); font-size:12px;
+    }
+    .bp-user-item {
+      display:flex; align-items:center; gap:12px;
+      padding:10px 0; border-bottom:1px solid #e8eaef;
+    }
+    .bp-user-item .radio {
+      width:20px; height:20px; border:2px solid #b0b7c3; border-radius:50%;
+      flex-shrink:0; cursor:pointer; display:inline-flex; align-items:center;
+      justify-content:center;
+    }
+    .bp-user-item .radio.checked { border-color:var(--off-primary); }
+    .bp-user-item .radio.checked::after {
+      content:''; width:10px; height:10px; border-radius:50%;
+      background:var(--off-primary);
+    }
+    .bp-user-avatar {
+      width:36px; height:36px; border-radius:50%;
+      display:inline-flex; align-items:center; justify-content:center;
+      font-size:14px; font-weight:600; color:#fff; flex-shrink:0;
+    }
+    .bp-user-info { flex:1; min-width:0; }
+    .bp-user-info b { display:block; font-size:14px; color:#2b2f3a; }
+    .bp-user-info small { color:var(--off-text-muted); font-size:12px; }
+    .bp-user-detail {
+      border:1px solid var(--off-border); border-radius:999px; background:#fff;
+      padding:4px 12px; font-size:12px; color:#4b525f; cursor:pointer; flex-shrink:0;
+    }
+    .bp-approver-foot {
+      display:flex; justify-content:space-between; padding:12px 0 0;
+    }
+    .bp-approver-foot button {
+      border:0; background:transparent; cursor:pointer; font-size:13px;
+      padding:6px 12px; border-radius:8px;
+    }
+    .bp-approver-foot .clear-btn { color:var(--off-text-muted); }
+    .bp-approver-foot .done-btn { color:var(--off-primary); font-weight:600; }
+
+    .bp-selected-users { margin-top:12px; }
+    .bp-selected-user {
+      display:flex; align-items:center; gap:10px;
+      padding:8px 12px; background:#fff; border-radius:10px; margin-bottom:6px;
+    }
+    .bp-selected-user .remove-btn {
+      margin-left:auto; border:0; background:transparent; cursor:pointer;
+      color:#6b7280; font-size:14px;
+    }
+
+    .bp-search-empty {
+      text-align:center; padding:24px; color:var(--off-text-muted); font-size:13px;
+    }
+
+    .bp-auto-reject {
+      display:flex; align-items:center; gap:8px;
+      padding:12px 14px; color:var(--off-text-muted); font-size:13px;
+      margin-top:8px;
+    }
+    .bp-auto-reject i { font-size:18px; }
+
+    .bp-val-btn {
+      display:inline-flex; align-items:center; gap:4px;
+      padding:6px 12px; border:1px solid var(--off-border); border-radius:8px;
+      background:#fff; font-size:13px; color:#2b2f3a; cursor:pointer;
+      white-space:nowrap;
+    }
+    .bp-val-btn:hover { background:#f8f9fc; }
+    .bp-val-btn i { font-size:14px; color:var(--off-text-muted); }
+
+    .bp-modal-side-tab .tab-badge {
+      margin-left:auto; background:#eef1f6; color:#6b7280;
+      padding:2px 8px; border-radius:999px; font-size:12px; font-weight:400;
+    }
+
+    .bp-modal-delete-btn {
+      display:flex; align-items:center; gap:8px; padding:10px 14px;
+      font-size:14px; color:#6b7280; cursor:pointer; border:0; background:transparent;
+      border-radius:10px; width:100%;
+    }
+    .bp-modal-delete-btn:hover { background:#f8f9fc; }
+  </style>
+</head>
+<body data-module="reservation" data-page="approval-rules"
+      data-crumbs='[{"label":"預約管理","href":"reservation-dashboard.html"},{"label":"預約規則"},{"label":"預約審核規則"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#58c7f5,#1f80f0)">
+          <i class="ti ti-shield-check"></i>
+        </span>
+        <div>
+          <div class="off-page-title-row">
+            <h1>預約審核規則</h1>
+            <button class="off-btn off-btn-primary" onclick="openNewPolicyModal()">
+              <i class="ti ti-plus"></i> 新增
+            </button>
+          </div>
+          <p class="off-page-desc">關於資源和預約的規則。</p>
+        </div>
+        <div class="off-page-actions">
+          <button class="off-btn"><i class="ti ti-adjustments-alt"></i> 排序 / 欄位</button>
+        </div>
+      </div>
+
+      <div class="off-panel" style="padding:0">
+        <table class="off-table">
+          <thead>
+            <tr>
+              <th style="width:40px"><input type="checkbox"></th>
+              <th class="off-search-cell"><input placeholder="🔍 名稱" id="bp-search"></th>
+              <th>簽到要求</th>
+              <th>審核與審核人員</th>
+              <th>覆蓋規則</th>
+              <th>隱私設定</th>
+            </tr>
+          </thead>
+          <tbody id="bp-tbody">
+            <tr><td colspan="6" style="text-align:center; padding:24px; color:var(--off-text-muted)">
+              <i class="ti ti-loader-2"></i> 讀取中…
+            </td></tr>
+          </tbody>
+        </table>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px">
+          <button class="off-btn"><i class="ti ti-trash"></i> 資源回收筒</button>
+          <div style="display:flex; align-items:center; gap:10px; color:var(--off-text-muted); font-size:13px">
+            <span>30 <i class="ti ti-chevron-down"></i></span>
+            <span id="bp-count">1 - 0 / 0</span>
+            <button class="off-btn off-btn-ghost"><i class="ti ti-chevron-left"></i></button>
+            <button class="off-btn off-btn-ghost"><i class="ti ti-chevron-right"></i></button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal -->
+  <div class="off-modal-back" id="modal-bp">
+    <div class="off-modal off-modal-wrap" style="width:min(1040px, 94vw); max-height:92vh; grid-template-rows:1fr">
+      <button class="off-modal-close" onclick="offCloseModal('modal-bp')"><i class="ti ti-x"></i></button>
+
+      <!-- 左側 -->
+      <aside class="off-modal-side" style="display:flex; flex-direction:column; overflow-y:auto">
+        <h3 id="bp-modal-title" style="font-size:20px; font-weight:700; margin:0 0 4px">預約審核規則</h3>
+        <p style="font-size:13px; color:var(--off-text-muted); margin:0 0 16px; line-height:1.5">
+          一組可重複使用的規則，統一管控此資源在所有管道的預約、審核與簽到方式。
+        </p>
+
+        <div class="bp-modal-side-tab active" data-bp-tab="basic" onclick="switchPane('basic')">
+          <i class="ti ti-adjustments"></i><span>基本</span>
+          <i class="ti ti-chevron-right arrow"></i>
+        </div>
+        <div class="bp-modal-side-tab" data-bp-tab="booking-rules" onclick="switchPane('booking-rules')">
+          <i class="ti ti-code"></i><span>預約規則</span>
+          <i class="ti ti-chevron-right arrow"></i>
+        </div>
+        <div class="bp-modal-side-tab" data-bp-tab="time-range" onclick="switchPane('time-range')">
+          <i class="ti ti-clock"></i><span>預約範圍</span>
+          <i class="ti ti-chevron-right arrow"></i>
+        </div>
+        <div class="bp-modal-side-tab" data-bp-tab="approval" onclick="switchPane('approval')">
+          <i class="ti ti-file-check"></i><span>核准規則</span>
+          <i class="ti ti-chevron-right arrow"></i>
+        </div>
+        <div class="bp-modal-side-tab disabled" data-bp-tab="host">
+          <i class="ti ti-user-star"></i><span>預約主持人</span>
+          <i class="ti ti-chevron-right arrow"></i>
+        </div>
+        <div class="bp-modal-side-tab disabled" data-bp-tab="privacy">
+          <i class="ti ti-lock"></i><span>保密條約</span>
+          <i class="ti ti-chevron-right arrow"></i>
+        </div>
+        <div class="bp-modal-side-tab" data-bp-tab="booking-path" onclick="switchPane('booking-path')">
+          <i class="ti ti-route"></i><span>創建/編輯預約途徑</span>
+          <i class="ti ti-chevron-right arrow"></i>
+        </div>
+        <div class="bp-modal-side-tab disabled" data-bp-tab="other">
+          <i class="ti ti-dots"></i><span>其他</span>
+          <i class="ti ti-chevron-right arrow"></i>
+        </div>
+        <div class="bp-modal-side-tab disabled" data-bp-tab="override">
+          <i class="ti ti-users"></i><span>覆蓋規則</span>
+          <span class="tab-badge">2</span>
+        </div>
+        <div class="bp-modal-side-tab disabled" data-bp-tab="info">
+          <i class="ti ti-info-circle"></i><span>資訊</span>
+          <i class="ti ti-chevron-right arrow"></i>
+        </div>
+
+        <div class="bp-related-title">使用該規則之會議室或設備</div>
+        <div class="bp-related-item">
+          <i class="ti ti-door"></i><span>會議室</span>
+          <span class="badge" id="bp-related-rooms">0</span>
+        </div>
+        <div class="bp-related-item">
+          <i class="ti ti-device-tv"></i><span>設備</span>
+          <span class="badge" id="bp-related-equipment">0</span>
+        </div>
+
+        <div style="padding:8px 0; margin-top:8px; border-top:1px solid var(--off-border)">
+          <button class="bp-modal-delete-btn" id="bp-delete-btn" style="display:none" onclick="deletePolicy()">
+            <i class="ti ti-trash"></i> 刪除
+          </button>
+        </div>
+      </aside>
+
+      <!-- 右側 -->
+      <div class="off-modal-body" style="padding:0; display:flex; flex-direction:column">
+
+        <!-- ===== 基本 ===== -->
+        <div class="bp-pane active" data-bp-pane="basic">
+          <div class="bp-setting-card">
+            <div class="icon"><i class="ti ti-cursor-text"></i></div>
+            <div class="info"><b>名稱</b></div>
+            <div class="ctrl">
+              <input id="bp-name" placeholder="預約審核規則名稱" style="border:1px solid var(--off-border); border-radius:8px; padding:6px 12px; font-size:14px; outline:none; width:200px; text-align:right; background:#fff">
+            </div>
+          </div>
+
+          <div class="bp-section-title">簽到/登出</div>
+          <p class="bp-section-desc">這些設定僅對使用此規則的房間有效。</p>
+
+          <div class="bp-setting-card disabled">
+            <div class="icon"><i class="ti ti-user-check"></i></div>
+            <div class="info">
+              <b>需要辦理簽到手續</b>
+              <small>開啟此功能後，用戶需要在指定時間內簽到，否則系統將認定為缺席並自動釋放該資源。 關閉此功能後，系統將在預約開始時自動簽到該資源。</small>
+            </div>
+            <div class="ctrl">
+              <label class="off-toggle"><input type="checkbox"><span class="off-toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="bp-setting-card disabled">
+            <div class="icon"><i class="ti ti-arrow-back-up"></i></div>
+            <div class="info">
+              <b>允許與會者於預約面板簽到、簽退或延長預約</b>
+              <small>啟用後，與會者可在預約面板上自行辦理簽到、簽退或延長預約，無需等待主辦人。</small>
+            </div>
+            <div class="ctrl">
+              <label class="off-toggle"><input type="checkbox"><span class="off-toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="bp-setting-card disabled">
+            <div class="icon"><i class="ti ti-user-search"></i></div>
+            <div class="info">
+              <b>點名</b>
+              <small>設定此資源的預約是否可以點名。</small>
+            </div>
+            <div class="ctrl">
+              <span class="bp-val-btn">由使用者選擇 <i class="ti ti-chevron-down"></i></span>
+            </div>
+          </div>
+
+          <div class="bp-setting-card disabled">
+            <div class="icon"><i class="ti ti-logout"></i></div>
+            <div class="info">
+              <b>允許提早簽退預約</b>
+              <small>開啟此功能後，系統將顯示一個離開按鈕，供用戶提前登出。 關閉此功能後，將不能提早結束預約，系統將幫助在預約的結束時自動登出資源。</small>
+            </div>
+            <div class="ctrl">
+              <label class="off-toggle"><input type="checkbox" checked><span class="off-toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="bp-setting-card" style="background:#e8f4fe; border:1px solid #bdd8f0">
+            <div class="icon" style="background:#d0e8fa"><i class="ti ti-building"></i></div>
+            <div class="info"><b>分支機構管理</b></div>
+            <div class="ctrl">
+              <select id="bp-branch" style="border:1px solid var(--off-border); border-radius:8px; padding:6px 12px; font-size:14px; outline:none; background:#fff; cursor:pointer">
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 預約規則 ===== -->
+        <div class="bp-pane" data-bp-pane="booking-rules">
+          <h3 style="font-size:18px; font-weight:700; margin:0 0 4px">預約規則</h3>
+          <p class="bp-section-desc">如果預約涉及不同的規則設定，下面的規則將默認為不適用</p>
+
+          <div class="bp-setting-card">
+            <div class="icon"><i class="ti ti-repeat"></i></div>
+            <div class="info"><b>允許用戶創建重複的預約</b></div>
+            <div class="ctrl">
+              <label class="off-toggle"><input type="checkbox" checked data-rule="allow-recurring"><span class="off-toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="bp-setting-card">
+            <div class="icon"><i class="ti ti-calendar-event"></i></div>
+            <div class="info"><b>允許用戶創建全日的預約</b></div>
+            <div class="ctrl">
+              <label class="off-toggle"><input type="checkbox" checked data-rule="allow-allday"><span class="off-toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="bp-setting-card">
+            <div class="icon"><i class="ti ti-calendar-stats"></i></div>
+            <div class="info"><b>允許用戶創建跨日預約</b></div>
+            <div class="ctrl">
+              <label class="off-toggle"><input type="checkbox" checked data-rule="allow-multiday"><span class="off-toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="bp-setting-card">
+            <div class="icon"><i class="ti ti-moon"></i></div>
+            <div class="info"><b>允許用戶在非營業時間創建預約</b></div>
+            <div class="ctrl">
+              <label class="off-toggle"><input type="checkbox" checked data-rule="allow-offhours"><span class="off-toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="bp-setting-card">
+            <div class="icon"><i class="ti ti-copy"></i></div>
+            <div class="info"><b>允許用戶同一預約中預約多個資源</b></div>
+            <div class="ctrl">
+              <label class="off-toggle"><input type="checkbox" checked data-rule="allow-multi-resource"><span class="off-toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="bp-setting-card">
+            <div class="icon"><i class="ti ti-clock-plus"></i></div>
+            <div class="info"><b>允許用戶即場延長預約</b></div>
+            <div class="ctrl">
+              <label class="off-toggle"><input type="checkbox" checked data-rule="allow-extend"><span class="off-toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="bp-setting-card disabled">
+            <div class="icon"><i class="ti ti-walk"></i></div>
+            <div class="info">
+              <b>僅限現場預約</b>
+              <small>此資源僅支援現場預約，不提供提前預約。</small>
+            </div>
+            <div class="ctrl">
+              <label class="off-toggle"><input type="checkbox"><span class="off-toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="bp-setting-card clickable" onclick="openDropdown('overlap')">
+            <div class="icon"><i class="ti ti-layers-intersect"></i></div>
+            <div class="info"><b>預約重疊</b></div>
+            <div class="ctrl">
+              <span class="bp-val-btn" id="bp-overlap-display">允許與所有其他預約重疊 <i class="ti ti-chevron-down"></i></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 預約時間 / 日期範圍 ===== -->
+        <div class="bp-pane" data-bp-pane="time-range">
+          <h3 style="font-size:18px; font-weight:700; margin:0 0 4px">預約範圍</h3>
+          <p class="bp-section-desc">如果預約涉及不同的規則設定，下面的規則將在分配的資源上實施</p>
+
+          <div class="bp-setting-card">
+            <div class="icon"><i class="ti ti-calendar-minus"></i></div>
+            <div class="info">
+              <b>限制預約日期範圍</b>
+              <small>用戶可以在限定日子內創建預約</small>
+            </div>
+            <div class="ctrl">
+              <label class="off-toggle"><input type="checkbox" data-rule="limit-date-range"><span class="off-toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="bp-setting-card">
+            <div class="icon"><i class="ti ti-clock"></i></div>
+            <div class="info">
+              <b>限制每次預約時間長度</b>
+              <small>用戶可以創建以下限定時間長度內的預約</small>
+            </div>
+            <div class="ctrl">
+              <label class="off-toggle"><input type="checkbox" data-rule="limit-duration"><span class="off-toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="bp-setting-card disabled">
+            <div class="icon"><i class="ti ti-hourglass"></i></div>
+            <div class="info">
+              <b>限制現場預約的最長使用時間</b>
+              <small>此規則限制用戶在現場進行即時預約時所能選擇的最長預約時長，不適用於事前預約。</small>
+            </div>
+            <div class="ctrl">
+              <label class="off-toggle"><input type="checkbox"><span class="off-toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="bp-setting-card">
+            <div class="icon"><i class="ti ti-pencil-off"></i></div>
+            <div class="info">
+              <b>預約前有編輯或刪除限制</b>
+              <small>限制用戶在預約開始前編輯/刪除預約。</small>
+            </div>
+            <div class="ctrl">
+              <label class="off-toggle"><input type="checkbox" data-rule="edit-restrict"><span class="off-toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="bp-setting-card disabled">
+            <div class="icon"><i class="ti ti-clock-stop"></i></div>
+            <div class="info">
+              <b>限制每個預約的最大預約時間</b>
+              <small>用戶只能在每一個時間段中創建一個預約時間不超過最大限制的預約。 請注意，這不會限制用戶可以使用的總預約時間。</small>
+            </div>
+            <div class="ctrl">
+              <label class="off-toggle"><input type="checkbox"><span class="off-toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="bp-setting-card disabled">
+            <div class="icon"><i class="ti ti-calendar-due"></i></div>
+            <div class="info"><b>允許在特定日期之前預約</b></div>
+            <div class="ctrl">
+              <label class="off-toggle"><input type="checkbox"><span class="off-toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="bp-setting-card disabled">
+            <div class="icon"><i class="ti ti-calendar-plus"></i></div>
+            <div class="info"><b>允許在特定日期之後預約</b></div>
+            <div class="ctrl">
+              <label class="off-toggle"><input type="checkbox"><span class="off-toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="bp-setting-card disabled clickable">
+            <div class="icon"><i class="ti ti-clock-bolt"></i></div>
+            <div class="info">
+              <b>預約時段限制</b>
+              <small>限制各時段的預約開放時間。在開放時間之前，該時段的預約將被拒絕。</small>
+            </div>
+            <div class="ctrl">
+              <i class="ti ti-chevron-right" style="font-size:18px; color:var(--off-text-muted)"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 預約審批 ===== -->
+        <div class="bp-pane" data-bp-pane="approval">
+          <div class="bp-section-title">預約批核</div>
+
+          <div class="bp-setting-card">
+            <div class="icon"><i class="ti ti-clock-pause"></i></div>
+            <div class="info">
+              <b>批准前鎖定時段</b>
+              <small>批准前鎖定時段。其他用戶不能預約同一時段。</small>
+            </div>
+            <div class="ctrl">
+              <label class="off-toggle"><input type="checkbox" id="bp-lock-slot"><span class="off-toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="bp-setting-card clickable" onclick="openDropdown('conditional')">
+            <div class="icon"><i class="ti ti-adjustments-alt"></i></div>
+            <div class="info">
+              <b>條件式預約審核</b>
+              <small>當符合上述一個或多個條件時，預約需審核。</small>
+            </div>
+            <div class="ctrl">
+              <span class="bp-val-btn" id="bp-conditional-display">所有預約需審核 <i class="ti ti-chevron-down"></i></span>
+            </div>
+          </div>
+
+          <div class="bp-setting-card clickable" onclick="openDropdown('re-approve')">
+            <div class="icon"><i class="ti ti-file-pencil"></i></div>
+            <div class="info"><b>編輯後重新審核</b></div>
+            <div class="ctrl">
+              <span class="bp-val-btn" id="bp-reapprove-display">任何變更都需重新批核 <i class="ti ti-chevron-down"></i></span>
+            </div>
+          </div>
+
+          <div class="bp-setting-card clickable" onclick="openDropdown('show-approver')">
+            <div class="icon"><i class="ti ti-user-check"></i></div>
+            <div class="info"><b>顯示審批人</b></div>
+            <div class="ctrl">
+              <span class="bp-val-btn" id="bp-approver-display">不顯示 <i class="ti ti-chevron-down"></i></span>
+            </div>
+          </div>
+
+          <div class="bp-section-title">批核預約的用戶 / 用戶群組</div>
+          <div class="bp-approver-panel">
+            <input placeholder="🔍 新增" id="bp-approver-search" onfocus="openApproverList()" oninput="filterApprovers()">
+            <div id="bp-approver-list-wrap" style="display:none">
+              <div class="bp-approver-tabs">
+                <div class="tab active" data-tab="users" onclick="switchApproverTab('users')">用戶</div>
+                <div class="tab" data-tab="groups" onclick="switchApproverTab('groups')">用戶群組</div>
+                <button class="close-tab" onclick="closeApproverList()"><i class="ti ti-x"></i></button>
+              </div>
+              <div class="bp-approver-hint">僅顯示具有 <b>用戶</b> 權限的用戶</div>
+              <div id="bp-approver-user-list"></div>
+              <div id="bp-approver-group-list" style="display:none"></div>
+              <div class="bp-approver-foot">
+                <button class="clear-btn" onclick="clearApprovers()">清除</button>
+                <button class="done-btn" onclick="closeApproverList()">完成</button>
+              </div>
+            </div>
+            <div class="bp-selected-users" id="bp-selected-approvers"></div>
+            <div class="bp-search-empty" id="bp-no-approver" style="display:none">沒有選擇的項目</div>
+          </div>
+
+          <div class="bp-auto-reject">
+            <i class="ti ti-alert-circle"></i>
+            <span>如果 <input type="number" id="bp-auto-reject-days" value="7" min="1" max="365" style="width:50px; border:1px solid var(--off-border); border-radius:6px; padding:3px 6px; font-size:13px; text-align:center; outline:none"> 天沒有人批核，自動拒絕預約</span>
+          </div>
+        </div>
+
+        <!-- ===== 創建/編輯預約途徑 ===== -->
+        <div class="bp-pane" data-bp-pane="booking-path">
+          <h3 style="font-size:18px; font-weight:700; margin:0 0 4px">創建/編輯預約途徑</h3>
+
+          <div class="bp-setting-card" style="margin-top:16px">
+            <div class="icon"><i class="ti ti-settings"></i></div>
+            <div class="info">
+              <b>允許預約管理者為用戶創建預約</b>
+              <small>允許預約管理者從控制台為用戶預約使用此規則的房間</small>
+            </div>
+            <div class="ctrl">
+              <label class="off-toggle"><input type="checkbox" checked data-rule="allow-admin-create"><span class="off-toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="bp-setting-card">
+            <div class="icon"><i class="ti ti-device-desktop"></i></div>
+            <div class="info">
+              <b>允許從用戶界面預約</b>
+              <small>允許用戶從用戶界面預約使用此規則的房間</small>
+            </div>
+            <div class="ctrl">
+              <label class="off-toggle"><input type="checkbox" checked data-rule="allow-ui-booking"><span class="off-toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="bp-setting-card disabled">
+            <div class="icon"><i class="ti ti-device-tablet"></i></div>
+            <div class="info">
+              <b>允許透過預約面板和電子標牌進行預約</b>
+              <small>允許用戶從預約面板和電子標牌使用此規則的房間</small>
+            </div>
+            <div class="ctrl">
+              <label class="off-toggle"><input type="checkbox" checked><span class="off-toggle-slider"></span></label>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="off-modal-foot">
+          <div id="bp-err" style="color:var(--off-red); font-size:13px; margin-right:auto; align-self:center; display:none"></div>
+          <button class="off-btn off-btn-primary" id="bp-save">儲存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 下拉面板 overlay -->
+  <div class="bp-dropdown-overlay" id="bp-dd-overlay" onclick="closeAllDropdowns()"></div>
+
+  <!-- 條件式預約審核面板 -->
+  <div class="bp-dropdown-panel" id="dd-conditional" style="display:none">
+    <div class="bp-dropdown-head">
+      <div>
+        <h4>條件式預約審核</h4>
+        <small>當符合上述一個或多個條件時，預約需審核。</small>
+      </div>
+      <span class="bp-val-btn" id="dd-cond-mode-btn" onclick="toggleCondMode()" style="font-size:12px">按條件審核 <i class="ti ti-chevron-down"></i></span>
+      <button class="close-btn" onclick="closeAllDropdowns()"><i class="ti ti-x"></i></button>
+    </div>
+    <div id="dd-cond-mode-selector" style="display:none; border-bottom:1px solid var(--off-border)">
+      <div class="bp-dropdown-option" data-cond-mode="conditional" onclick="selectCondMode('conditional')">
+        <div class="opt-info"><b>按條件審核</b></div>
+        <i class="ti ti-check check"></i>
+      </div>
+      <div class="bp-dropdown-option selected" data-cond-mode="all" onclick="selectCondMode('all')">
+        <div class="opt-info"><b>所有預約需審核</b></div>
+        <i class="ti ti-check check"></i>
+      </div>
+    </div>
+    <div id="dd-cond-list" style="display:none">
+      <div class="bp-condition-item"><div class="cond-info"><b>最短預約時長</b><small>審核超過所設時長的預約。</small></div><label class="off-toggle"><input type="checkbox" data-cond="min-duration"><span class="off-toggle-slider"></span></label></div>
+      <div class="bp-condition-item"><div class="cond-info"><b>全天預約</b><small>審核預約整天的房間。</small></div><label class="off-toggle"><input type="checkbox" data-cond="all-day"><span class="off-toggle-slider"></span></label></div>
+      <div class="bp-condition-item"><div class="cond-info"><b>重複預約</b><small>審核在多個日期重複的預約。</small></div><label class="off-toggle"><input type="checkbox" data-cond="recurring"><span class="off-toggle-slider"></span></label></div>
+      <div class="bp-condition-item"><div class="cond-info"><b>跨日預約</b><small>審核跨越兩天或以上的預約。</small></div><label class="off-toggle"><input type="checkbox" data-cond="multi-day"><span class="off-toggle-slider"></span></label></div>
+      <div class="bp-condition-item"><div class="cond-info"><b>非營業時間</b><small>審核非營業時間的預約。</small></div><label class="off-toggle"><input type="checkbox" data-cond="off-hours"><span class="off-toggle-slider"></span></label></div>
+      <div class="bp-condition-item"><div class="cond-info"><b>同一用戶多次預約</b><small>審核用戶是否超過每日預約次數。</small></div><label class="off-toggle"><input type="checkbox" data-cond="user-limit"><span class="off-toggle-slider"></span></label></div>
+      <div class="bp-condition-item"><div class="cond-info"><b>同一用戶過多即將到來的預約</b><small>審核用戶是否已有設定數量的即將到來已確認的預約。</small></div><label class="off-toggle"><input type="checkbox" data-cond="user-upcoming"><span class="off-toggle-slider"></span></label></div>
+      <div class="bp-condition-item"><div class="cond-info"><b>房間容量使用率</b><small>審核參加人數是否低於房間容量百分比。</small></div><label class="off-toggle"><input type="checkbox" data-cond="capacity"><span class="off-toggle-slider"></span></label></div>
+      <div class="bp-condition-item"><div class="cond-info"><b>含服務請求的預約</b><small>審核包含額外服務的預約。</small></div><label class="off-toggle"><input type="checkbox" data-cond="service"><span class="off-toggle-slider"></span></label></div>
+    </div>
+  </div>
+
+  <!-- 編輯後重新審核面板 -->
+  <div class="bp-dropdown-panel" id="dd-re-approve" style="display:none">
+    <div class="bp-dropdown-head"><h4>編輯後重新審核</h4><button class="close-btn" onclick="closeAllDropdowns()"><i class="ti ti-x"></i></button></div>
+    <div class="bp-dropdown-option selected" data-val="always" onclick="selectReApprove('always')"><div class="opt-info"><b>任何變更都需重新批核</b><small>任何編輯都會觸發重新批核。</small></div><i class="ti ti-check check"></i></div>
+    <div class="bp-dropdown-option" data-val="time-only" onclick="selectReApprove('time-only')"><div class="opt-info"><b>僅時間變更需重新批核</b><small>只有當預約時間被修改時才需要重新批核。</small></div><i class="ti ti-check check"></i></div>
+  </div>
+
+  <!-- 顯示審批人面板 -->
+  <div class="bp-dropdown-panel" id="dd-show-approver" style="display:none">
+    <div class="bp-dropdown-head"><h4>顯示審批人</h4><button class="close-btn" onclick="closeAllDropdowns()"><i class="ti ti-x"></i></button></div>
+    <div class="bp-dropdown-option selected" data-val="hide" onclick="selectShowApprover('hide')"><div class="opt-info"><b>不顯示</b><small>不向使用者顯示審批人員。</small></div><i class="ti ti-check check"></i></div>
+    <div class="bp-dropdown-option" data-val="show" onclick="selectShowApprover('show')"><div class="opt-info"><b>顯示審批人</b><small>顯示此政策設定的審批人員。</small></div><i class="ti ti-check check"></i></div>
+  </div>
+
+  <!-- 預約重疊面板 -->
+  <div class="bp-dropdown-panel" id="dd-overlap" style="display:none">
+    <div class="bp-dropdown-head"><h4>預約重疊</h4><button class="close-btn" onclick="closeAllDropdowns()"><i class="ti ti-x"></i></button></div>
+    <div class="bp-dropdown-option selected" data-val="allow-all" onclick="selectOverlap('allow-all')"><div class="opt-info"><b>允許與所有其他預約重疊</b></div><i class="ti ti-check check"></i></div>
+    <div class="bp-dropdown-option disabled" data-val="deny-all"><div class="opt-info"><b>不允許與所有其他預約重疊</b></div><i class="ti ti-check check"></i></div>
+    <div class="bp-dropdown-option disabled" data-val="deny-same-policy"><div class="opt-info"><b>不允許與使用同一預約規則資源的預約重疊</b></div><i class="ti ti-check check"></i></div>
+  </div>
+
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script>
+    OffAuth.requireLogin();
+
+    function esc(s) { return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    let policies = [
+      {
+        id: 1, name: '預約審核規則 1',
+        approval_enabled: true,
+        lock_slot: false,
+        conditional_mode: 'all',
+        re_approve_mode: 'always',
+        show_approver: 'hide',
+        auto_reject_days: 7,
+        override_rule: '—',
+        privacy: '沒有',
+      },
+    ];
+
+    const demoUsers = [
+      { id:1, name:'Ingrid', email:'ingrid@bizlution.com', color:'#1f80f0' },
+      { id:2, name:'Ingridiaim台北分公司的員工', email:'ingridiaim@gmail.com', color:'#f09c1f' },
+      { id:3, name:'新竹分公司維修人員 A', email:'m0341018@mail.hfu.edu.tw', color:'#12a97e', initial:'新' },
+      { id:4, name:'Chester', email:'chester@bizlution.com', color:'#6b7280' },
+      { id:5, name:'1234', email:'test@example.com', color:'#f26a5c', initial:'1' },
+    ];
+    const demoGroups = [
+      { id:1, name:'維修組 A', member_count:3 },
+      { id:2, name:'IT 支援', member_count:5 },
+      { id:3, name:'行政', member_count:2 },
+    ];
+    let selectedApprovers = [];
+    let currentOverlap = 'allow-all';
+
+    // ============================================================
+    // Tab switching
+    // ============================================================
+    function switchPane(key) {
+      document.querySelectorAll('.bp-modal-side-tab').forEach(t => t.classList.remove('active'));
+      const tab = document.querySelector('[data-bp-tab="' + key + '"]');
+      if (tab) tab.classList.add('active');
+      document.querySelectorAll('.bp-pane').forEach(p => p.classList.remove('active'));
+      const pane = document.querySelector('[data-bp-pane="' + key + '"]');
+      if (pane) pane.classList.add('active');
+    }
+
+    // ============================================================
+    // Table
+    // ============================================================
+    function renderTable() {
+      const tbody = document.getElementById('bp-tbody');
+      if (!policies.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:32px; color:var(--off-text-muted)">尚無預約審核規則，點右上「新增」建立第一個</td></tr>';
+        document.getElementById('bp-count').textContent = '1 - 0 / 0';
+        return;
+      }
+      tbody.innerHTML = policies.map(p => `
+        <tr data-id="${p.id}" style="cursor:pointer">
+          <td><input type="checkbox" onclick="event.stopPropagation()"></td>
+          <td style="font-weight:500; color:#111">${esc(p.name)}</td>
+          <td><span class="bp-status no">不需簽到</span></td>
+          <td><span class="bp-link"><i class="ti ti-shield-check"></i> 預約批核</span></td>
+          <td>${p.override_rule || '—'}</td>
+          <td>${p.privacy || '沒有'}</td>
+        </tr>
+      `).join('');
+      document.getElementById('bp-count').textContent = '1 - ' + policies.length + ' / ' + policies.length;
+      tbody.querySelectorAll('tr[data-id]').forEach(tr => {
+        tr.addEventListener('click', () => openEditPolicy(parseInt(tr.dataset.id, 10)));
+      });
+    }
+
+    async function loadPolicies() {
+      try {
+        const data = await OffAPI.bookingPolicies.list();
+        if (data && data.length) policies = data;
+      } catch (e) {
+        console.warn('API not available, using demo data:', e.message);
+      }
+      renderTable();
+    }
+
+    // ============================================================
+    // Branch dropdown
+    // ============================================================
+    async function loadBranches() {
+      const sel = document.getElementById('bp-branch');
+      try {
+        const branches = await OffAPI.branches.list();
+        sel.innerHTML = branches.map(b => '<option value="' + b.id + '">' + esc(b.name) + '</option>').join('');
+      } catch (e) {
+        sel.innerHTML = '<option value="1">HQ</option>';
+      }
+    }
+
+    // ============================================================
+    // Modal
+    // ============================================================
+    let editingPolicyId = null;
+    let currentCondMode = 'all';
+    let currentReApprove = 'always';
+    let currentShowApprover = 'hide';
+
+    function resetModal() {
+      document.getElementById('bp-name').value = '';
+      document.getElementById('bp-lock-slot').checked = false;
+      currentCondMode = 'all';
+      currentReApprove = 'always';
+      currentShowApprover = 'hide';
+      currentOverlap = 'allow-all';
+      selectedApprovers = [];
+      document.getElementById('bp-auto-reject-days').value = '7';
+      document.getElementById('bp-related-rooms').textContent = '0';
+      document.getElementById('bp-err').style.display = 'none';
+      document.getElementById('bp-delete-btn').style.display = 'none';
+      document.querySelectorAll('[data-cond]').forEach(cb => cb.checked = false);
+      updateDisplayValues();
+      renderSelectedApprovers();
+      closeApproverList();
+      switchPane('basic');
+    }
+
+    function openNewPolicyModal() {
+      editingPolicyId = null;
+      document.getElementById('bp-modal-title').textContent = '預約審核規則';
+      resetModal();
+      offOpenModal('modal-bp');
+    }
+
+    function openEditPolicy(id) {
+      const p = policies.find(x => x.id === id);
+      if (!p) return;
+      editingPolicyId = id;
+      document.getElementById('bp-modal-title').textContent = p.name || '預約審核規則';
+      document.getElementById('bp-name').value = p.name || '';
+      document.getElementById('bp-lock-slot').checked = !!p.lock_slot;
+      currentCondMode = p.conditional_mode || 'all';
+      currentReApprove = p.re_approve_mode || 'always';
+      currentShowApprover = p.show_approver || 'hide';
+      selectedApprovers = (p.approvers || []).map(a => {
+        const type = a.type || a.approver_type;
+        const aid = a.approver_id || a.id;
+        const src = type === 'user' ? demoUsers.find(u => u.id === aid) : demoGroups.find(g => g.id === aid);
+        return { type, id: aid, name: src ? src.name : '#' + aid, email: src ? src.email : '', color: src ? src.color : '#6b7280', initial: src ? src.initial : undefined };
+      });
+      document.getElementById('bp-auto-reject-days').value = String(p.auto_reject_days || 7);
+      document.getElementById('bp-related-rooms').textContent = String(p.related_rooms || 0);
+      document.getElementById('bp-err').style.display = 'none';
+      document.getElementById('bp-delete-btn').style.display = '';
+      if (p.conditions) {
+        document.querySelectorAll('[data-cond]').forEach(cb => {
+          cb.checked = p.conditions.includes(cb.dataset.cond);
+        });
+      }
+      updateDisplayValues();
+      renderSelectedApprovers();
+      closeApproverList();
+      switchPane('basic');
+      offOpenModal('modal-bp');
+    }
+
+    function updateDisplayValues() {
+      const condLabels = { all:'所有預約需審核', conditional:'按條件審核' };
+      document.getElementById('bp-conditional-display').innerHTML = esc(condLabels[currentCondMode] || '所有預約需審核') + ' <i class="ti ti-chevron-down"></i>';
+
+      const reLabels = { always:'任何變更都需重新批核', 'time-only':'僅時間變更需重新批核' };
+      document.getElementById('bp-reapprove-display').innerHTML = esc(reLabels[currentReApprove] || '任何變更都需重新批核') + ' <i class="ti ti-chevron-down"></i>';
+
+      const appLabels = { hide:'不顯示', show:'顯示審批人' };
+      document.getElementById('bp-approver-display').innerHTML = esc(appLabels[currentShowApprover] || '不顯示') + ' <i class="ti ti-chevron-down"></i>';
+
+      const overlapLabels = { 'allow-all':'允許與所有其他預約重疊', 'deny-all':'不允許與所有其他預約重疊', 'deny-same-policy':'不允許與使用同一預約規則資源的預約重疊' };
+      document.getElementById('bp-overlap-display').innerHTML = esc(overlapLabels[currentOverlap] || '允許與所有其他預約重疊') + ' <i class="ti ti-chevron-down"></i>';
+    }
+
+    // ============================================================
+    // Dropdowns
+    // ============================================================
+    function openDropdown(type) {
+      closeAllDropdowns();
+      document.getElementById('bp-dd-overlay').classList.add('open');
+      const panel = document.getElementById('dd-' + type);
+      panel.style.display = '';
+
+      if (type === 'conditional') {
+        document.getElementById('dd-cond-mode-selector').style.display = 'none';
+        document.getElementById('dd-cond-list').style.display = currentCondMode === 'conditional' ? '' : 'none';
+        document.getElementById('dd-cond-mode-btn').innerHTML = (currentCondMode === 'conditional' ? '按條件審核' : '所有預約需審核') + ' <i class="ti ti-chevron-down"></i>';
+        document.querySelectorAll('#dd-conditional [data-cond-mode]').forEach(el => {
+          el.classList.toggle('selected', el.dataset.condMode === currentCondMode);
+        });
+      }
+      if (type === 're-approve') {
+        document.querySelectorAll('#dd-re-approve [data-val]').forEach(el => {
+          el.classList.toggle('selected', el.dataset.val === currentReApprove);
+        });
+      }
+      if (type === 'show-approver') {
+        document.querySelectorAll('#dd-show-approver [data-val]').forEach(el => {
+          el.classList.toggle('selected', el.dataset.val === currentShowApprover);
+        });
+      }
+      if (type === 'overlap') {
+        document.querySelectorAll('#dd-overlap [data-val]').forEach(el => {
+          el.classList.toggle('selected', el.dataset.val === currentOverlap);
+        });
+      }
+    }
+
+    function closeAllDropdowns() {
+      document.getElementById('bp-dd-overlay').classList.remove('open');
+      document.querySelectorAll('.bp-dropdown-panel').forEach(p => p.style.display = 'none');
+    }
+
+    function toggleCondMode() {
+      const sel = document.getElementById('dd-cond-mode-selector');
+      sel.style.display = sel.style.display === 'none' ? '' : 'none';
+    }
+    function selectCondMode(mode) {
+      currentCondMode = mode;
+      document.getElementById('dd-cond-mode-selector').style.display = 'none';
+      document.getElementById('dd-cond-list').style.display = mode === 'conditional' ? '' : 'none';
+      document.getElementById('dd-cond-mode-btn').innerHTML = (mode === 'conditional' ? '按條件審核' : '所有預約需審核') + ' <i class="ti ti-chevron-down"></i>';
+      document.querySelectorAll('#dd-conditional [data-cond-mode]').forEach(el => {
+        el.classList.toggle('selected', el.dataset.condMode === mode);
+      });
+      updateDisplayValues();
+    }
+    function selectReApprove(val) {
+      currentReApprove = val;
+      document.querySelectorAll('#dd-re-approve [data-val]').forEach(el => el.classList.toggle('selected', el.dataset.val === val));
+      updateDisplayValues();
+      closeAllDropdowns();
+    }
+    function selectShowApprover(val) {
+      currentShowApprover = val;
+      document.querySelectorAll('#dd-show-approver [data-val]').forEach(el => el.classList.toggle('selected', el.dataset.val === val));
+      updateDisplayValues();
+      closeAllDropdowns();
+    }
+    function selectOverlap(val) {
+      currentOverlap = val;
+      document.querySelectorAll('#dd-overlap [data-val]').forEach(el => el.classList.toggle('selected', el.dataset.val === val));
+      updateDisplayValues();
+      closeAllDropdowns();
+    }
+
+    // ============================================================
+    // Approvers
+    // ============================================================
+    let approverTab = 'users';
+
+    function openApproverList() {
+      document.getElementById('bp-approver-list-wrap').style.display = '';
+      approverTab = 'users';
+      renderApproverUsers();
+    }
+    function closeApproverList() {
+      document.getElementById('bp-approver-list-wrap').style.display = 'none';
+    }
+    function switchApproverTab(tab) {
+      approverTab = tab;
+      document.querySelectorAll('.bp-approver-tabs .tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+      document.querySelector('.bp-approver-hint').innerHTML = tab === 'users' ? '僅顯示具有 <b>用戶</b> 權限的用戶' : '選擇用戶群組';
+      if (tab === 'users') {
+        document.getElementById('bp-approver-user-list').style.display = '';
+        document.getElementById('bp-approver-group-list').style.display = 'none';
+        renderApproverUsers();
+      } else {
+        document.getElementById('bp-approver-user-list').style.display = 'none';
+        document.getElementById('bp-approver-group-list').style.display = '';
+        renderApproverGroups();
+      }
+    }
+    function renderApproverUsers() {
+      const q = (document.getElementById('bp-approver-search').value || '').toLowerCase();
+      const list = document.getElementById('bp-approver-user-list');
+      const filtered = demoUsers.filter(u => !q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
+      list.innerHTML = filtered.map(u => {
+        const sel = selectedApprovers.some(a => a.type === 'user' && a.id === u.id);
+        const initial = u.initial || u.name.charAt(0).toUpperCase();
+        return '<div class="bp-user-item"><div class="radio' + (sel ? ' checked' : '') + '" onclick="toggleApprover(\'user\',' + u.id + ')"></div><div class="bp-user-avatar" style="background:' + u.color + '">' + esc(initial) + '</div><div class="bp-user-info"><b>' + esc(u.name) + '</b><small>' + esc(u.email) + '</small></div><button class="bp-user-detail">詳細</button></div>';
+      }).join('');
+    }
+    function renderApproverGroups() {
+      const q = (document.getElementById('bp-approver-search').value || '').toLowerCase();
+      const list = document.getElementById('bp-approver-group-list');
+      const filtered = demoGroups.filter(g => !q || g.name.toLowerCase().includes(q));
+      list.innerHTML = filtered.map(g => {
+        const sel = selectedApprovers.some(a => a.type === 'group' && a.id === g.id);
+        return '<div class="bp-user-item"><div class="radio' + (sel ? ' checked' : '') + '" onclick="toggleApprover(\'group\',' + g.id + ')"></div><div class="bp-user-avatar" style="background:#6b7280"><i class="ti ti-users" style="font-size:16px"></i></div><div class="bp-user-info"><b>' + esc(g.name) + '</b><small>' + g.member_count + ' 位成員</small></div><button class="bp-user-detail">詳細</button></div>';
+      }).join('');
+    }
+    function toggleApprover(type, id) {
+      const idx = selectedApprovers.findIndex(a => a.type === type && a.id === id);
+      if (idx >= 0) { selectedApprovers.splice(idx, 1); }
+      else {
+        const src = type === 'user' ? demoUsers.find(u => u.id === id) : demoGroups.find(g => g.id === id);
+        if (src) selectedApprovers.push({ type, id, name: src.name, email: src.email, color: src.color, initial: src.initial });
+      }
+      if (approverTab === 'users') renderApproverUsers(); else renderApproverGroups();
+      renderSelectedApprovers();
+    }
+    function clearApprovers() {
+      selectedApprovers = [];
+      if (approverTab === 'users') renderApproverUsers(); else renderApproverGroups();
+      renderSelectedApprovers();
+    }
+    function renderSelectedApprovers() {
+      const wrap = document.getElementById('bp-selected-approvers');
+      const empty = document.getElementById('bp-no-approver');
+      if (!selectedApprovers.length) { wrap.innerHTML = ''; empty.style.display = ''; return; }
+      empty.style.display = 'none';
+      wrap.innerHTML = selectedApprovers.map(a => {
+        const initial = a.initial || a.name.charAt(0).toUpperCase();
+        const icon = a.type === 'group'
+          ? '<div class="bp-user-avatar" style="background:#6b7280; width:28px; height:28px; font-size:12px"><i class="ti ti-users" style="font-size:14px"></i></div>'
+          : '<div class="bp-user-avatar" style="background:' + (a.color || '#6b7280') + '; width:28px; height:28px; font-size:12px">' + esc(initial) + '</div>';
+        return '<div class="bp-selected-user">' + icon + '<span style="font-size:13px; font-weight:500">' + esc(a.name) + '</span><button class="remove-btn" onclick="removeApprover(\'' + a.type + '\',' + a.id + ')"><i class="ti ti-x"></i></button></div>';
+      }).join('');
+    }
+    function removeApprover(type, id) {
+      selectedApprovers = selectedApprovers.filter(a => !(a.type === type && a.id === id));
+      renderSelectedApprovers();
+      if (approverTab === 'users') renderApproverUsers(); else renderApproverGroups();
+    }
+    function filterApprovers() {
+      if (approverTab === 'users') renderApproverUsers(); else renderApproverGroups();
+    }
+
+    // ============================================================
+    // Delete
+    // ============================================================
+    async function deletePolicy() {
+      if (!editingPolicyId) return;
+      try {
+        await OffAPI.bookingPolicies.remove(editingPolicyId);
+      } catch (e) {
+        policies = policies.filter(p => p.id !== editingPolicyId);
+      }
+      offCloseModal('modal-bp');
+      await loadPolicies();
+    }
+
+    // ============================================================
+    // Save
+    // ============================================================
+    document.getElementById('bp-save').addEventListener('click', async () => {
+      const err = document.getElementById('bp-err');
+      err.style.display = 'none';
+      const name = document.getElementById('bp-name').value.trim();
+      if (!name) { err.textContent = '請輸入名稱'; err.style.display = 'block'; return; }
+
+      const conditions = [];
+      document.querySelectorAll('[data-cond]:checked').forEach(cb => conditions.push(cb.dataset.cond));
+
+      const payload = {
+        name,
+        lock_slot: document.getElementById('bp-lock-slot').checked,
+        conditional_mode: currentCondMode,
+        conditions,
+        re_approve_mode: currentReApprove,
+        show_approver: currentShowApprover,
+        approvers: selectedApprovers.map(a => ({ type: a.type, id: a.id })),
+        auto_reject_days: parseInt(document.getElementById('bp-auto-reject-days').value, 10) || 7,
+      };
+
+      try {
+        if (editingPolicyId) {
+          await OffAPI.bookingPolicies.patch(editingPolicyId, payload);
+        } else {
+          await OffAPI.bookingPolicies.create(payload);
+        }
+        offCloseModal('modal-bp');
+        await loadPolicies();
+      } catch (e) {
+        if (editingPolicyId) {
+          const idx = policies.findIndex(x => x.id === editingPolicyId);
+          if (idx >= 0) Object.assign(policies[idx], payload);
+        } else {
+          const newId = Math.max(0, ...policies.map(p => p.id)) + 1;
+          policies.push({ id: newId, ...payload, approval_enabled: true, override_rule: '—', privacy: '沒有' });
+        }
+        offCloseModal('modal-bp');
+        renderTable();
+      }
+    });
+
+    loadPolicies();
+    loadBranches();
+  </script>
+</body>
+</html>

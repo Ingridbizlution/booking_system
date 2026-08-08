@@ -11,6 +11,10 @@ from .reservation import (
     ReservationOut, ReservationCreate, ReservationUpdate, ReservationApproveIn,
     DashboardStats,
 )
+from .booking_policy import (
+    BookingPolicyOut, BookingPolicyCreate, BookingPolicyUpdate,
+    ApproverIn, ApproverOut,
+)
 
 __all__ = [
     "LoginIn", "TokenOut",
@@ -24,4 +28,6 @@ __all__ = [
     "AmenityOut", "AmenityCreate", "AmenityUpdate", "ResourceAmenityIn",
     "ReservationOut", "ReservationCreate", "ReservationUpdate", "ReservationApproveIn",
     "DashboardStats",
+    "BookingPolicyOut", "BookingPolicyCreate", "BookingPolicyUpdate",
+    "ApproverIn", "ApproverOut",
 ]

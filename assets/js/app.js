@@ -27,9 +27,9 @@ const OFF_NAV = {
         { key: 'reservation', label: '預約記錄', href: '#' },
         { key: 'quota',       label: '配額使用歷史記錄', href: '#' }
       ]},
-      { key: 'room',      label: '房間',      icon: 'door', badge: '11', children: [
-        { key: 'standard',   label: '標準房間', href: 'reservation-rooms.html' },
-        { key: 'combinable', label: '可合併房間', href: 'reservation-rooms-combinable.html', isNew: true }
+      { key: 'room',      label: '會議室',      icon: 'door', badge: '11', children: [
+        { key: 'standard',   label: '標準會議室', href: 'reservation-rooms.html' },
+        { key: 'combinable', label: '可合併會議室', href: 'reservation-rooms-combinable.html', isNew: true }
       ]},
       { key: 'desk',      label: '共享辦公桌', icon: 'grid-dots', badge: '37', href: '#', disabled: true },
       { key: 'equipment', label: '設備',      icon: 'device-tv',  badge: '9',  href: 'reservation-equipment.html', isNew: true },
@@ -42,7 +42,9 @@ const OFF_NAV = {
         { key: 'display-timeslots',  label: '預約時間帶', href: '#' },
         { key: 'display-layouts',    label: '房間佈局',   href: '#', disabled: true },
       ] },
-      { key: 'rules',     label: '預約規則',   icon: 'adjustments-alt', children: [] },
+      { key: 'rules',     label: '預約規則',   icon: 'adjustments-alt', children: [
+        { key: 'approval-rules', label: '預約審核規則', href: 'reservation-rules.html' },
+      ] },
       { key: 'forms',     label: '預約表格',   icon: 'file-text', children: [] },
       { key: 'settings',  label: '設定/郵件提醒', icon: 'settings', href: '#' },
       { key: 'reports',   label: '郵件報表',   icon: 'mail', href: '#' }

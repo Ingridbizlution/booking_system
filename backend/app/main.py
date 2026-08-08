@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .core.config import settings
-from .api.v1 import auth, users, branches, rooms, reservations, dashboard, categories, roles, equipment, amenities
+from .api.v1 import auth, users, branches, rooms, reservations, dashboard, categories, roles, equipment, amenities, booking_policies
 
 app = FastAPI(
     title="Offision API",
@@ -32,6 +32,7 @@ app.include_router(reservations.router, prefix=API_V1)
 app.include_router(dashboard.router, prefix=API_V1)
 app.include_router(categories.router, prefix=API_V1)
 app.include_router(roles.router, prefix=API_V1)
+app.include_router(booking_policies.router, prefix=API_V1)
 
 
 @app.get("/health")
