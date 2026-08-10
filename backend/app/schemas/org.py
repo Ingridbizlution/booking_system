@@ -23,6 +23,13 @@ class BranchCreate(BranchBase):
     pass
 
 
+class BranchUpdate(BaseModel):
+    name: str | None = None
+    address: str | None = None
+    timezone: str | None = None
+    parent_branch_id: int | None = None
+
+
 class BranchOut(BranchBase):
     model_config = ConfigDict(from_attributes=True)
     id: int

@@ -7,12 +7,17 @@ from sqlalchemy.orm import Session
 from ...db.session import get_db
 from ...models import (
     Reservation, ReservationAttendee, Resource, User, AuditLog,
-    Location, Branch, UserGroup, UserGroupMember,
+    Branch,
     BookingPolicy,
 )
 from ...schemas import (
     ReservationOut, ReservationCreate, ReservationUpdate, ReservationApproveIn,
 )
+from ...core.rbac import (
+    branch_scope, has_permission, holds_role, in_branch_scope,
+    resource_branch_id, resource_scope_clause,
+)
+from ...models import ROLE_KEY_RESERVATION_APPROVER
 from ..deps import get_current_user
 
 router = APIRouter(prefix="/reservations", tags=["reservation"])
@@ -93,6 +98,15 @@ def list_reservations(
         stmt = stmt.where(Reservation.start_at <= to_at)
     if status_filter:
         stmt = stmt.where(Reservation.status == status_filter)
+    scope_clause = resource_scope_clause(db, user)
+    if scope_clause is not None:
+        # 可見範圍內資源的預約，加上自己主辦的單（跨分公司預約仍看得到自己的）
+        in_scope = select(Resource.id).where(
+            Resource.organization_id == user.organization_id, scope_clause
+        )
+        stmt = stmt.where(
+            or_(Reservation.resource_id.in_(in_scope), Reservation.organizer_id == user.id)
+        )
     rows = db.execute(stmt.order_by(Reservation.start_at.desc())).scalars().all()
     if approvable_by_me:
         rows = [r for r in rows if _can_approve_reservation(db, user, r)]
@@ -120,8 +134,14 @@ def create_reservation(
     # 生成 6 位存取代碼
     access_code = f"{secrets.randbelow(1000000):06d}"
 
-    # 若資源設定「需要批准政策」，則預約進入待審批狀態；否則直接核准
-    initial_status = "pending" if getattr(resource, "requires_approval", False) else "approved"
+    # 跨分公司預約一律需審批（由該資源所屬分公司的管理員處理），
+    # 否則依資源自身的 requires_approval 政策決定
+    cross_branch = not in_branch_scope(db, user, resource_branch_id(db, resource))
+    initial_status = (
+        "pending"
+        if (getattr(resource, "requires_approval", False) or cross_branch)
+        else "approved"
+    )
 
     r = Reservation(
         organization_id=user.organization_id,
@@ -207,17 +227,6 @@ def update_reservation(
     return _to_out(r, db)
 
 
-def _room_branch_id(db: Session, room: Resource) -> int | None:
-    """房間所屬的分支 id：優先看 resource.branch_id，否則由 location.branch_id 反推。"""
-    if room.branch_id:
-        return room.branch_id
-    if room.location_id:
-        loc = db.get(Location, room.location_id)
-        if loc:
-            return loc.branch_id
-    return None
-
-
 def _ancestor_branch_ids(db: Session, branch_id: int) -> list[int]:
     """回傳 [自己, parent, grandparent, ...] 直到根。"""
     chain: list[int] = []
@@ -233,32 +242,27 @@ def _ancestor_branch_ids(db: Session, branch_id: int) -> list[int]:
     return chain
 
 
-def _is_admin_user(db: Session, u: User) -> bool:
-    """判斷是否為管理員：user.permissions.is_super_admin 或 屬於 category=admin 的群組。"""
-    perms = u.permissions or {}
-    if perms.get("is_super_admin"):
-        return True
-    rows = db.execute(
-        select(UserGroup)
-        .join(UserGroupMember, UserGroupMember.group_id == UserGroup.id)
-        .where(UserGroupMember.user_id == u.id, UserGroup.category == "admin")
-    ).scalars().first()
-    return rows is not None
-
-
 def _can_approve_reservation(db: Session, approver: User, reservation: Reservation) -> bool:
     """
-    核准權限：
-      approver 必須為管理員（is_super_admin 或 admin 群組成員）
-      且 approver.branch_id 必須在該房間分支的 ancestor chain 內
-      （所屬分支或上層分支皆可）。
+    核准權限，兩條路徑任一即可：
+
+    1. 被指派為該房間所屬分公司的「預約審批人」職責角色
+       （即使不是管理員，也不需要 reservation:write）。
+    2. 具備 reservation:write（管理員或被授權的預約管理者），
+       且 approver.branch_id 在該房間分支的 ancestor chain 內。
     """
-    if not _is_admin_user(db, approver):
-        return False
     room = db.get(Resource, reservation.resource_id)
     if not room:
         return False
-    room_branch_id = _room_branch_id(db, room)
+    room_branch_id = resource_branch_id(db, room)
+
+    # 路徑 1：職責型角色 —— 比對 role.key 而非名稱，改名不會讓審批失效
+    if holds_role(db, approver, ROLE_KEY_RESERVATION_APPROVER, room_branch_id):
+        return True
+
+    # 路徑 2：權限型
+    if not has_permission(db, approver, "reservation", "write"):
+        return False
     if not room_branch_id:
         # 房間無分支 → 只有 super_admin 或組織任一 admin 可核准
         return True

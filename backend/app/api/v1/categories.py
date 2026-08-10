@@ -7,7 +7,7 @@ from ...models import User, UserGroup, UserGroupCategory
 from ...schemas import (
     UserGroupCategoryOut, UserGroupCategoryCreate, UserGroupCategoryUpdate,
 )
-from ..deps import get_current_user
+from ..deps import get_current_user, require_permission
 
 router = APIRouter(prefix="/categories", tags=["organization"])
 
@@ -50,7 +50,7 @@ def list_categories(db: Session = Depends(get_db), user: User = Depends(get_curr
 def create_category(
     payload: UserGroupCategoryCreate,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_permission("user")),
 ):
     exists = db.execute(
         select(UserGroupCategory).where(
@@ -73,7 +73,7 @@ def update_category(
     cat_id: int,
     payload: UserGroupCategoryUpdate,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_permission("user")),
 ):
     c = db.get(UserGroupCategory, cat_id)
     if not c or c.organization_id != user.organization_id:
@@ -96,7 +96,7 @@ def update_category(
 def delete_category(
     cat_id: int,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_permission("user")),
 ):
     c = db.get(UserGroupCategory, cat_id)
     if not c or c.organization_id != user.organization_id:

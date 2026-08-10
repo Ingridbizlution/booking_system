@@ -21,6 +21,8 @@ const OffAuth = {
   clear() {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    // 一併清掉 /users/me 的權限快取，避免換人登入後沿用前一位使用者的權限
+    try { sessionStorage.removeItem('off_me'); } catch { /* 無 sessionStorage 時忽略 */ }
   },
   redirectToLogin() {
     // 若目前不在 login 頁，導向 login
@@ -70,6 +72,8 @@ const OffAPI = {
     get:   (id)      => offRequest('GET',  `/users/${id}`),
     create:(payload) => offRequest('POST', '/users', payload),
     patch: (id, p)   => offRequest('PATCH', `/users/${id}`, p),
+    // 權限變更走獨立端點（需 user:write；授予 super admin 需 super admin）
+    setPermissions: (id, perms) => offRequest('PUT', `/users/${id}/permissions`, perms),
   },
   branches: {
     list:   () => offRequest('GET', '/branches'),
@@ -94,6 +98,12 @@ const OffAPI = {
     create: (p) => offRequest('POST', '/roles', p),
     patch:  (id, p) => offRequest('PATCH', `/roles/${id}`, p),
     remove: (id) => offRequest('DELETE', `/roles/${id}`),
+    // 角色指派：branch_id 為 null 代表全組織範圍
+    listAssignees: (id) => offRequest('GET', `/roles/${id}/assignees`),
+    assign:   (id, user_id, branch_id = null) =>
+      offRequest('POST', `/roles/${id}/assignees`, { user_id, branch_id }),
+    unassign: (id, assignment_id) =>
+      offRequest('DELETE', `/roles/${id}/assignees/${assignment_id}`),
   },
   groups: {
     list:   () => offRequest('GET', '/groups'),
@@ -156,5 +166,73 @@ const OffAPI = {
   },
 };
 
+/* ---------- 管理控制台存取權限 ----------
+ * 後端只強制「寫入」權限（require_permission）；`read` 用於決定 UI 顯示什麼。
+ * 資料來源為 GET /users/me 的 effective_permissions —— 該欄位已由後端合併群組
+ * 繼承與 admin 群組的全域權，前端無法自行推導，務必用它而非 user.permissions。
+ *
+ * 下表把頁面／模組對應到 14 個權限鍵。以 href 前綴比對，最長者優先。
+ * 值可為單一權限鍵、權限鍵陣列（具備其中任一即可）、null（不管制），
+ * 或 OFF_PERM_SUPER（僅 super admin）。
+ *
+ * 陣列的用途：模組入口（如預約管理）底下含多種權限的頁面，只要使用者能讀其中
+ * 任何一頁就該看得到入口，否則會出現「有子頁權限卻進不去模組」的死路。 */
+const OFF_PERM_SUPER = '@super';
+const OFF_MODULE_PERMISSION = {
+  'reservation-': ['reservation', 'resource'],  // 預約單 + 資源（會議室/設備）
+  'ticket-':      'support',         // 工單管理 → 支援管理者
+  'signage-':     'panel',           // 電子標牌 → 面板管理者
+  'media-library':'panel',           // 媒體庫（標牌內容）
+  'room-control': 'av',              // 房間控制 → 音訊/視訊設備管理器
+  'org-':         'user',            // 組織目錄 → 用戶管理者
+  'system-':      OFF_PERM_SUPER,    // 系統設定/審計：14 鍵中無對應項，限 super admin
+  'broadcast-':   null,              // 廣播：14 個權限鍵中無對應項
+  'map':          null,              // 地圖：一般使用者導航功能
+};
+
+/** 由頁面路徑推出所需權限鍵；找不到對應則回 null（不管制）。 */
+function offPermissionForHref(href) {
+  const page = (href || '').split('/').pop().split('?')[0];
+  const match = Object.entries(OFF_MODULE_PERMISSION)
+    .filter(([prefix]) => page.startsWith(prefix))
+    .sort(([a], [b]) => b.length - a.length)[0];   // 最長前綴優先
+  return match ? match[1] : null;
+}
+
+const OFF_ME_KEY = 'off_me';
+
+/** 取得並快取 /users/me（含有效權限）。回傳 null 表示未登入或取得失敗。 */
+async function offLoadMe(force = false) {
+  if (!OffAuth.token()) return null;
+  if (!force) {
+    try {
+      const cached = sessionStorage.getItem(OFF_ME_KEY);
+      if (cached) return JSON.parse(cached);
+    } catch { /* 快取毀損則重新取得 */ }
+  }
+  try {
+    const me = await OffAPI.me();
+    try { sessionStorage.setItem(OFF_ME_KEY, JSON.stringify(me)); } catch { /* 忽略 */ }
+    return me;
+  } catch {
+    return null;   // 取不到權限時不封鎖畫面；寫入仍由後端把關
+  }
+}
+
+/** 是否具備讀取權（write 亦視為可讀）。permKey 可為字串、陣列或 null。 */
+function offCanRead(me, permKey) {
+  if (!permKey || (Array.isArray(permKey) && !permKey.length)) return true;  // 不管制
+  if (!me) return true;                               // 資訊不足 → 不管制
+  if (Array.isArray(permKey)) return permKey.some(k => offCanRead(me, k));   // 任一即可
+  if (permKey === OFF_PERM_SUPER) return !!me.is_super_admin;
+  if (me.is_admin || me.is_super_admin) return true;
+  const flags = (me.effective_permissions || {})[permKey];
+  return !!(flags && (flags.read || flags.write));
+}
+
 window.OffAuth = OffAuth;
 window.OffAPI  = OffAPI;
+window.offLoadMe = offLoadMe;
+window.offCanRead = offCanRead;
+window.offPermissionForHref = offPermissionForHref;
+window.OFF_MODULE_PERMISSION = OFF_MODULE_PERMISSION;

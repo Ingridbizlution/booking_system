@@ -8,7 +8,7 @@ from ...models.booking_policy import BookingPolicy, BookingPolicyApprover
 from ...schemas.booking_policy import (
     BookingPolicyOut, BookingPolicyCreate, BookingPolicyUpdate, ApproverOut,
 )
-from ..deps import get_current_user
+from ..deps import get_current_user, require_permission
 
 router = APIRouter(prefix="/booking-policies", tags=["booking-policy"])
 
@@ -74,7 +74,7 @@ def get_booking_policy(
 def create_booking_policy(
     payload: BookingPolicyCreate,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_permission("reservation")),
 ):
     bp = BookingPolicy(
         organization_id=user.organization_id,
@@ -109,7 +109,7 @@ def update_booking_policy(
     bp_id: int,
     payload: BookingPolicyUpdate,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_permission("reservation")),
 ):
     bp = db.get(BookingPolicy, bp_id)
     if not bp or bp.organization_id != user.organization_id:
@@ -140,7 +140,7 @@ def update_booking_policy(
 def delete_booking_policy(
     bp_id: int,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_permission("reservation")),
 ):
     bp = db.get(BookingPolicy, bp_id)
     if not bp or bp.organization_id != user.organization_id:

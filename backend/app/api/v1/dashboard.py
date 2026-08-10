@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from ...db.session import get_db
 from ...models import Reservation, Resource, User
 from ...schemas import DashboardStats
+from ...core.rbac import resource_scope_clause
 from ..deps import get_current_user
 
 router = APIRouter(prefix="/dashboard", tags=["reservation"])
@@ -23,23 +24,34 @@ def reservation_dashboard(
     start = datetime.combine(from_date, time.min, tzinfo=tz)
     end = datetime.combine(to_date, time.max, tzinfo=tz)
 
+    # 統計只涵蓋使用者分公司範圍內的資源，與會議室/設備列表一致
+    scope_clause = resource_scope_clause(db, user)
+
     # 1) 資源數量（room only for slice 1）
-    resource_count = db.execute(
-        select(func.count(Resource.id)).where(
-            Resource.organization_id == user.organization_id,
-            Resource.type == "room",
-        )
-    ).scalar_one()
+    count_q = select(func.count(Resource.id)).where(
+        Resource.organization_id == user.organization_id,
+        Resource.type == "room",
+    )
+    if scope_clause is not None:
+        count_q = count_q.where(scope_clause)
+    resource_count = db.execute(count_q).scalar_one()
 
     # 2) 預約清單
-    resv = db.execute(
-        select(Reservation).where(
-            Reservation.organization_id == user.organization_id,
-            Reservation.start_at <= end,
-            Reservation.end_at >= start,
-            Reservation.status.in_(["approved", "checked_in"]),
+    resv_q = select(Reservation).where(
+        Reservation.organization_id == user.organization_id,
+        Reservation.start_at <= end,
+        Reservation.end_at >= start,
+        Reservation.status.in_(["approved", "checked_in"]),
+    )
+    if scope_clause is not None:
+        resv_q = resv_q.where(
+            Reservation.resource_id.in_(
+                select(Resource.id).where(
+                    Resource.organization_id == user.organization_id, scope_clause
+                )
+            )
         )
-    ).scalars().all()
+    resv = db.execute(resv_q).scalars().all()
 
     total_seconds = sum((r.end_at - r.start_at).total_seconds() for r in resv)
     total_hours = round(total_seconds / 3600, 1)

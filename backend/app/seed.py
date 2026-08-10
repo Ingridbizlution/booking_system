@@ -2,15 +2,17 @@
 
 Idempotent：已有資料就不重複建立。
 """
+import os
 from datetime import datetime, timedelta, timezone
-from sqlalchemy import select
+from sqlalchemy import func, select
 from .db.session import SessionLocal
 from .db.init_db import init_db
 from .core.security import hash_password
 from .models import (
     Organization, Branch, Location,
     User, UserGroup, UserGroupMember,
-    UserGroupCategory, AssignableRole,
+    UserGroupCategory, AssignableRole, UserRoleAssignment,
+    ROLE_KEY_RESERVATION_APPROVER,
     Resource, Reservation,
     Amenity, ResourceAmenity,
 )
@@ -39,6 +41,19 @@ def seed():
             org = Organization(name="bizlution", slug="bizlution", timezone="Asia/Taipei", locale="zh-TW", plan="trial")
             db.add(org); db.flush()
             print(f"[seed] organization created id={org.id}")
+
+        # 已有資料時預設不再重跑（容器每次啟動都會執行本檔）。
+        # 本檔以「名稱」判斷資料是否存在，一旦使用者把示範資料改名或刪除，
+        # 重跑就會把它們重新建立，覆蓋掉真實資料。
+        # 需要重新灌示範資料時，設環境變數 SEED_FORCE=1。
+        if not os.getenv("SEED_FORCE"):
+            existing = db.execute(
+                select(func.count(Branch.id)).where(Branch.organization_id == org.id)
+            ).scalar_one()
+            if existing:
+                print(f"[seed] 組織已有 {existing} 個分支，略過示範資料"
+                      f"（要強制重灌請設 SEED_FORCE=1）")
+                return
 
         # 2) 分支（含 parent 階層：HQ 為總部，其他分公司 parent=HQ）
         branches: dict[str, Branch] = {}
@@ -129,12 +144,22 @@ def seed():
                 u.branch_id = branches[br_name].id
             user_ids[email] = u
 
+        # 5b) 組織擁有者設為 super admin。
+        # 必要條件：授予/撤銷 is_super_admin 本身需要 super admin 權限，
+        # 若組織內無人具備此旗標，將永遠無法透過 API 授予（啟動死鎖）。
+        owner = user_ids["ingrid@bizlution.com"]
+        if not (owner.permissions or {}).get("is_super_admin"):
+            owner.permissions = {**(owner.permissions or {}), "ui_access": True, "is_super_admin": True}
+        db.flush()
+
         # 5a) 可指派角色（示範）
-        for r_name, r_desc, r_icon, bind_group in [
-            ("預約審批人",    "各分支的預約單審批人；由「預約規則」在送出時尋找此角色。", "ti-user-check",  None),
-            ("房間管理員",    "維護房間資料、設備狀態、關閉／開放房間。",                "ti-door",        "系統管理員"),
-            ("樓層管理員",    "維護樓層平面圖、資源座標。",                              "ti-map-pin",     None),
-            ("緊急聯絡人",    "緊急事件通知；不掛任何權限。",                            "ti-alert-triangle", None),
+        # `key` 是授權邏輯用的識別碼；name 可被使用者改名，故不以 name 判斷職責。
+        roles: dict[str, AssignableRole] = {}
+        for r_name, r_desc, r_icon, bind_group, r_key in [
+            ("預約審批人",    "各分支的預約單審批人；由「預約規則」在送出時尋找此角色。", "ti-user-check",  None, ROLE_KEY_RESERVATION_APPROVER),
+            ("房間管理員",    "維護房間資料、設備狀態、關閉／開放房間。",                "ti-door",        "系統管理員", None),
+            ("樓層管理員",    "維護樓層平面圖、資源座標。",                              "ti-map-pin",     None, None),
+            ("緊急聯絡人",    "緊急事件通知；不掛任何權限。",                            "ti-alert-triangle", None, None),
         ]:
             r = db.execute(select(AssignableRole).where(
                 AssignableRole.organization_id == org.id,
@@ -142,33 +167,59 @@ def seed():
             )).scalar_one_or_none()
             if not r:
                 bound_id = groups[bind_group].id if bind_group and bind_group in groups else None
-                db.add(AssignableRole(
+                r = AssignableRole(
                     organization_id=org.id, name=r_name, description=r_desc,
-                    icon=r_icon, bound_group_id=bound_id, is_enabled=True,
-                ))
+                    icon=r_icon, bound_group_id=bound_id, is_enabled=True, key=r_key,
+                )
+                db.add(r); db.flush()
+            elif r_key and not r.key:
+                r.key = r_key      # 遷移：既有列補上 key
+            roles[r_name] = r
+        db.flush()
+
+        # 5c) 示範指派：新竹的支援職員兼任該分公司的預約審批人。
+        # 此人不是管理員、也沒有 reservation:write，僅憑職責角色即可審批新竹的預約單。
+        approver_user = user_ids["m0341018@mail.hfu.edu.tw"]
+        approver_role = roles["預約審批人"]
+        exists_assign = db.execute(select(UserRoleAssignment).where(
+            UserRoleAssignment.user_id == approver_user.id,
+            UserRoleAssignment.role_id == approver_role.id,
+        )).scalar_one_or_none()
+        if not exists_assign:
+            db.add(UserRoleAssignment(
+                user_id=approver_user.id,
+                role_id=approver_role.id,
+                branch_id=branches["新竹分公司"].id,
+            ))
         db.flush()
 
         # 6a) 設備（equipment）
+        # 每筆都必須指定分公司：物件層級權限以 branch 為範圍單位，
+        # 未歸屬分公司的資源只有 super admin 看得到。
         EQUIPMENT = [
-            ("筆記型電腦推車",   "Sample equipment resource - 筆記型電腦推車", None),
-            ("投影設備",         "Sample equipment resource - 投影設備", None),
-            ("視訊會議套件",     "Sample equipment resource - 視訊會議套件", None),
-            ("音訊設備",         "Sample equipment resource - 音訊設備", None),
-            ("簡報套件",         "Sample equipment resource - 簡報套件", None),
-            ("直立式機櫃",       "Sample equipment resource - 直立式機櫃", "其他設備類型"),
-            ("電子桌牌T7-1",     "Sample equipment resource - 電子桌牌", "其他設備類型"),
-            ("設備 8",           "Sample equipment resource - 設備 8", None),
-            ("設備 9",           "Sample equipment resource - 設備 9", None),
+            # (name, description, category, branch_name)
+            ("筆記型電腦推車",   "Sample equipment resource - 筆記型電腦推車", None, "HQ"),
+            ("投影設備",         "Sample equipment resource - 投影設備", None, "HQ"),
+            ("視訊會議套件",     "Sample equipment resource - 視訊會議套件", None, "HQ"),
+            ("音訊設備",         "Sample equipment resource - 音訊設備", None, "台北分公司"),
+            ("簡報套件",         "Sample equipment resource - 簡報套件", None, "台北分公司"),
+            ("直立式機櫃",       "Sample equipment resource - 直立式機櫃", "其他設備類型", "HQ"),
+            ("電子桌牌T7-1",     "Sample equipment resource - 電子桌牌", "其他設備類型", "HQ"),
+            ("設備 8",           "Sample equipment resource - 設備 8", None, "新竹分公司"),
+            ("設備 9",           "Sample equipment resource - 設備 9", None, "新竹分公司"),
         ]
-        for name, desc, category in EQUIPMENT:
+        for name, desc, category, br_name in EQUIPMENT:
             e = db.execute(select(Resource).where(Resource.organization_id == org.id, Resource.name == name)).scalar_one_or_none()
             if not e:
                 db.add(Resource(
                     organization_id=org.id, type="equipment",
                     name=name, description=desc, category=category,
-                    branch_id=branches["HQ"].id if category else None,
+                    branch_id=branches[br_name].id,
                     status="available", requires_approval=False, priority=0,
                 ))
+            elif not e.branch_id and not e.location_id:
+                # 遷移：早期 seed 未指派分公司，會導致此資源對所有人隱形
+                e.branch_id = branches[br_name].id
         db.flush()
 
         # 6b) 附屬設備（amenities）

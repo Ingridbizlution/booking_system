@@ -6,7 +6,7 @@ from ...db.session import get_db
 from ...models import Resource, Branch
 from ...models.amenity import Amenity, ResourceAmenity
 from ...schemas.amenity import AmenityOut, AmenityCreate, AmenityUpdate, ResourceAmenityIn
-from ..deps import get_current_user
+from ..deps import get_current_user, require_permission
 from ...models import User
 
 router = APIRouter(prefix="/amenities", tags=["reservation"])
@@ -74,7 +74,7 @@ def list_amenities(
 def create_amenity(
     payload: AmenityCreate,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_permission("resource")),
 ):
     a = Amenity(
         organization_id=user.organization_id,
@@ -105,7 +105,7 @@ def update_amenity(
     amenity_id: int,
     payload: AmenityUpdate,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_permission("resource")),
 ):
     a = db.get(Amenity, amenity_id)
     if not a or a.organization_id != user.organization_id:
@@ -121,7 +121,7 @@ def update_amenity(
 def delete_amenity(
     amenity_id: int,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_permission("resource")),
 ):
     a = db.get(Amenity, amenity_id)
     if not a or a.organization_id != user.organization_id:
@@ -136,7 +136,7 @@ def set_amenity_rooms(
     amenity_id: int,
     payload: ResourceAmenityIn,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_permission("resource")),
 ):
     return _set_resources(amenity_id, "room", payload.resource_ids, db, user)
 
@@ -146,7 +146,7 @@ def set_amenity_equipment(
     amenity_id: int,
     payload: ResourceAmenityIn,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_permission("resource")),
 ):
     return _set_resources(amenity_id, "equipment", payload.resource_ids, db, user)
 

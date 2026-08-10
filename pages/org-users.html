@@ -343,6 +343,11 @@
         </div>
 
         <div class="off-drawer-section">
+          <p class="label">可指派角色</p>
+          <div class="value" id="ud-roles" style="flex-direction:column; align-items:stretch; gap:6px">—</div>
+        </div>
+
+        <div class="off-drawer-section">
           <p class="label">委託代表</p>
           <div class="value" id="ud-delegate">—</div>
         </div>
@@ -571,6 +576,18 @@
       groupBox.innerHTML = (u.groups && u.groups.length)
         ? u.groups.map(g => `<span class="off-chip chip-primary">${esc(g.name)}</span>`).join(' ')
         : '<span style="color:var(--off-text-muted); font-size:12px">未加入任何群組</span>';
+
+      // 可指派角色（職責）——顯示角色名稱與其負責範圍
+      const roleBox = document.getElementById('ud-roles');
+      roleBox.innerHTML = (u.roles && u.roles.length)
+        ? u.roles.map(r => `
+            <div style="display:flex; align-items:center; gap:8px">
+              <span class="off-chip chip-purple">${esc(r.role_name)}</span>
+              <span style="font-size:12px; color:var(--off-text-muted)">
+                範圍：${r.branch_name ? esc(r.branch_name) : '全組織'}
+              </span>
+            </div>`).join('')
+        : '<span style="color:var(--off-text-muted); font-size:12px">未指派任何角色</span>';
 
       // 委託代表
       document.getElementById('ud-delegate').innerHTML = u.delegate_name
@@ -806,6 +823,20 @@
         admin,
       };
     }
+    // 正規化後比較，避免鍵順序或缺省值造成誤判
+    function permissionsChanged(before, after) {
+      const norm = (p) => JSON.stringify({
+        ui_access: p.ui_access !== false,
+        is_super_admin: !!p.is_super_admin,
+        admin: Object.fromEntries(
+          Object.entries(p.admin || {})
+            .map(([k, v]) => [k, { read: !!v.read, write: !!v.write }])
+            .sort(([a], [b]) => a.localeCompare(b))
+        ),
+      });
+      return norm(before) !== norm(after);
+    }
+
     function updateEditPermCount() {
       const p = collectEditPermissions();
       let n = Object.keys(p.admin).length;
@@ -990,11 +1021,16 @@
         employee_id:  document.getElementById('eu-employee-id').value.trim() || null,
         branch_id:    branchVal ? parseInt(branchVal, 10) : null,
         delegate_user_id: __editDelegateSelected || null,
-        permissions:  collectEditPermissions(),
         group_ids:    [...__editGroupSelected],
       };
       try {
         await OffAPI.users.patch(editingUserId, payload);
+        // 權限走獨立端點（後端已將 permissions 從一般更新中移除）；
+        // 僅在實際變更時送出，避免無謂呼叫（後端禁止變更自己的權限）
+        const nextPerms = collectEditPermissions();
+        if (permissionsChanged(editingUserData.permissions || {}, nextPerms)) {
+          await OffAPI.users.setPermissions(editingUserId, nextPerms);
+        }
         offCloseModal('modal-edit-user');
         await loadUsers();
         // 若 drawer 開著，重新載入

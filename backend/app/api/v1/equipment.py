@@ -5,9 +5,11 @@ from sqlalchemy.orm import Session
 from ...db.session import get_db
 from ...models import Resource, Location, Branch, User
 from ...schemas import RoomOut, RoomCreate, RoomUpdate
-from ..deps import get_current_user
+from ...core.rbac import can_access_resource, resource_scope_clause
+from ..deps import get_current_user, require_permission
 # 沿用 rooms._to_out 產生 RoomOut（含 branch_name / location_name 反查）
 from . import rooms as rooms_mod
+from .rooms import _assert_writable_branch
 
 router = APIRouter(prefix="/equipment", tags=["reservation"])
 
@@ -21,6 +23,9 @@ def list_equipment(
         Resource.organization_id == user.organization_id,
         Resource.type == "equipment",
     )
+    scope = resource_scope_clause(db, user)
+    if scope is not None:
+        q = q.where(scope)
     equipment = db.execute(q.order_by(Resource.id)).scalars().all()
     return [rooms_mod._to_out(r, db) for r in equipment]
 
@@ -29,8 +34,9 @@ def list_equipment(
 def create_equipment(
     payload: RoomCreate,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_permission("resource")),
 ):
+    _assert_writable_branch(db, user, payload.branch_id, payload.location_id)
     r = Resource(
         organization_id=user.organization_id,
         type="equipment",
@@ -58,18 +64,29 @@ def get_equipment(eq_id: int, db: Session = Depends(get_db), user: User = Depend
     r = db.get(Resource, eq_id)
     if not r or r.organization_id != user.organization_id or r.type != "equipment":
         raise HTTPException(status.HTTP_404_NOT_FOUND)
+    if not can_access_resource(db, user, r):
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
     return rooms_mod._to_out(r, db)
 
 
 @router.patch("/{eq_id}", response_model=RoomOut)
 def update_equipment(
     eq_id: int, payload: RoomUpdate,
-    db: Session = Depends(get_db), user: User = Depends(get_current_user),
+    db: Session = Depends(get_db), user: User = Depends(require_permission("resource")),
 ):
     r = db.get(Resource, eq_id)
     if not r or r.organization_id != user.organization_id or r.type != "equipment":
         raise HTTPException(status.HTTP_404_NOT_FOUND)
-    for k, v in payload.model_dump(exclude_unset=True).items():
+    if not can_access_resource(db, user, r):
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+    changed = payload.model_dump(exclude_unset=True)
+    if "branch_id" in changed or "location_id" in changed:
+        _assert_writable_branch(
+            db, user,
+            changed.get("branch_id", r.branch_id),
+            changed.get("location_id", r.location_id),
+        )
+    for k, v in changed.items():
         setattr(r, k, v)
     db.commit()
     db.refresh(r)
@@ -77,9 +94,11 @@ def update_equipment(
 
 
 @router.delete("/{eq_id}", status_code=204)
-def delete_equipment(eq_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def delete_equipment(eq_id: int, db: Session = Depends(get_db), user: User = Depends(require_permission("resource"))):
     r = db.get(Resource, eq_id)
     if not r or r.organization_id != user.organization_id or r.type != "equipment":
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+    if not can_access_resource(db, user, r):
         raise HTTPException(status.HTTP_404_NOT_FOUND)
     db.delete(r)
     db.commit()

@@ -389,6 +389,21 @@
       if (confirm('確定要登出？')) { OffAuth.clear(); location.href = 'login.html'; }
     });
     if (u) document.querySelector('.off-avatar').textContent = u.display_name.slice(0, 1);
+
+    // 依有效權限隱藏無權存取的模組卡片（後端仍獨立把關寫入權限）
+    offLoadMe().then(me => {
+      if (!me) return;
+      document.querySelectorAll('a.mod-card').forEach(card => {
+        // 已停用的卡片是未實作模組的佔位，不受權限管制
+        if (card.classList.contains('is-disabled')) return;
+        if (!offCanRead(me, offPermissionForHref(card.getAttribute('href')))) card.remove();
+      });
+      // 移除因此變空的分組標題
+      document.querySelectorAll('.group-title').forEach(title => {
+        const grid = title.nextElementSibling;
+        if (grid && !grid.querySelector('a.mod-card')) { grid.remove(); title.remove(); }
+      });
+    });
   </script>
 </body>
 </html>

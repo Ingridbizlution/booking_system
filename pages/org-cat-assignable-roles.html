@@ -119,6 +119,49 @@
     </div>
   </div>
 
+  <!-- Modal：指派角色給使用者 -->
+  <div class="off-modal-back" id="modal-assign">
+    <div class="off-modal off-modal-wrap" style="grid-template-columns:1fr; width:min(640px, 94vw)">
+      <button class="off-modal-close" onclick="offCloseModal('modal-assign')"><i class="ti ti-x"></i></button>
+      <div class="off-modal-body">
+        <h3 style="margin:0 0 4px">指派角色</h3>
+        <p style="color:var(--off-text-muted); font-size:13px; margin:0 0 16px">
+          角色：<b id="as-role-name">—</b>
+        </p>
+
+        <!-- 綁定 admin 群組時的警告 -->
+        <div id="as-admin-warn" class="off-new-note"
+             style="display:none; background:#fff4e5; border:1px solid #ffd8a8; border-radius:8px; padding:10px 12px; margin-bottom:14px">
+          <b><i class="ti ti-alert-triangle"></i> 注意：</b>此角色綁定的「<span id="as-warn-group"></span>」屬於管理員類群組。
+          被指派者將在其指派範圍內取得<b>完整管理權限</b>，而非僅限此職責。
+        </div>
+
+        <div style="font-size:13px; font-weight:600; margin-bottom:8px">目前指派</div>
+        <div id="as-list" style="margin-bottom:18px">
+          <div style="color:var(--off-text-muted); font-size:13px">讀取中…</div>
+        </div>
+
+        <div style="border-top:1px solid var(--off-border); padding-top:14px">
+          <div style="font-size:13px; font-weight:600; margin-bottom:10px">新增指派</div>
+          <div class="off-field"><span class="off-field-label"><i class="ti ti-user"></i> 使用者 <span style="color:red">*</span></span>
+            <select id="as-user"><option value="">— 請選擇 —</option></select>
+          </div>
+          <div class="off-field"><span class="off-field-label"><i class="ti ti-building"></i> 職責範圍 <span style="color:red">*</span></span>
+            <select id="as-branch"></select>
+          </div>
+          <p class="off-new-note" style="margin:8px 0 0">
+            範圍決定此人在哪個分公司擔任該職責，涵蓋該分公司<b>及其下層</b>。
+          </p>
+          <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px">
+            <button class="off-btn" onclick="offCloseModal('modal-assign')">關閉</button>
+            <button class="off-btn off-btn-primary" id="as-save"><i class="ti ti-plus"></i> 指派</button>
+          </div>
+          <div id="as-err" style="color:var(--off-red); font-size:13px; margin-top:8px; display:none"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="../assets/js/api.js"></script>
   <script src="../assets/js/app.js"></script>
   <script>
@@ -163,6 +206,7 @@
                 <th>名稱</th>
                 <th>描述</th>
                 <th>綁定群組</th>
+                <th>已指派</th>
                 <th>已啟用</th>
                 <th></th>
               </tr>
@@ -181,6 +225,9 @@
                   <td>${r.bound_group_name
                       ? `<span class="off-chip chip-primary">${esc(r.bound_group_name)}</span>`
                       : '<span style="color:var(--off-text-muted); font-size:12px">未綁定（僅職責）</span>'}</td>
+                  <td>${r.assignee_count
+                      ? `<span class="off-chip">${r.assignee_count} 人</span>`
+                      : '<span style="color:var(--off-text-muted); font-size:12px">未指派</span>'}</td>
                   <td>
                     <label class="off-toggle">
                       <input type="checkbox" data-field="is_enabled" ${r.is_enabled ? 'checked' : ''}>
@@ -188,6 +235,7 @@
                     </label>
                   </td>
                   <td>
+                    <button class="off-btn off-btn-ghost" data-assign="${r.id}" title="指派給使用者"><i class="ti ti-user-plus"></i></button>
                     <button class="off-btn off-btn-ghost" data-edit="${r.id}"><i class="ti ti-edit"></i></button>
                     <button class="off-btn off-btn-ghost" data-remove="${r.id}"><i class="ti ti-trash"></i></button>
                   </td>
@@ -209,6 +257,9 @@
         });
         box.querySelectorAll('button[data-remove]').forEach(b => {
           b.addEventListener('click', () => removeRole(parseInt(b.dataset.remove, 10)));
+        });
+        box.querySelectorAll('button[data-assign]').forEach(b => {
+          b.addEventListener('click', () => openAssign(parseInt(b.dataset.assign, 10)));
         });
       } catch (e) {
         box.innerHTML = `<div class="off-empty" style="color:var(--off-red)"><i class="ti ti-alert-triangle"></i> 讀取失敗：${esc(e.message)}</div>`;
@@ -255,6 +306,115 @@
       offOpenModal('modal-new-role');
     });
 
+    /* ---------------- 角色指派 ---------------- */
+    let __assignRoleId = null;
+    let __me = null;
+    let __branches = [];
+    let __groups = [];
+
+    /** 分公司下拉：「全組織」只有 super admin 能建立（後端會擋），故非 super admin 不顯示。 */
+    function fillBranchSelect() {
+      const sel = document.getElementById('as-branch');
+      const canOrgWide = !!(__me && __me.is_super_admin);
+      const scope = __me ? __me.branch_scope : null;   // null = 不受限
+      const options = __branches
+        .filter(b => scope === null || scope.includes(b.id))
+        .map(b => `<option value="${b.id}">${esc(b.name)}</option>`);
+      sel.innerHTML =
+        (canOrgWide ? '<option value="">— 全組織 —</option>' : '') +
+        (options.length ? options.join('') : '<option value="" disabled>（無可指派的分公司）</option>');
+    }
+
+    async function renderAssignees() {
+      const box = document.getElementById('as-list');
+      try {
+        const rows = await OffAPI.roles.listAssignees(__assignRoleId);
+        if (!rows.length) {
+          box.innerHTML = '<div style="color:var(--off-text-muted); font-size:13px">尚未指派給任何人</div>';
+          return;
+        }
+        box.innerHTML = rows.map(a => `
+          <div style="display:flex; align-items:center; gap:10px; padding:8px 10px; border:1px solid var(--off-border); border-radius:8px; margin-bottom:6px">
+            <span class="off-avatar" style="width:28px; height:28px; font-size:12px">${esc((a.user_display_name || '?').slice(0,1))}</span>
+            <div style="flex:1; min-width:0">
+              <div style="font-size:13px; font-weight:500">${esc(a.user_display_name || '—')}</div>
+              <div style="font-size:12px; color:var(--off-text-muted)">${esc(a.user_email || '')}</div>
+            </div>
+            <span class="off-chip">${a.branch_name ? esc(a.branch_name) : '全組織'}</span>
+            <button class="off-btn off-btn-ghost" data-unassign="${a.id}" title="移除指派">
+              <i class="ti ti-trash"></i>
+            </button>
+          </div>`).join('');
+        box.querySelectorAll('button[data-unassign]').forEach(b => {
+          b.addEventListener('click', async () => {
+            if (!confirm('確定要移除這筆指派？該使用者將立即失去此職責帶來的權限。')) return;
+            try {
+              await OffAPI.roles.unassign(__assignRoleId, parseInt(b.dataset.unassign, 10));
+              await renderAssignees();
+              loadRoles();               // 更新表格的「已指派」人數
+            } catch (e) { alert('移除失敗：' + e.message); }
+          });
+        });
+      } catch (e) {
+        box.innerHTML = `<div style="color:var(--off-red); font-size:13px">讀取失敗：${esc(e.message)}</div>`;
+      }
+    }
+
+    async function openAssign(roleId) {
+      const role = (window.__roles_cache || []).find(x => x.id === roleId);
+      if (!role) return;
+      __assignRoleId = roleId;
+      document.getElementById('as-role-name').textContent = role.name;
+      document.getElementById('as-err').style.display = 'none';
+      document.getElementById('as-list').innerHTML =
+        '<div style="color:var(--off-text-muted); font-size:13px">讀取中…</div>';
+      offOpenModal('modal-assign');
+
+      // 綁定 admin 類群組時提出警告：被指派者會取得完整管理權
+      const warn = document.getElementById('as-admin-warn');
+      const bound = __groups.find(g => g.id === role.bound_group_id);
+      if (bound && bound.category === 'admin') {
+        document.getElementById('as-warn-group').textContent = bound.name;
+        warn.style.display = 'block';
+      } else {
+        warn.style.display = 'none';
+      }
+
+      fillBranchSelect();
+      await renderAssignees();
+    }
+
+    document.getElementById('as-save').addEventListener('click', async () => {
+      const err = document.getElementById('as-err');
+      err.style.display = 'none';
+      const uid = parseInt(document.getElementById('as-user').value, 10);
+      if (!uid) { err.textContent = '請選擇使用者'; err.style.display = 'block'; return; }
+      const bv = document.getElementById('as-branch').value;
+      try {
+        await OffAPI.roles.assign(__assignRoleId, uid, bv ? parseInt(bv, 10) : null);
+        document.getElementById('as-user').value = '';
+        await renderAssignees();
+        loadRoles();
+      } catch (e) {
+        err.textContent = e.message; err.style.display = 'block';
+      }
+    });
+
+    /** 指派 modal 需要的參考資料，一次載入即可。 */
+    async function loadAssignRefs() {
+      try {
+        const [me, branches, users, groups] = await Promise.all([
+          offLoadMe(), OffAPI.branches.list(), OffAPI.users.list(), OffAPI.groups.list(),
+        ]);
+        __me = me; __branches = branches; __groups = groups;
+        document.getElementById('as-user').innerHTML =
+          '<option value="">— 請選擇 —</option>' +
+          users.map(u => `<option value="${u.id}">${esc(u.display_name)}（${esc(u.email)}）</option>`).join('');
+      } catch (e) {
+        console.error('載入指派參考資料失敗', e);
+      }
+    }
+
     document.getElementById('nr-save').addEventListener('click', async () => {
       const err = document.getElementById('nr-err');
       err.style.display = 'none';
@@ -278,6 +438,7 @@
     });
 
     loadGroupsIntoSelect();
+    loadAssignRefs();
     loadRoles();
   </script>
 </body>

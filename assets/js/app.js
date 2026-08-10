@@ -4,6 +4,9 @@
  * - 提供 Modal 顯示/隱藏
  * ------------------------------------------------------------ */
 
+/* 選單項目支援 `badge` 欄位（見 renderSidebar），但目前一律不使用：
+ * 原先的靜態數字與實際資料不符，且資源類清單會依使用者的分公司範圍過濾，
+ * 寫死的數字必然誤導。若要恢復徽章，請改為從 API 取得即時筆數。 */
 const OFF_NAV = {
   reservation: {
     icon: 'calendar-event',
@@ -27,15 +30,16 @@ const OFF_NAV = {
         { key: 'reservation', label: '預約記錄', href: '#' },
         { key: 'quota',       label: '配額使用歷史記錄', href: '#' }
       ]},
-      { key: 'room',      label: '會議室',      icon: 'door', badge: '11', children: [
+      // 資源類項目歸「資源管理者」(resource)，與預約單本身的權限分開
+      { key: 'room',      label: '會議室',      icon: 'door', perm: 'resource', children: [
         { key: 'standard',   label: '標準會議室', href: 'reservation-rooms.html' },
         { key: 'combinable', label: '可合併會議室', href: 'reservation-rooms-combinable.html', isNew: true }
       ]},
-      { key: 'desk',      label: '共享辦公桌', icon: 'grid-dots', badge: '37', href: '#', disabled: true },
-      { key: 'equipment', label: '設備',      icon: 'device-tv',  badge: '9',  href: 'reservation-equipment.html', isNew: true },
-      { key: 'parking',   label: '車位',      icon: 'parking',    badge: '50', href: '#', disabled: true },
-      { key: 'other',     label: '其他資源',   icon: 'box',        badge: '1',  href: '#' },
-      { key: 'team',      label: '團隊空間',   icon: 'users',      href: 'reservation-team-spaces.html' },
+      { key: 'desk',      label: '共享辦公桌', icon: 'grid-dots', href: '#', disabled: true },
+      { key: 'equipment', label: '設備',      icon: 'device-tv',  perm: 'resource', href: 'reservation-equipment.html', isNew: true },
+      { key: 'parking',   label: '車位',      icon: 'parking',    href: '#', disabled: true },
+      { key: 'other',     label: '其他資源',   icon: 'box',        perm: 'resource', href: '#' },
+      { key: 'team',      label: '團隊空間',   icon: 'users',      perm: 'resource', href: 'reservation-team-spaces.html' },
       { key: 'display',   label: '顯示與篩選', icon: 'filter', children: [
         { key: 'display-amenities',  label: '附屬設備',   href: 'reservation-display-amenities.html' },
         { key: 'display-categories', label: '資源類別',   href: '#' },
@@ -57,9 +61,9 @@ const OFF_NAV = {
     title: '工單管理',
     items: [
       { key: 'dashboard', label: '資訊主頁',   icon: 'layout-dashboard', href: 'ticket-dashboard.html' },
-      { key: 'reports',   label: '已匯報問題', icon: 'flag',   badge: '1', href: 'ticket-reports.html' },
+      { key: 'reports',   label: '已匯報問題', icon: 'flag',   href: 'ticket-reports.html' },
       { key: 'logs',      label: '紀錄',      icon: 'history', href: '#' },
-      { key: 'staff',     label: '支援職員',   icon: 'user-check', badge: '1', href: '#' },
+      { key: 'staff',     label: '支援職員',   icon: 'user-check', href: '#' },
       { key: 'policies',  label: '工單政策',   icon: 'shield-check', href: 'ticket-policies.html' }
     ]
   },
@@ -93,8 +97,8 @@ const OFF_NAV = {
     title: '電子標牌',
     items: [
       { key: 'home',      label: '首頁',        icon: 'home',    href: 'signage-home.html' },
-      { key: 'content',   label: '內容',        icon: 'photo',   badge: '3', href: '#' },
-      { key: 'devices',   label: '設備',        icon: 'device-desktop', badge: '2', href: 'signage-devices.html' },
+      { key: 'content',   label: '內容',        icon: 'photo',   href: '#' },
+      { key: 'devices',   label: '設備',        icon: 'device-desktop', href: 'signage-devices.html' },
       { key: 'settings',  label: '設備設定',    icon: 'settings', href: '#' },
       { key: 'playlists', label: '播放列表',    icon: 'playlist', href: 'signage-playlists.html' },
       { key: 'media',     label: '已上傳的媒體', icon: 'folder', href: '#' },
@@ -195,7 +199,7 @@ function renderSidebar(moduleKey, activePage) {
       const cls = [isActive ? 'active' : '', it.disabled ? 'disabled' : ''].filter(Boolean).join(' ');
       const clickBlock = it.disabled ? ' onclick="event.preventDefault(); return false;" title="尚未開放"' : '';
       return `<li>
-        <a class="${cls}" href="${it.disabled ? '#' : (it.href || '#')}"${clickBlock}>
+        <a class="${cls}" href="${it.disabled ? '#' : (it.href || '#')}"${clickBlock}${it.perm ? ` data-perm="${it.perm}"` : ''}>
           <span class="off-nav-icon">${icon(it.icon)}</span>
           <span>${it.label}</span>
           ${it.badge ? `<span class="off-badge ${it.badgeDot ? 'dot' : ''}">${it.badge}</span>` : ''}
@@ -207,7 +211,7 @@ function renderSidebar(moduleKey, activePage) {
       c.href && c.href.split('/').pop().replace('.html','') === (activePage || ''));
     const collapsed = !containsActive;
     return `<li>
-      <div class="off-nav-group${collapsed ? ' collapsed' : ''}" onclick="offToggleNavGroup(this)">
+      <div class="off-nav-group${collapsed ? ' collapsed' : ''}" onclick="offToggleNavGroup(this)"${it.perm ? ` data-perm="${it.perm}"` : ''}>
         <span class="off-nav-icon">${icon(it.icon)}</span>
         <span>${it.label}</span>
         ${it.badge ? `<span class="off-badge">${it.badge}</span>` : ''}
@@ -241,6 +245,20 @@ function renderSidebar(moduleKey, activePage) {
   </aside>`;
 }
 
+/* ---------- 管理控制台存取權限 ----------
+ * 後端只強制「寫入」權限；`read` 用於決定管理控制台顯示哪些內容。
+ * 判斷邏輯（offLoadMe / offCanRead / OFF_MODULE_PERMISSION）放在 api.js，
+ * 因為啟動頁等未載入 app.js 的頁面同樣需要。
+ * 個別選單項目可用 `perm: '<權限鍵>'` 指定所需權限。 */
+
+/** 依權限隱藏側邊欄中無權存取的選單項目。 */
+function offApplyNavPermissions(me, moduleKey) {
+  if (!me) return;
+  document.querySelectorAll('.off-sidebar [data-perm]').forEach(el => {
+    if (!offCanRead(me, el.dataset.perm)) el.closest('li')?.remove();
+  });
+}
+
 /* ---------- Boot ---------- */
 document.addEventListener('DOMContentLoaded', () => {
   const body = document.body;
@@ -252,6 +270,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const side = document.getElementById('off-sidebar');
   if (side) side.outerHTML = renderSidebar(moduleKey, pageKey);
+
+  // 依有效權限收斂管理控制台的可見範圍（後端仍獨立把關寫入權限）
+  offLoadMe().then(me => {
+    if (!me) return;
+    if (me.ui_access === false) {
+      document.body.innerHTML =
+        '<div style="display:grid;place-items:center;min-height:100vh;font:14px/1.6 system-ui;color:#4b525f">'
+        + '您的帳號未開放管理控制台存取權限，請聯絡系統管理員。</div>';
+      return;
+    }
+    offApplyNavPermissions(me, moduleKey);
+  });
 
   // 頂部頭像 → 點擊開 dropdown（內含登出）
   const avatar = document.querySelector('.off-topbar .off-avatar');
