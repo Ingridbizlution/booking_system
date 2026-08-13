@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>租戶管理 · 繳費紀錄 · Bizlution FMS</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+  <style>
+    /* Filter bar */
+    .pay-filter {
+      display: flex; align-items: center; gap: 10px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--off-border);
+      flex-wrap: wrap;
+    }
+    .pay-filter label { font-size: 13px; font-weight: 500; color: #5b6472; }
+    .pay-select {
+      border: 1px solid var(--off-border); border-radius: 8px;
+      padding: 7px 12px; font-size: 14px; color: #111;
+      background: #fff; outline: none; cursor: pointer; min-width: 160px;
+    }
+    .pay-select:focus { border-color: var(--off-primary); }
+
+    /* Status badge */
+    .pay-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 500;
+    }
+    .pay-paid    { background:#dcfce7; color:#16a34a; }
+    .pay-pending { background:#fef9c3; color:#a16207; }
+    .pay-overdue { background:#fee2e2; color:#dc2626; }
+
+    .pay-amount { font-weight: 600; font-family: monospace; }
+    .pay-month  { font-weight: 600; color: #111; }
+    .pay-tenant-name { font-weight: 600; font-size: 14px; }
+
+    /* Summary cards */
+    .pay-stats {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 14px; margin-bottom: 18px;
+    }
+    .pay-stat {
+      background: #fff; border: 1px solid var(--off-border);
+      border-radius: 12px; padding: 16px 18px;
+    }
+    .pay-stat-label { font-size: 12px; color: var(--off-text-muted); margin-bottom: 6px; }
+    .pay-stat-value { font-size: 22px; font-weight: 700; color: #111; }
+    .pay-stat-sub   { font-size: 12px; color: var(--off-text-muted); margin-top: 2px; }
+  </style>
+</head>
+<body data-module="tenant" data-page="payments"
+      data-crumbs='[{"label":"租戶管理","href":"tenant-list.html"},{"label":"租戶繳費紀錄"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#6ee7f7,#1f80f0)">
+          <i class="ti ti-receipt-2"></i>
+        </span>
+        <div>
+          <div class="off-page-title-row">
+            <h1>租戶繳費紀錄</h1>
+            <button class="off-btn"><i class="ti ti-download"></i> 匯出</button>
+          </div>
+          <p class="off-page-desc">檢視各租戶每月繳費明細</p>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="pay-stats" id="pay-stats"></div>
+
+      <!-- Table -->
+      <div class="off-panel" style="padding:0">
+        <!-- Filter -->
+        <div class="pay-filter">
+          <label>篩選租戶</label>
+          <select class="pay-select" id="filter-tenant">
+            <option value="">全部租戶</option>
+          </select>
+          <label>年份</label>
+          <select class="pay-select" id="filter-year">
+            <option value="">全部</option>
+            <option value="2025" selected>2025</option>
+            <option value="2024">2024</option>
+          </select>
+        </div>
+
+        <table class="off-table">
+          <thead>
+            <tr>
+              <th>租戶</th>
+              <th>繳費月份</th>
+              <th>方案</th>
+              <th>金額</th>
+              <th>繳費日期</th>
+              <th>狀態</th>
+              <th>備註</th>
+            </tr>
+          </thead>
+          <tbody id="pay-tbody"></tbody>
+        </table>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px">
+          <span style="color:var(--off-text-muted); font-size:13px" id="pay-count"></span>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script>
+    /* ══════════════════════════════════
+       租戶繳費紀錄 — 資料來自 OffAPI.tenantPayments（2026-08-13）
+    ══════════════════════════════════ */
+    let payments = [];
+
+    const STATUS_CFG = {
+      paid:    { cls:'pay-paid',    icon:'ti-circle-check', label:'已繳' },
+      pending: { cls:'pay-pending', icon:'ti-clock',        label:'待繳' },
+      overdue: { cls:'pay-overdue', icon:'ti-alert-circle', label:'逾期' },
+    };
+
+    function fmtAmount(n) {
+      return 'NT$ ' + n.toLocaleString();
+    }
+    function fmtMonth(m) {
+      const [y, mo] = m.split('-');
+      return `${y} 年 ${mo} 月`;
+    }
+
+    /* ── 從 API 載入繳費紀錄 ── */
+    async function loadPayments() {
+      const tbody = document.getElementById('pay-tbody');
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--off-text-muted)">
+        <i class="ti ti-loader-2"></i> 載入中…</td></tr>`;
+      try {
+        const params = {};
+        const tn = document.getElementById('filter-tenant').value;
+        const yr = document.getElementById('filter-year').value;
+        if (tn) params.tenant = tn;
+        if (yr) params.year = yr;
+        const data = await OffAPI.tenantPayments.list(params);
+        payments = Array.isArray(data) ? data : (data.items || []);
+        buildTenantFilter();
+        renderTable();
+      } catch (e) {
+        console.error('載入繳費紀錄失敗', e);
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--off-red)">
+          <i class="ti ti-alert-circle"></i> 載入失敗：${e.message}</td></tr>`;
+        document.getElementById('pay-count').textContent = '';
+        document.getElementById('pay-stats').innerHTML = '';
+      }
+    }
+
+    /* ── 動態建立租戶篩選選項 ── */
+    function buildTenantFilter() {
+      const sel = document.getElementById('filter-tenant');
+      const current = sel.value;
+      const names = [...new Set(payments.map(r => r.tenant))].sort();
+      sel.innerHTML = '<option value="">全部租戶</option>'
+        + names.map(n => `<option value="${n}"${n === current ? ' selected' : ''}>${n}</option>`).join('');
+    }
+
+    /* ── 篩選（客戶端對已載入資料再篩） ── */
+    function filtered() {
+      const tn = document.getElementById('filter-tenant').value;
+      const yr = document.getElementById('filter-year').value;
+      return payments.filter(r =>
+        (!tn || r.tenant === tn) &&
+        (!yr || r.month.startsWith(yr))
+      );
+    }
+
+    /* ── 統計卡 ── */
+    function renderStats(rows) {
+      const total   = rows.reduce((s, r) => s + r.amount, 0);
+      const paid    = rows.filter(r => r.status === 'paid').reduce((s, r) => s + r.amount, 0);
+      const pending = rows.filter(r => r.status === 'pending').length;
+      const overdue = rows.filter(r => r.status === 'overdue').length;
+      document.getElementById('pay-stats').innerHTML = `
+        <div class="pay-stat">
+          <div class="pay-stat-label">篩選總金額</div>
+          <div class="pay-stat-value" style="font-size:18px">NT$ ${total.toLocaleString()}</div>
+          <div class="pay-stat-sub">${rows.length} 筆紀錄</div>
+        </div>
+        <div class="pay-stat">
+          <div class="pay-stat-label">已收款</div>
+          <div class="pay-stat-value" style="color:#16a34a;font-size:18px">NT$ ${paid.toLocaleString()}</div>
+          <div class="pay-stat-sub">${rows.filter(r=>r.status==='paid').length} 筆</div>
+        </div>
+        <div class="pay-stat">
+          <div class="pay-stat-label">待繳</div>
+          <div class="pay-stat-value" style="color:#a16207;font-size:20px">${pending}</div>
+          <div class="pay-stat-sub">筆待確認</div>
+        </div>
+        <div class="pay-stat">
+          <div class="pay-stat-label">逾期</div>
+          <div class="pay-stat-value" style="color:#dc2626;font-size:20px">${overdue}</div>
+          <div class="pay-stat-sub">筆逾期未繳</div>
+        </div>`;
+    }
+
+    /* ── 資料表 ── */
+    function renderTable() {
+      const rows = filtered();
+      renderStats(rows);
+      const tbody = document.getElementById('pay-tbody');
+      if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--off-text-muted)">
+          <i class="ti ti-inbox"></i> 無符合條件的紀錄</td></tr>`;
+        document.getElementById('pay-count').textContent = '';
+        return;
+      }
+      tbody.innerHTML = rows.map(r => {
+        const sc = STATUS_CFG[r.status] || STATUS_CFG.pending;
+        return `<tr>
+          <td>
+            <span class="pay-tenant-name">${r.tenant}</span>
+            <div style="font-size:11px;color:var(--off-text-muted)">${r.tier}</div>
+          </td>
+          <td class="pay-month">${fmtMonth(r.month)}</td>
+          <td style="font-size:13px;color:var(--off-text-muted)">${r.tier}</td>
+          <td class="pay-amount">${fmtAmount(r.amount)}</td>
+          <td style="font-size:13px;color:var(--off-text-muted)">${r.paidAt || '—'}</td>
+          <td>
+            <span class="pay-badge ${sc.cls}">
+              <i class="ti ${sc.icon}" style="font-size:12px"></i> ${sc.label}
+            </span>
+          </td>
+          <td style="font-size:12px;color:var(--off-text-muted)">${r.note || '—'}</td>
+        </tr>`;
+      }).join('');
+      document.getElementById('pay-count').textContent = `共 ${rows.length} 筆`;
+    }
+
+    /* ── 篩選變更時重新載入 ── */
+    document.getElementById('filter-tenant').addEventListener('change', () => renderTable());
+    document.getElementById('filter-year').addEventListener('change', () => loadPayments());
+
+    /* ── 初始化 ── */
+    loadPayments();
+  </script>
+</body>
+</html>

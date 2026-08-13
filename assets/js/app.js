@@ -1,4 +1,4 @@
-/* Offision 前端共通行為
+/* Bizlution FMS 前端共通行為
  * - 為每個模組定義側邊導覽
  * - 依 body[data-module][data-page] 標示 active
  * - 提供 Modal 顯示/隱藏
@@ -151,6 +151,19 @@ const OFF_NAV = {
       { key: 'email',    label: '電子郵件範本',  icon: 'mail-forward', href: 'system-email-templates.html' },
       { key: 'smtp',     label: '電郵相關設定',  icon: 'mail-cog', href: '#' }
     ]
+  },
+
+  tenant: {
+    icon: 'building-skyscraper',
+    color: 'linear-gradient(135deg, #6ee7f7, #1f80f0)',
+    title: '租戶管理',
+    items: [
+      { key: 'list',     label: '租戶列表',     icon: 'list',           href: 'tenant-list.html' },
+      { key: 'payments', label: '租戶繳費紀錄', icon: 'receipt-2',      href: 'tenant-payments.html' },
+      { key: 'category', label: '分類',         icon: 'category', children: [
+        { key: 'cat-types', label: '租戶類別', href: 'tenant-categories.html', isNew: true }
+      ]}
+    ]
   }
 };
 
@@ -169,7 +182,7 @@ function renderTopBar(crumbs = []) {
     </span>
     <a class="off-logo" href="launcher.html">
       <span class="off-logo-mark"></span>
-      Offision
+      Bizlution FMS
     </a>
     <div class="off-search">
       <i class="ti ti-search"></i>

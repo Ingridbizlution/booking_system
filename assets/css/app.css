@@ -1,7 +1,7 @@
 /* ============================================================
- * Offision — 前端專案自訂樣式
+ * Bizlution FMS — 前端專案自訂樣式
  * 使用 Tabler v1（CDN，MIT License）作為基礎版面
- * 依 Offision 截圖細節微調
+ * 依 Bizlution FMS 截圖細節微調
  * ========================================================== */
 
 :root {
@@ -333,7 +333,7 @@ html, body { background: var(--off-bg); }
 }
 .off-panel .off-panel-title { font-size: 15px; font-weight: 600; margin: 0; }
 
-/* ---------- Data table (Offision list style) ---------- */
+/* ---------- Data table (Bizlution FMS list style) ---------- */
 .off-table {
   width: 100%; border-collapse: collapse;
 }
@@ -425,7 +425,7 @@ html, body { background: var(--off-bg); }
   .off-sidebar { position: static; height: auto; }
 }
 
-/* Modal (Offision two-pane drawer) */
+/* Modal (Bizlution FMS two-pane drawer) */
 .off-modal-back {
   position: fixed; inset: 0; background: rgba(28, 34, 45, .32);
   display: none; align-items: center; justify-content: center; z-index: 60;
@@ -831,7 +831,7 @@ html, body { background: var(--off-bg); }
 .off-info-row.mono .val { font-family: monospace; }
 
 /* ============================================================
- * 房間 / 資源編輯 modal — 共用欄位樣式（Offision 淡灰底單行）
+ * 房間 / 資源編輯 modal — 共用欄位樣式（Bizlution FMS 淡灰底單行）
  * 從 reservation-rooms-combinable.html 提出來給多頁共用
  * ============================================================ */
 .cbm-field {

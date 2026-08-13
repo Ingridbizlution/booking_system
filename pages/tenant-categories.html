@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>租戶管理 · 租戶類別 · Bizlution FMS</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+  <style>
+    .cat-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 16px;
+    }
+    .cat-card {
+      background: #fff; border: 1px solid var(--off-border);
+      border-radius: 14px; padding: 18px 20px;
+    }
+    .cat-head {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 4px;
+    }
+    .cat-icon {
+      width: 42px; height: 42px; border-radius: 11px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 21px; flex: 0 0 auto; color: #fff;
+    }
+    .cat-name { font-size: 16px; font-weight: 700; color: #111; margin: 0; }
+    .cat-code { font-size: 12px; color: var(--off-text-muted); font-family: monospace; }
+    .cat-count {
+      margin-left: auto; font-size: 12px; color: var(--off-text-muted);
+      background: var(--off-bg); padding: 3px 10px; border-radius: 999px;
+    }
+    .cat-desc {
+      font-size: 13px; color: #5b6472; line-height: 1.6;
+      margin: 10px 0 14px;
+    }
+    .cat-sub {
+      font-size: 11px; font-weight: 700; letter-spacing: .06em;
+      text-transform: uppercase; color: var(--off-text-muted);
+      margin: 0 0 8px;
+    }
+    .mod-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .mod-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 12px; padding: 4px 10px; border-radius: 999px;
+      background: #eef4ff; color: #1f5fb8; border: 1px solid #dbeafe;
+    }
+    .mod-chip.core   { background:#f1f5f9; color:#475569; border-color:#e2e8f0; }
+    .mod-chip.key    { background:#dcfce7; color:#15803d; border-color:#bbf7d0; }
+    .mod-chip i { font-size: 13px; }
+
+    .cat-foot {
+      display: flex; gap: 8px; margin-top: 16px;
+      padding-top: 14px; border-top: 1px solid var(--off-border);
+    }
+
+    /* 分析說明區 */
+    .analysis {
+      background: #fff; border: 1px solid var(--off-border);
+      border-radius: 14px; padding: 20px 22px; margin-top: 20px;
+    }
+    .analysis h3 {
+      font-size: 15px; font-weight: 700; margin: 0 0 4px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .analysis > p {
+      font-size: 13px; color: var(--off-text-muted); margin: 0 0 16px;
+    }
+    .an-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .an-table th {
+      text-align: left; font-weight: 600; color: #5b6472;
+      padding: 9px 10px; border-bottom: 1px solid var(--off-border);
+      font-size: 12px;
+    }
+    .an-table td {
+      padding: 9px 10px; border-bottom: 1px solid var(--off-border);
+      color: #333;
+    }
+    .an-table tr:last-child td { border-bottom: 0; }
+    .an-mark { text-align: center; font-size: 15px; }
+    .an-yes  { color: #16a34a; }
+    .an-no   { color: #d1d5db; }
+    .an-opt  { color: #f59e0b; }
+    .an-legend {
+      display: flex; gap: 16px; flex-wrap: wrap;
+      font-size: 12px; color: var(--off-text-muted);
+      margin-top: 12px; padding-top: 12px;
+      border-top: 1px solid var(--off-border);
+    }
+  </style>
+</head>
+<body data-module="tenant" data-page="cat-types"
+      data-crumbs='[{"label":"租戶管理","href":"tenant-list.html"},{"label":"分類"},{"label":"租戶類別"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#6ee7f7,#1f80f0)">
+          <i class="ti ti-category"></i>
+        </span>
+        <div>
+          <div class="off-page-title-row">
+            <h1>租戶類別</h1>
+            <button class="off-btn off-btn-primary" id="btn-new-cat">
+              <i class="ti ti-plus"></i> 新增類別
+            </button>
+          </div>
+          <p class="off-page-desc">依租戶的營運型態分類，作為規劃功能模組權限的參考基準</p>
+        </div>
+      </div>
+
+      <!-- 類別卡片 -->
+      <div class="cat-grid" id="cat-grid"></div>
+
+      <!-- 模組需求分析 -->
+      <div class="analysis">
+        <h3><i class="ti ti-chart-dots-3" style="color:var(--off-primary)"></i> 類別 × 功能模組需求分析</h3>
+        <p>以下是各租戶類別的模組需求建議，供規劃權限預設值時參考。</p>
+        <table class="an-table">
+          <thead>
+            <tr>
+              <th style="width:38%">功能模組</th>
+              <th class="an-mark" style="width:16%">辦公室</th>
+              <th class="an-mark" style="width:16%">影城</th>
+              <th style="width:30%">說明</th>
+            </tr>
+          </thead>
+          <tbody id="an-tbody"></tbody>
+        </table>
+        <div class="an-legend">
+          <span><i class="ti ti-circle-check an-yes"></i> 建議開啟</span>
+          <span><i class="ti ti-circle-dashed an-opt"></i> 選配（依規模決定）</span>
+          <span><i class="ti ti-circle-minus an-no"></i> 通常不需要</span>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script>
+    /* ══════════════════════════════════════════════
+       租戶類別 — 資料來自 OffAPI.tenantCategories（2026-08-13）
+    ══════════════════════════════════════════════ */
+    let categories = [];
+
+    /* ══════════════════════════════════════════════
+       模組需求分析矩陣（參考用靜態表，跨類別比較）
+       yes = 建議開啟 / opt = 選配 / no = 通常不需要
+    ══════════════════════════════════════════════ */
+    const ANALYSIS = [
+      { mod:'登入',              office:'yes', cinema:'yes', note:'所有租戶必備' },
+      { mod:'地圖',              office:'yes', cinema:'yes', note:'辦公室找座位；影城找廳別與逃生動線' },
+      { mod:'組織目錄',          office:'yes', cinema:'yes', note:'員工與權限管理，所有租戶必備' },
+      { mod:'預約管理',          office:'yes', cinema:'opt', note:'辦公室核心；影城僅包場／活動租借時需要' },
+      { mod:'資料分析',          office:'yes', cinema:'yes', note:'辦公室看空間使用率；影城看設備稼動與故障率' },
+      { mod:'資產管理（會議室）', office:'yes', cinema:'no',  note:'辦公室主要資產就是會議室' },
+      { mod:'資產管理（全部）',   office:'opt', cinema:'yes', note:'影城需管放映機、音響、座椅；辦公室僅大型企業需要' },
+      { mod:'維護',              office:'opt', cinema:'yes', note:'影城設備有強制保養週期；辦公室多外包' },
+      { mod:'服務',              office:'opt', cinema:'yes', note:'影城清潔／餐飲派工頻繁；辦公室視有無後勤團隊' },
+      { mod:'IoT 與警報',        office:'opt', cinema:'yes', note:'影城需監控溫溼度、放映機溫度、消防；辦公室多為空氣品質' },
+      { mod:'工單管理',          office:'yes', cinema:'yes', note:'兩者都需要故障回報，但影城的 SLA 更嚴格' },
+      { mod:'訪客管理',          office:'yes', cinema:'no',  note:'辦公室需登記訪客；影城客人不逐一登記' },
+      { mod:'電子標牌',          office:'opt', cinema:'yes', note:'影城需場次看板；辦公室多用於大廳公告' },
+      { mod:'廣播',              office:'opt', cinema:'yes', note:'影城需緊急疏散廣播（法規要求）' },
+      { mod:'考勤管理',          office:'opt', cinema:'yes', note:'影城為輪班制，排班需求高於辦公室' },
+      { mod:'固定座位管理',      office:'yes', cinema:'no',  note:'辦公室指派固定工位；影城座位屬售票系統' },
+    ];
+
+    const MARK = {
+      yes: '<i class="ti ti-circle-check an-yes"></i>',
+      opt: '<i class="ti ti-circle-dashed an-opt"></i>',
+      no:  '<i class="ti ti-circle-minus an-no"></i>',
+    };
+
+    /* ── 從 API 載入類別 ── */
+    async function loadCategories() {
+      const grid = document.getElementById('cat-grid');
+      grid.innerHTML = `<div style="text-align:center;padding:28px;color:var(--off-text-muted)">
+        <i class="ti ti-loader-2"></i> 載入中…</div>`;
+      try {
+        const data = await OffAPI.tenantCategories.list();
+        categories = Array.isArray(data) ? data : (data.items || []);
+        renderCats();
+      } catch (e) {
+        console.error('載入租戶類別失敗', e);
+        grid.innerHTML = `<div style="text-align:center;padding:28px;color:var(--off-red)">
+          <i class="ti ti-alert-circle"></i> 載入失敗：${e.message}</div>`;
+      }
+    }
+
+    /* ── 渲染類別卡 ── */
+    function renderCats() {
+      const grid = document.getElementById('cat-grid');
+      if (!categories.length) {
+        grid.innerHTML = `<div style="text-align:center;padding:28px;color:var(--off-text-muted)">
+          <i class="ti ti-inbox"></i> 尚無類別資料</div>`;
+        return;
+      }
+      grid.innerHTML = categories.map(c => `
+        <div class="cat-card">
+          <div class="cat-head">
+            <span class="cat-icon" style="background:${c.color}"><i class="ti ${c.icon}"></i></span>
+            <div>
+              <p class="cat-name">${c.name}</p>
+              <span class="cat-code">${c.code}</span>
+            </div>
+            <span class="cat-count">${c.tenants != null ? c.tenants : 0} 個租戶</span>
+          </div>
+          <p class="cat-desc">${c.desc || ''}</p>
+          <p class="cat-sub">建議功能模組</p>
+          <div class="mod-chips">
+            ${(c.modules || []).map(m => `
+              <span class="mod-chip ${m.lvl || ''}">
+                <i class="ti ${m.icon}"></i> ${m.label}
+              </span>`).join('')}
+          </div>
+          <div class="cat-foot">
+            <button class="off-btn" style="font-size:12px;padding:5px 12px"
+                    onclick="editCategory('${c.id || c.code}')">
+              <i class="ti ti-pencil"></i> 編輯
+            </button>
+            <button class="off-btn" style="font-size:12px;padding:5px 12px;color:var(--off-red)"
+                    onclick="deleteCategory('${c.id || c.code}', '${c.name}')">
+              <i class="ti ti-trash"></i> 刪除
+            </button>
+          </div>
+        </div>`).join('');
+    }
+
+    /* ── 渲染分析表 ── */
+    function renderAnalysis() {
+      document.getElementById('an-tbody').innerHTML = ANALYSIS.map(r => `
+        <tr>
+          <td style="font-weight:500">${r.mod}</td>
+          <td class="an-mark">${MARK[r.office]}</td>
+          <td class="an-mark">${MARK[r.cinema]}</td>
+          <td style="color:var(--off-text-muted);font-size:12px">${r.note}</td>
+        </tr>`).join('');
+    }
+
+    /* ── 新增類別 ── */
+    document.getElementById('btn-new-cat').addEventListener('click', async () => {
+      const name = prompt('請輸入新類別名稱：');
+      if (!name || !name.trim()) return;
+      const code = prompt('請輸入類別代碼（英文小寫）：');
+      if (!code || !code.trim()) return;
+      try {
+        await OffAPI.tenantCategories.create({
+          name: name.trim(),
+          code: code.trim().toLowerCase(),
+        });
+        await loadCategories();
+      } catch (e) {
+        alert('新增類別失敗：' + e.message);
+      }
+    });
+
+    /* ── 編輯類別 ── */
+    async function editCategory(id) {
+      const cat = categories.find(c => String(c.id || c.code) === String(id));
+      if (!cat) return;
+      const newName = prompt('修改類別名稱：', cat.name);
+      if (newName === null) return;
+      try {
+        await OffAPI.tenantCategories.patch(id, { name: newName.trim() || cat.name });
+        await loadCategories();
+      } catch (e) {
+        alert('編輯失敗：' + e.message);
+      }
+    }
+
+    /* ── 刪除類別 ── */
+    async function deleteCategory(id, name) {
+      if (!confirm(`確定要刪除類別「${name}」嗎？`)) return;
+      try {
+        await OffAPI.tenantCategories.remove(id);
+        await loadCategories();
+      } catch (e) {
+        alert('刪除失敗：' + e.message);
+      }
+    }
+
+    /* ── 初始化 ── */
+    loadCategories();
+    renderAnalysis();
+  </script>
+</body>
+</html>

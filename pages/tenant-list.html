@@ -1,0 +1,749 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>租戶管理 · 租戶列表 · Bizlution FMS</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+  <style>
+    /* ── 租戶列表 ── */
+    .tenant-avatar {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 15px; color: #fff; flex: 0 0 auto;
+    }
+    .tenant-name { font-weight: 600; font-size: 14px; color: #111; }
+    .tenant-id   { font-size: 12px; color: var(--off-text-muted); font-family: monospace; }
+    .tenant-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 500;
+      white-space: nowrap;
+    }
+    /* 操作欄按鈕不換行 */
+    .row-actions { display: flex; gap: 6px; }
+    .row-actions .off-btn { white-space: nowrap; font-size: 12px; padding: 4px 10px; }
+    .badge-premium  { background:#ede9fe; color:#7c3aed; }
+    .badge-standard { background:#dcfce7; color:#16a34a; }
+
+    /* ── 編輯 Modal ── */
+    .tenant-modal-back {
+      position: fixed; inset: 0; background: rgba(0,0,0,.45);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000; opacity: 0; pointer-events: none;
+      transition: opacity .2s;
+    }
+    .tenant-modal-back.open { opacity: 1; pointer-events: auto; }
+    .tenant-modal {
+      background: #fff; border-radius: 16px;
+      width: 780px; max-width: 96vw;
+      height: 560px; max-height: 90vh;
+      display: flex; flex-direction: column;
+      box-shadow: 0 24px 64px rgba(0,0,0,.18);
+      transform: scale(.96); transition: transform .2s;
+      overflow: hidden;
+    }
+    .tenant-modal-back.open .tenant-modal { transform: scale(1); }
+
+    /* Modal header */
+    .tm-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 22px 14px;
+      border-bottom: 1px solid var(--off-border);
+      flex: 0 0 auto;
+    }
+    .tm-header h2 { font-size: 17px; font-weight: 700; margin: 0; }
+    .tm-close {
+      border: 0; background: 0; width: 30px; height: 30px;
+      border-radius: 8px; cursor: pointer; font-size: 18px;
+      color: var(--off-text-muted); display: flex; align-items: center; justify-content: center;
+    }
+    .tm-close:hover { background: var(--off-bg); color: #111; }
+
+    /* Modal body = left nav + right content */
+    .tm-body {
+      display: flex; flex: 1 1 auto; min-height: 0; overflow: hidden;
+    }
+    .tm-nav {
+      width: 148px; flex: 0 0 148px;
+      border-right: 1px solid var(--off-border);
+      padding: 14px 8px;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .tm-nav-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 12px; border-radius: 8px;
+      font-size: 14px; color: #4b525f; cursor: pointer;
+      transition: background .12s;
+    }
+    .tm-nav-item:hover  { background: var(--off-sidebar-hover); }
+    .tm-nav-item.active { background: var(--off-sidebar-active-bg); color: var(--off-sidebar-active-fg); font-weight: 600; }
+
+    /* Tab panels */
+    .tm-panel { flex: 1; overflow-y: auto; padding: 22px 26px; display: none; }
+    .tm-panel.active { display: block; }
+
+    /* Form fields */
+    .tm-section-title {
+      font-size: 11px; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--off-text-muted);
+      margin: 20px 0 10px;
+    }
+    .tm-section-title:first-child { margin-top: 0; }
+    .tm-row {
+      display: grid; grid-template-columns: 140px 1fr;
+      align-items: center; gap: 10px;
+      padding: 10px 0; border-bottom: 1px solid var(--off-border);
+    }
+    .tm-row:last-of-type { border-bottom: 0; }
+    .tm-label { font-size: 13px; color: #5b6472; font-weight: 500; }
+    .tm-input {
+      border: 1px solid var(--off-border); border-radius: 8px;
+      padding: 8px 12px; font-size: 14px; color: #111;
+      background: #fff; width: 100%; outline: none;
+      transition: border-color .15s;
+    }
+    .tm-input:focus { border-color: var(--off-primary); }
+    .tm-input[readonly] { background: var(--off-bg); color: var(--off-text-muted); cursor: default; }
+    .tm-select {
+      border: 1px solid var(--off-border); border-radius: 8px;
+      padding: 8px 12px; font-size: 14px; color: #111;
+      background: #fff; width: 100%; outline: none; cursor: pointer;
+    }
+    .tm-select:focus { border-color: var(--off-primary); }
+
+    /* Permission tab */
+    .perm-grid {
+      display: flex; flex-direction: column; gap: 0;
+      border: 1px solid var(--off-border); border-radius: 10px;
+      overflow: hidden; margin-top: 14px;
+    }
+    .perm-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--off-border);
+      font-size: 14px;
+    }
+    .perm-row:last-child { border-bottom: 0; }
+    .perm-label { display: flex; align-items: center; gap: 8px; color: #222; }
+    .perm-label i { font-size: 16px; color: var(--off-text-muted); }
+    .perm-label .sub { font-size: 11px; color: var(--off-text-muted); margin-left: 2px; }
+
+    /* Toggle switch */
+    .tog { position: relative; display: inline-block; width: 38px; height: 22px; }
+    .tog input { opacity: 0; width: 0; height: 0; }
+    .tog-slider {
+      position: absolute; inset: 0; background: #d1d5db;
+      border-radius: 999px; cursor: pointer; transition: background .15s;
+    }
+    .tog-slider::before {
+      content: ''; position: absolute;
+      width: 16px; height: 16px; border-radius: 50%; background: #fff;
+      left: 3px; top: 3px; transition: transform .15s;
+      box-shadow: 0 1px 3px rgba(0,0,0,.2);
+    }
+    .tog input:checked + .tog-slider { background: var(--off-primary); }
+    .tog input:checked + .tog-slider::before { transform: translateX(16px); }
+    .tog input:disabled + .tog-slider { opacity: .5; cursor: not-allowed; }
+
+    /* Modal footer */
+    .tm-footer {
+      display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+      padding: 14px 22px;
+      border-top: 1px solid var(--off-border);
+      flex: 0 0 auto;
+    }
+
+    /* ── 刪除警告 modal ── */
+    .del-modal {
+      background: #fff; border-radius: 14px;
+      width: 520px; max-width: 96vw;
+      box-shadow: 0 24px 64px rgba(0,0,0,.18);
+      transform: scale(.96); transition: transform .2s;
+      overflow: hidden;
+    }
+    .tenant-modal-back.open .del-modal { transform: scale(1); }
+    .del-icon {
+      width: 42px; height: 42px; border-radius: 11px; flex: 0 0 auto;
+      background: #fee2e2; color: #dc2626;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+    .del-list {
+      list-style: none; margin: 14px 0 0; padding: 12px 14px;
+      background: var(--off-bg); border-radius: 10px;
+      display: flex; flex-direction: column; gap: 7px;
+    }
+    .del-list li {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: #4b525f;
+    }
+    .del-list li i { font-size: 15px; color: #dc2626; flex: 0 0 auto; }
+    .del-warn {
+      display: flex; align-items: flex-start; gap: 8px;
+      margin-top: 12px; padding: 10px 12px;
+      background: #fffbeb; border: 1px solid #fde68a; border-radius: 9px;
+      font-size: 12.5px; color: #92400e; line-height: 1.55;
+    }
+    .del-warn i { font-size: 15px; flex: 0 0 auto; margin-top: 1px; }
+
+    /* 新增租戶 modal */
+    .new-tenant-modal {
+      background: #fff; border-radius: 14px;
+      width: 460px; max-width: 96vw;
+      box-shadow: 0 24px 64px rgba(0,0,0,.18);
+      transform: scale(.96); transition: transform .2s;
+      overflow: hidden;
+    }
+    .tenant-modal-back.open .new-tenant-modal { transform: scale(1); }
+  </style>
+</head>
+<body data-module="tenant" data-page="list"
+      data-crumbs='[{"label":"租戶管理","href":"tenant-list.html"},{"label":"租戶列表"}]'>
+
+  <div id="off-top"></div>
+  <div class="off-shell">
+    <div id="off-sidebar"></div>
+    <main class="off-main">
+      <div class="off-page-head">
+        <span class="off-page-icon" style="background:linear-gradient(135deg,#6ee7f7,#1f80f0)">
+          <i class="ti ti-building-skyscraper"></i>
+        </span>
+        <div>
+          <div class="off-page-title-row">
+            <h1>租戶列表</h1>
+            <button class="off-btn off-btn-primary" id="btn-new-tenant">
+              <i class="ti ti-plus"></i> 新增租戶
+            </button>
+          </div>
+          <p class="off-page-desc">管理平台上所有已建立的租戶帳號</p>
+        </div>
+        <div class="off-page-actions">
+          <button class="off-btn"><i class="ti ti-download"></i> 匯出</button>
+          <button class="off-btn"><i class="ti ti-search"></i> 搜尋</button>
+        </div>
+      </div>
+
+      <div class="off-panel" style="padding:0">
+        <table class="off-table">
+          <thead>
+            <tr>
+              <th style="width:40px"><input type="checkbox" id="chk-all"></th>
+              <th>租戶名稱</th>
+              <th>Tenant ID</th>
+              <th>租戶類別</th>
+              <th>會員等級</th>
+              <th>時區</th>
+              <th>建立日期</th>
+              <th style="width:170px">操作</th>
+            </tr>
+          </thead>
+          <tbody id="tenant-tbody"></tbody>
+        </table>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px">
+          <span style="color:var(--off-text-muted); font-size:13px" id="tenant-count"></span>
+          <div style="color:var(--off-text-muted); font-size:13px">30 <i class="ti ti-chevron-down"></i></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       編輯租戶 Modal
+  ════════════════════════════════════════ -->
+  <div class="tenant-modal-back" id="modal-edit">
+    <div class="tenant-modal">
+      <!-- Header -->
+      <div class="tm-header">
+        <h2 id="edit-modal-title">編輯租戶</h2>
+        <button class="tm-close" onclick="closeEditModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <!-- Body -->
+      <div class="tm-body">
+        <!-- Left nav -->
+        <nav class="tm-nav">
+          <div class="tm-nav-item active" data-tab="basic" onclick="switchTab(this,'basic')">
+            <i class="ti ti-info-circle"></i> 基本
+          </div>
+          <div class="tm-nav-item" data-tab="perms" onclick="switchTab(this,'perms')">
+            <i class="ti ti-shield-check"></i> 權限
+          </div>
+        </nav>
+
+        <!-- ── 基本 ── -->
+        <div class="tm-panel active" id="tab-basic">
+          <p class="tm-section-title">基本資訊</p>
+
+          <div class="tm-row">
+            <span class="tm-label">租戶名稱</span>
+            <input class="tm-input" id="edit-name" placeholder="輸入租戶名稱">
+          </div>
+          <div class="tm-row">
+            <span class="tm-label">Tenant ID</span>
+            <input class="tm-input" id="edit-tid" readonly>
+          </div>
+          <div class="tm-row">
+            <span class="tm-label">租戶類別</span>
+            <select class="tm-select" id="edit-category">
+              <option value="office">辦公室</option>
+              <option value="cinema">影城</option>
+            </select>
+          </div>
+
+          <p class="tm-section-title">地區設定</p>
+
+          <div class="tm-row">
+            <span class="tm-label">時區</span>
+            <select class="tm-select" id="edit-tz">
+              <option value="Asia/Taipei">台北 (UTC+8)</option>
+              <option value="Asia/Tokyo">東京 (UTC+9)</option>
+              <option value="Asia/Shanghai">上海 (UTC+8)</option>
+              <option value="Asia/Hong_Kong">香港 (UTC+8)</option>
+              <option value="Asia/Singapore">新加坡 (UTC+8)</option>
+              <option value="America/New_York">紐約 (UTC-5)</option>
+              <option value="America/Los_Angeles">洛杉磯 (UTC-8)</option>
+              <option value="Europe/London">倫敦 (UTC+0)</option>
+              <option value="Europe/Paris">巴黎 (UTC+1)</option>
+            </select>
+          </div>
+          <div class="tm-row">
+            <span class="tm-label">預設語言</span>
+            <select class="tm-select" id="edit-lang">
+              <option value="zh-TW">繁體中文</option>
+              <option value="ja">日文</option>
+              <option value="en">英文</option>
+            </select>
+          </div>
+          <div class="tm-row">
+            <span class="tm-label">預設貨幣</span>
+            <select class="tm-select" id="edit-currency">
+              <option value="TWD">新台幣 (TWD)</option>
+              <option value="JPY">日幣 (JPY)</option>
+              <option value="USD">美金 (USD)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ── 權限 ── -->
+        <div class="tm-panel" id="tab-perms">
+          <p class="tm-section-title">會員等級</p>
+          <select class="tm-select" id="edit-tier" onchange="applyTier(this.value)" style="margin-bottom:6px">
+            <option value="standard">中級會員</option>
+            <option value="premium">高級會員</option>
+          </select>
+          <p style="font-size:12px; color:var(--off-text-muted); margin:4px 0 0">
+            切換等級將自動調整下方功能模組的開啟狀態。
+          </p>
+
+          <p class="tm-section-title" style="margin-top:18px">功能模組權限</p>
+          <div class="perm-grid" id="perm-grid"></div>
+        </div>
+      </div>
+      <!-- Footer -->
+      <div class="tm-footer">
+        <button class="off-btn" onclick="closeEditModal()">取消</button>
+        <button class="off-btn off-btn-primary" onclick="saveEditModal()">
+          <i class="ti ti-check"></i> 儲存
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       新增租戶 Modal
+  ════════════════════════════════════════ -->
+  <div class="tenant-modal-back" id="modal-new">
+    <div class="new-tenant-modal">
+      <div class="tm-header">
+        <h2>新增租戶</h2>
+        <button class="tm-close" onclick="closeModal('modal-new')"><i class="ti ti-x"></i></button>
+      </div>
+      <div style="padding:22px 26px; display:flex; flex-direction:column; gap:14px">
+        <div>
+          <label style="font-size:13px; font-weight:500; color:#5b6472; display:block; margin-bottom:6px">
+            租戶名稱 <span style="color:red">*</span>
+          </label>
+          <input class="tm-input" id="new-name" placeholder="例：陽明海運">
+        </div>
+        <div>
+          <label style="font-size:13px; font-weight:500; color:#5b6472; display:block; margin-bottom:6px">
+            Tenant ID <span style="color:var(--off-text-muted); font-size:11px">（系統自動生成，可修改）</span>
+          </label>
+          <input class="tm-input" id="new-tid" placeholder="例：yangming">
+        </div>
+        <div>
+          <label style="font-size:13px; font-weight:500; color:#5b6472; display:block; margin-bottom:6px">
+            租戶類別
+          </label>
+          <select class="tm-select" id="new-category">
+            <option value="office">辦公室</option>
+            <option value="cinema">影城</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:13px; font-weight:500; color:#5b6472; display:block; margin-bottom:6px">
+            會員等級
+          </label>
+          <select class="tm-select" id="new-tier">
+            <option value="standard">中級會員</option>
+            <option value="premium">高級會員</option>
+          </select>
+        </div>
+      </div>
+      <div class="tm-footer">
+        <button class="off-btn" onclick="closeModal('modal-new')">取消</button>
+        <button class="off-btn off-btn-primary" onclick="createTenant()">
+          <i class="ti ti-plus"></i> 建立
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       刪除租戶 — 警告 Modal
+  ════════════════════════════════════════ -->
+  <div class="tenant-modal-back" id="modal-delete">
+    <div class="del-modal">
+      <div style="padding:24px 26px 0">
+        <div style="display:flex; gap:14px; align-items:flex-start">
+          <span class="del-icon"><i class="ti ti-alert-triangle"></i></span>
+          <div>
+            <h2 style="font-size:17px; font-weight:700; margin:0 0 6px">刪除租戶「<span id="del-name"></span>」？</h2>
+            <p style="font-size:13px; color:#5b6472; line-height:1.65; margin:0">
+              此操作<b>無法復原</b>。刪除後，該租戶下列資料將一併永久移除：
+            </p>
+          </div>
+        </div>
+
+        <ul class="del-list">
+          <li><i class="ti ti-users"></i> 所有使用者帳號、群組與權限設定</li>
+          <li><i class="ti ti-calendar-event"></i> 所有預約紀錄與審批歷程</li>
+          <li><i class="ti ti-building"></i> 所有資產、會議室與設備資料</li>
+          <li><i class="ti ti-receipt-2"></i> 所有繳費紀錄與帳務資料</li>
+          <li><i class="ti ti-photo"></i> 所有上傳的媒體與附件檔案</li>
+        </ul>
+
+        <div class="del-warn">
+          <i class="ti ti-info-circle"></i>
+          <span>若只是要暫停服務，建議改用<b>停用租戶</b>，保留資料以便日後復用。</span>
+        </div>
+
+        <div style="margin-top:16px">
+          <label style="font-size:13px; color:#5b6472; display:block; margin-bottom:6px">
+            請輸入租戶名稱 <b id="del-confirm-hint"></b> 以確認刪除
+          </label>
+          <input class="tm-input" id="del-confirm" placeholder="輸入租戶名稱" autocomplete="off">
+          <p id="del-err" style="color:var(--off-red); font-size:12px; margin:6px 0 0; display:none">
+            名稱不符，請重新輸入。
+          </p>
+        </div>
+      </div>
+      <div class="tm-footer" style="margin-top:20px">
+        <button class="off-btn" onclick="closeModal('modal-delete')">取消</button>
+        <button class="off-btn" id="del-submit" onclick="confirmDelete()"
+                style="background:var(--off-red); color:#fff; border-color:var(--off-red)">
+          <i class="ti ti-trash"></i> 我了解後果，永久刪除
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script>
+    /* ══════════════════════════════════
+       租戶列表 — 資料來自 OffAPI.tenants（2026-08-13）
+    ══════════════════════════════════ */
+    let tenants = [];
+
+    /* ── 租戶類別（與 tenant-categories.html 對應）── */
+    const CATEGORY_CFG = {
+      office: { label: '辦公室', icon: 'ti-building', bg: '#eef4ff', fg: '#1f5fb8', bd: '#dbeafe' },
+      cinema: { label: '影城',   icon: 'ti-movie',    bg: '#f3e8ff', fg: '#7c3aed', bd: '#e9d5ff' },
+    };
+
+    /* ── 功能模組定義 ── */
+    const MODULES = [
+      { key: 'login',     label: '登入',               icon: 'ti-login',            alwaysOn: true },
+      { key: 'map',       label: '地圖',               icon: 'ti-map-2',            alwaysOn: true },
+      { key: 'org',       label: '組織目錄',           icon: 'ti-users',            alwaysOn: true },
+      { key: 'reserve',   label: '預約管理',           icon: 'ti-calendar-event',   alwaysOn: true },
+      { key: 'analytics', label: '資料分析',           icon: 'ti-chart-bar',        alwaysOn: true },
+      { key: 'asset_room',label: '資產管理（會議室）', icon: 'ti-door',             premiumOff: false, standardOn: true },
+      { key: 'asset_full',label: '資產管理（全部）',   icon: 'ti-building',         premiumOn: true,  standardOff: true },
+      { key: 'maintenance',label: '維護',              icon: 'ti-tool',             premiumOn: true,  standardOff: true },
+      { key: 'service',   label: '服務',               icon: 'ti-hand-click',       premiumOn: true,  standardOff: true },
+      { key: 'iot',       label: 'IoT 與警報',         icon: 'ti-cpu',              premiumOn: true,  standardOff: true },
+    ];
+
+    function tierPerms(tier) {
+      return Object.fromEntries(MODULES.map(m => {
+        if (m.alwaysOn) return [m.key, true];
+        if (tier === 'premium') return [m.key, !!m.premiumOn];
+        return [m.key, !!m.standardOn];
+      }));
+    }
+
+    /* ── 顏色工具 ── */
+    const COLORS = ['#0284c7','#7c3aed','#059669','#d97706','#dc2626','#db2777','#0891b2'];
+    function colorFor(str) {
+      let h = 0; for (const c of str) h = (h * 31 + c.charCodeAt(0)) & 0xffffffff;
+      return COLORS[Math.abs(h) % COLORS.length];
+    }
+    function initial(name) { return name ? name[0] : '?'; }
+
+    /* ── 從 API 載入租戶列表 ── */
+    async function loadTenants() {
+      const tbody = document.getElementById('tenant-tbody');
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:28px;color:var(--off-text-muted)">
+        <i class="ti ti-loader-2"></i> 載入中…</td></tr>`;
+      try {
+        const data = await OffAPI.tenants.list();
+        tenants = Array.isArray(data) ? data : (data.items || []);
+        renderTable();
+      } catch (e) {
+        console.error('載入租戶列表失敗', e);
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:28px;color:var(--off-red)">
+          <i class="ti ti-alert-circle"></i> 載入失敗：${e.message}</td></tr>`;
+        document.getElementById('tenant-count').textContent = '';
+      }
+    }
+
+    /* ── 渲染列表 ── */
+    function renderTable() {
+      const tbody = document.getElementById('tenant-tbody');
+      if (!tenants.length) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:28px;color:var(--off-text-muted)">
+          <i class="ti ti-inbox"></i> 尚無租戶資料</td></tr>`;
+        document.getElementById('tenant-count').textContent = '';
+        return;
+      }
+      tbody.innerHTML = tenants.map(t => `
+        <tr>
+          <td><input type="checkbox"></td>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span class="tenant-avatar" style="background:${t.color||colorFor(t.name)}">${initial(t.name)}</span>
+              <div>
+                <div class="tenant-name">${t.name}</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="tenant-id">${t.tid}</span></td>
+          <td>${categoryBadge(t.category)}</td>
+          <td>
+            ${t.tier === 'premium'
+              ? '<span class="tenant-badge badge-premium"><i class="ti ti-crown" style="font-size:12px"></i> 高級會員</span>'
+              : '<span class="tenant-badge badge-standard"><i class="ti ti-star" style="font-size:12px"></i> 中級會員</span>'}
+          </td>
+          <td style="font-size:13px;color:var(--off-text-muted)">${tzLabel(t.tz)}</td>
+          <td style="font-size:13px;color:var(--off-text-muted)">${t.created}</td>
+          <td>
+            <div class="row-actions">
+              <button class="off-btn" onclick="openEditModal('${t.id}')">
+                <i class="ti ti-pencil"></i> 編輯
+              </button>
+              <button class="off-btn" style="color:var(--off-red)"
+                      onclick="openDeleteModal('${t.id}')" title="刪除租戶">
+                <i class="ti ti-trash"></i> 刪除
+              </button>
+            </div>
+          </td>
+        </tr>`).join('');
+      document.getElementById('tenant-count').textContent = `共 ${tenants.length} 筆`;
+    }
+
+    function categoryBadge(code) {
+      const c = CATEGORY_CFG[code];
+      if (!c) return '<span style="color:var(--off-text-muted);font-size:13px">—</span>';
+      return `<span class="tenant-badge" style="background:${c.bg};color:${c.fg};border:1px solid ${c.bd}">
+        <i class="ti ${c.icon}" style="font-size:12px"></i> ${c.label}</span>`;
+    }
+
+    function tzLabel(tz) {
+      const map = {
+        'Asia/Taipei':'台北 (UTC+8)', 'Asia/Tokyo':'東京 (UTC+9)',
+        'Asia/Shanghai':'上海 (UTC+8)', 'Asia/Hong_Kong':'香港 (UTC+8)',
+        'Asia/Singapore':'新加坡 (UTC+8)', 'America/New_York':'紐約 (UTC-5)',
+        'America/Los_Angeles':'洛杉磯 (UTC-8)', 'Europe/London':'倫敦 (UTC+0)',
+        'Europe/Paris':'巴黎 (UTC+1)',
+      };
+      return map[tz] || tz;
+    }
+
+    /* ══════════════════════════════════
+       Tab 切換
+    ══════════════════════════════════ */
+    function switchTab(el, tab) {
+      document.querySelectorAll('.tm-nav-item').forEach(x => x.classList.remove('active'));
+      document.querySelectorAll('.tm-panel').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('tab-' + tab).classList.add('active');
+    }
+
+    /* ══════════════════════════════════
+       編輯 Modal
+    ══════════════════════════════════ */
+    let editingId = null;
+
+    function openEditModal(id) {
+      editingId = id;
+      const t = tenants.find(x => String(x.id) === String(id));
+      if (!t) return;
+
+      document.getElementById('edit-modal-title').textContent = `編輯租戶 — ${t.name}`;
+      document.getElementById('edit-name').value = t.name;
+      document.getElementById('edit-tid').value  = t.tid;
+      document.getElementById('edit-category').value = t.category || 'office';
+      document.getElementById('edit-tz').value   = t.tz;
+      document.getElementById('edit-lang').value = t.lang;
+      document.getElementById('edit-currency').value = t.currency;
+      document.getElementById('edit-tier').value = t.tier;
+
+      switchTab(document.querySelector('.tm-nav-item[data-tab="basic"]'), 'basic');
+      renderPermGrid(t.tier, t.perms || tierPerms(t.tier));
+      document.getElementById('modal-edit').classList.add('open');
+    }
+
+    function closeEditModal() {
+      document.getElementById('modal-edit').classList.remove('open');
+    }
+
+    async function saveEditModal() {
+      const payload = {
+        name:     document.getElementById('edit-name').value.trim(),
+        category: document.getElementById('edit-category').value,
+        tz:       document.getElementById('edit-tz').value,
+        lang:     document.getElementById('edit-lang').value,
+        currency: document.getElementById('edit-currency').value,
+        tier:     document.getElementById('edit-tier').value,
+        perms:    collectPerms(),
+      };
+      if (!payload.name) { alert('租戶名稱不可為空'); return; }
+      try {
+        await OffAPI.tenants.patch(editingId, payload);
+        await loadTenants();
+        closeEditModal();
+      } catch (e) {
+        alert('儲存失敗：' + e.message);
+      }
+    }
+
+    /* ── 權限格渲染 ── */
+    function renderPermGrid(tier, perms) {
+      const grid = document.getElementById('perm-grid');
+      grid.innerHTML = MODULES.map(m => {
+        const on      = perms ? !!perms[m.key] : !!tierPerms(tier)[m.key];
+        const locked  = !!m.alwaysOn;
+        return `
+        <div class="perm-row">
+          <span class="perm-label">
+            <i class="ti ${m.icon}"></i>
+            ${m.label}
+            ${locked ? '<span class="sub">（必開）</span>' : ''}
+          </span>
+          <label class="tog">
+            <input type="checkbox" data-perm="${m.key}" ${on ? 'checked' : ''} ${locked ? 'disabled' : ''}>
+            <span class="tog-slider"></span>
+          </label>
+        </div>`;
+      }).join('');
+    }
+
+    function applyTier(tier) {
+      renderPermGrid(tier, tierPerms(tier));
+    }
+
+    function collectPerms() {
+      const out = {};
+      document.querySelectorAll('#perm-grid input[data-perm]').forEach(cb => {
+        out[cb.dataset.perm] = cb.checked;
+      });
+      return out;
+    }
+
+    /* ══════════════════════════════════
+       新增租戶 Modal
+    ══════════════════════════════════ */
+    document.getElementById('btn-new-tenant').addEventListener('click', () => {
+      document.getElementById('new-name').value  = '';
+      document.getElementById('new-tid').value   = '';
+      document.getElementById('new-tier').value  = 'standard';
+      document.getElementById('modal-new').classList.add('open');
+    });
+
+    document.getElementById('new-name').addEventListener('input', function() {
+      const slug = this.value.toLowerCase()
+        .replace(/[\s　]+/g, '-')
+        .replace(/[^a-z0-9\-]/g, '');
+      document.getElementById('new-tid').value = slug;
+    });
+
+    async function createTenant() {
+      const name     = document.getElementById('new-name').value.trim();
+      const tid      = document.getElementById('new-tid').value.trim();
+      const tier     = document.getElementById('new-tier').value;
+      const category = document.getElementById('new-category').value;
+      if (!name || !tid) { alert('請填寫租戶名稱與 Tenant ID'); return; }
+      try {
+        await OffAPI.tenants.create({
+          name, tid, tier, category,
+          tz: 'Asia/Taipei', lang: 'zh-TW', currency: 'TWD',
+        });
+        await loadTenants();
+        closeModal('modal-new');
+      } catch (e) {
+        alert('新增租戶失敗：' + e.message);
+      }
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('open');
+    }
+
+    /* ══════════════════════════════════
+       刪除租戶
+    ══════════════════════════════════ */
+    let deletingId = null;
+
+    function openDeleteModal(id) {
+      const t = tenants.find(x => String(x.id) === String(id));
+      if (!t) return;
+      deletingId = id;
+      document.getElementById('del-name').textContent = t.name;
+      document.getElementById('del-confirm-hint').textContent = `「${t.name}」`;
+      document.getElementById('del-confirm').value = '';
+      document.getElementById('del-err').style.display = 'none';
+      document.getElementById('modal-delete').classList.add('open');
+      setTimeout(() => document.getElementById('del-confirm').focus(), 120);
+    }
+
+    async function confirmDelete() {
+      const t = tenants.find(x => String(x.id) === String(deletingId));
+      if (!t) return;
+      const typed = document.getElementById('del-confirm').value.trim();
+      if (typed !== t.name) {
+        document.getElementById('del-err').style.display = 'block';
+        return;
+      }
+      try {
+        await OffAPI.tenants.remove(deletingId);
+        await loadTenants();
+        closeModal('modal-delete');
+      } catch (e) {
+        alert('刪除失敗：' + e.message);
+      }
+    }
+
+    /* ── 點背景關閉 ── */
+    document.querySelectorAll('.tenant-modal-back').forEach(el => {
+      el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+    });
+
+    /* ── 初始化 ── */
+    loadTenants();
+  </script>
+</body>
+</html>

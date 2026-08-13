@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>登入 · Offision</title>
+  <title>登入 · Bizlution FMS</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
   <link rel="stylesheet" href="../assets/css/app.css">
   <style>
     body { background: linear-gradient(135deg,#eef4ff,#fff 40%,#f4ecff); min-height:100vh; margin:0; }
     .login-wrap { min-height:100vh; display:grid; place-items:center; padding:20px; }
+    .login-col { width: min(560px, 100%); }
     .login-card {
-      width: min(420px, 100%);
       background:#fff; border-radius:20px; padding:32px;
       box-shadow: 0 20px 40px rgba(31,128,240,.08);
       border: 1px solid var(--off-border);
@@ -42,11 +42,53 @@
       border-radius:10px; font-size:12px; color:#4b525f;
     }
     .hint code { background:#fff; padding:1px 6px; border-radius:4px; }
+    .session-bar {
+      display:none; align-items:center; gap:10px; flex-wrap:wrap;
+      margin-bottom:14px; padding:10px 14px; border-radius:10px;
+      background:#eefaf4; border:1px solid #bce8d5; font-size:13px; color:#1c6b4a;
+    }
+    .session-bar button {
+      border:1px solid #bce8d5; background:#fff; color:#1c6b4a;
+      border-radius:8px; padding:5px 12px; font-size:12px; cursor:pointer;
+    }
+    /* 回應面板：這頁同時是驗 API 的地方，因此原始 response 一定要看得到 */
+    .resp { margin-top:16px; display:none; }
+    .resp h2 {
+      font-size:12px; text-transform:uppercase; letter-spacing:.04em;
+      color:#6b7280; margin:16px 0 6px;
+    }
+    .resp .status {
+      display:inline-block; padding:2px 10px; border-radius:999px;
+      font-size:12px; font-weight:600; margin-bottom:8px;
+    }
+    .status.ok  { background:#e6f7ee; color:#0f7a48; }
+    .status.bad { background:#fdecee; color:#b42318; }
+    .resp pre {
+      margin:0; padding:12px 14px; background:#0f172a; color:#d7e3ff;
+      border-radius:10px; font-size:11.5px; line-height:1.55;
+      overflow:auto; max-height:300px; white-space:pre-wrap; word-break:break-all;
+    }
+    .resp .meta { font-size:11px; color:#6b7280; margin-top:6px; }
+    .resp-actions { display:flex; gap:10px; margin-top:16px; }
+    .resp-actions a, .resp-actions button {
+      flex:1; text-align:center; text-decoration:none;
+      padding:10px; border-radius:10px; font-size:13px; font-weight:600;
+      border:1px solid var(--off-border); background:#fff; color:#2b3140; cursor:pointer;
+    }
+    .resp-actions a.go { background: var(--off-primary); color:#fff; border-color:transparent; }
   </style>
 </head>
 <body>
   <div class="login-wrap">
+    <div class="login-col">
     <div class="login-card">
+      <div class="session-bar" id="session-bar">
+        <span id="session-text"></span>
+        <span style="flex:1"></span>
+        <a href="launcher.html" style="text-decoration:none"><button type="button">進入系統</button></a>
+        <button type="button" id="logout-btn">登出</button>
+      </div>
+
       <div class="brand-mark">
         <svg viewBox="0 0 40 40" width="36" height="36" xmlns="http://www.w3.org/2000/svg">
           <rect x="4"  y="4"  width="14" height="14" rx="3" fill="#fff" opacity=".95"/>
@@ -55,47 +97,155 @@
           <rect x="22" y="22" width="14" height="14" rx="3" fill="#fff" opacity=".95"/>
         </svg>
       </div>
-      <h1>登入 Offision</h1>
-      <p class="sub">請使用您的組織帳號登入</p>
+      <h1>登入 Bizlution FMS</h1>
+      <p class="sub">請使用您的組織 email 登入</p>
 
       <form id="login-form" autocomplete="off">
         <label for="email">電子郵件</label>
-        <input id="email" type="email" required value="ingrid@bizlution.com">
+        <input id="email" type="email" required autocomplete="username"
+               value="admin.chen@demo.bizlution.com">
 
         <label for="pw">密碼</label>
-        <input id="pw" type="password" required value="Ingrid1234!">
+        <input id="pw" type="password" required autocomplete="current-password" value="Demo1234!">
 
         <button class="primary" id="submit-btn" type="submit">登入</button>
         <div class="err" id="err" style="display:none"></div>
       </form>
 
       <div class="hint">
-        <b>Demo 帳號</b><br>
-        Admin：<code>ingrid@bizlution.com / Ingrid1234!</code><br>
-        Staff：<code>m0341018@mail.hfu.edu.tw / Support1234!</code><br>
-        User：<code>ingridiaim@gmail.com / User1234!</code>
+        <b>示範帳號</b>（租戶 <code id="tenant-hint">DEMO_GROUP</code>，密碼皆為 <code>Demo1234!</code>）<br>
+        租戶管理員：<code>admin.chen@demo.bizlution.com</code><br>
+        場域管理員：<code>fm.lin@demo.bizlution.com</code>（只看得到台北總部）<br>
+        技師：<code>tech.liu@demo.bizlution.com</code>　申請人：<code>user.huang@demo.bizlution.com</code>
       </div>
+    </div>
+
+    <div class="login-card resp" id="resp" style="margin-top:16px">
+      <h2 style="margin-top:0">POST /auth/token</h2>
+      <div><span class="status" id="tok-status"></span></div>
+      <pre id="tok-body"></pre>
+      <div class="meta" id="tok-meta"></div>
+
+      <div id="me-block" style="display:none">
+        <h2>GET /auth/me</h2>
+        <div><span class="status" id="me-status"></span></div>
+        <pre id="me-body"></pre>
+      </div>
+
+      <div class="resp-actions" id="resp-actions" style="display:none">
+        <a class="go" id="go-next" href="launcher.html">進入系統</a>
+        <button type="button" id="clear-btn">清除 session 重測</button>
+      </div>
+    </div>
     </div>
   </div>
 
+  <script src="../assets/js/config.js"></script>
   <script src="../assets/js/api.js"></script>
   <script>
-    // 已登入直接進 launcher
-    if (OffAuth.token()) location.href = 'launcher.html';
+    const $ = id => document.getElementById(id);
+    const nextPage = new URLSearchParams(location.search).get('next') || 'launcher.html';
+    $('go-next').href = nextPage;
+    $('tenant-hint').textContent = OFF_TENANT_CODE;
+
+    /* 已登入時**不自動跳轉**：這一頁同時是驗證 API 回應的地方，自動跳走會讓
+       重新整理看不到任何東西。改成顯示目前的 session 與兩個明確的出口。 */
+    function renderSession() {
+      const u = OffAuth.user();
+      if (!OffAuth.token()) { $('session-bar').style.display = 'none'; return; }
+      $('session-bar').style.display = 'flex';
+      $('session-text').textContent = u
+        ? `目前已登入：${u.display_name}（${u.email || u.username}）`
+        : '目前已有 session（尚未取得使用者資料）';
+    }
+    renderSession();
+
+    $('logout-btn').addEventListener('click', async () => {
+      await OffAuth.logout();
+      renderSession();
+      $('resp').style.display = 'none';
+    });
+    $('clear-btn').addEventListener('click', async () => {
+      await OffAuth.logout();
+      renderSession();
+      $('resp').style.display = 'none';
+    });
+
+    function showStatus(el, status, ok) {
+      el.textContent = `HTTP ${status}`;
+      el.className = 'status ' + (ok ? 'ok' : 'bad');
+    }
+
+    /** problem+json 的 code 才是穩定值，detail 是給人看的訊息。 */
+    function messageOf(status, data) {
+      const p = (data && typeof data === 'object') ? data : {};
+      if (status === 429) {
+        return '登入失敗次數過多，已被暫時封鎖（後端依 tenant_code + 識別碼節流），請稍後再試。';
+      }
+      if (p.code === 'UNAUTHENTICATED') return 'email 或密碼錯誤。';
+      if (p.code === 'VALIDATION_ERROR') return `請求不完整：${p.detail || ''}`;
+      if (p.detail) return p.detail;
+      return `登入失敗（HTTP ${status}）`;
+    }
 
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const btn = document.getElementById('submit-btn');
-      const err = document.getElementById('err');
+      const btn = $('submit-btn'), err = $('err');
       err.style.display = 'none';
+      $('me-block').style.display = 'none';
+      $('resp-actions').style.display = 'none';
       btn.disabled = true; btn.textContent = '登入中…';
+
       try {
-        const tok = await OffAPI.login(document.getElementById('email').value, document.getElementById('pw').value);
-        OffAuth.save(tok);
-        const next = new URLSearchParams(location.search).get('next') || 'launcher.html';
-        location.href = next;
+        const email = $('email').value.trim();
+        const res = await OffAPI.login(email, $('pw').value);
+
+        // 不論成功或失敗都把原始回應顯示出來
+        $('resp').style.display = 'block';
+        showStatus($('tok-status'), res.status, res.ok);
+        $('tok-body').textContent = typeof res.data === 'string'
+          ? res.data : JSON.stringify(res.data, null, 2);
+        $('tok-meta').textContent =
+          `送出的 body：{ grant_type:"password", tenant_code:"${OFF_TENANT_CODE}", username:"${email}", password:"***" }`
+          + (res.requestId ? `　·　X-Request-ID：${res.requestId}` : '');
+
+        if (!res.ok) {
+          err.textContent = messageOf(res.status, res.data);
+          err.style.display = 'block';
+          btn.disabled = false; btn.textContent = '登入';
+          return;
+        }
+
+        OffAuth.save(res.data);
+
+        // 立刻打一次 /auth/me：它同時驗證了三件事 —— access token 可用、
+        // X-Tenant-ID 與 token 的 tid 對得上、以及使用者的角色與權限。
+        const meRes = await OffAPI.meRaw();
+        $('me-block').style.display = 'block';
+        showStatus($('me-status'), meRes.status, meRes.ok);
+        $('me-body').textContent = typeof meRes.data === 'string'
+          ? meRes.data : JSON.stringify(meRes.data, null, 2);
+        if (meRes.ok) OffAuth.saveProfile(meRes.data);
+
+        if (res.data.must_change_password) {
+          err.textContent = '此帳號被標記為必須變更密碼（must_change_password=true）；'
+            + '變更密碼的畫面尚未實作，後端端點是 POST /auth/password/change。';
+          err.style.display = 'block';
+        }
+
+        renderSession();
+        $('resp-actions').style.display = 'flex';
+        btn.disabled = false; btn.textContent = '登入';
+
       } catch (ex) {
-        err.textContent = ex.message || '登入失敗';
+        // 走到這裡通常不是業務錯誤，而是連不到 API 或被 CORS 擋掉
+        $('resp').style.display = 'block';
+        showStatus($('tok-status'), '—', false);
+        $('tok-body').textContent = String(ex);
+        $('tok-meta').textContent = `API 根路徑：${OFF_API_BASE}`;
+        err.innerHTML = `無法連線到 API（<code>${OFF_API_BASE}</code>）。`
+          + '請確認後端已啟動，且 <code>CORS_ALLOWED_ORIGINS</code> 含本頁的來源 '
+          + `<code>${location.origin}</code>。詳細原因見瀏覽器 console。`;
         err.style.display = 'block';
         btn.disabled = false; btn.textContent = '登入';
       }
