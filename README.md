@@ -1,6 +1,6 @@
-# Offision — 會議室管理系統
+# Bizlution FMS — 會議室管理系統
 
-依 Offision 截圖實作的完整專案：**HTML + CSS 前端** ＋ **FastAPI + PostgreSQL 後端**。外觀以 [Tabler](https://tabler.io) 5（MIT License，公開 CDN）為底，Offision 風格微調在 `assets/css/app.css`。
+依 Bizlution FMS 截圖實作的完整專案：**HTML + CSS 前端** ＋ **FastAPI + PostgreSQL 後端**。外觀以 [Tabler](https://tabler.io) 5（MIT License，公開 CDN）為底，Bizlution FMS 風格微調在 `assets/css/app.css`。
 
 ## 目前 vertical slice 範圍
 
@@ -54,12 +54,12 @@ python3 -m http.server 8000
 ## 檔案結構
 
 ```
-Offision_part_frontend_v2/
+Bizlution FMS_part_frontend_v2/
   index.html                          # 進入頁（重導至 launcher）
   README.md                           # 本檔
-  Offision_規格書.docx                # 規格書
+  Bizlution FMS_規格書.docx                # 規格書
   assets/
-    css/app.css                       # Offision 風格 CSS
+    css/app.css                       # Bizlution FMS 風格 CSS
     js/app.js                         # 側欄 / 頂部列 / Modal 共通 JS
     js/api.js                         # API client（JWT + fetch 包裝）
   pages/
